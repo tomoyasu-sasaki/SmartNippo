@@ -1,0 +1,41 @@
+# AI作業指示プロンプトテンプレート (SmartNippo実装用)
+# 使用方法: 各セクションごとに対象セクション情報を記入してAIに渡す
+
+version: "1.0"
+task_context:
+  project: "SmartNippo (Expo × Convex Daily-Report App)"
+  current_phase: "Phase {X}" # 1-8の数字を入力
+  current_section: "Section {X.Y}" # 例: "Section 1.1"
+  section_title: "{セクション名}" # 例: "環境準備"
+
+work_instruction:
+  objective: |
+    @implementation_plan_checklist.md の「{section_title}」セクションの
+    全タスクを順番に実行し、各チェックボックスを更新してください。
+
+  requirements:
+    - checklist_source: "@implementation_plan_checklist.md"
+    - update_checkboxes: true # 完了時に [ ] → [x] に更新
+    - verify_completion: true # 各タスクの動作確認実行
+    - follow_cursor_rules: true # @global.mdc の制約・報告形式に従う
+
+documentation_refs:
+  expo: "https://docs.expo.dev"
+  convex: "https://docs.convex.dev/home"
+  tailwind: "https://tailwindcss.com/docs"
+  nextjs: "https://nextjs.org/docs"
+  shadcn: "https://ui.shadcn.com/docs"
+
+# セクション別カスタマイズ例:
+section_examples:
+  "1.1_環境準備":
+    focus: "開発環境の確実な構築"
+    key_tasks: ["Node/pnpm確認", "CLI tools導入", "環境変数設定"]
+
+  "2.1_Convex_Auth":
+    focus: "認証基盤の安全な実装"
+    key_tasks: ["auth設定", "セキュリティ検証", "権限テスト"]
+
+  "3.1_スキーマ設計":
+    focus: "データモデルの正確な実装"
+    key_tasks: ["スキーマ定義", "マイグレーション", "バックアップ"]

@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run all tests before push
+echo "🧪 Running tests before push..."
+pnpm test
+
+# Run build to ensure everything compiles
+echo "🏗️  Running build check..."
+pnpm build
+
+echo "✅ All checks passed. Pushing to remote..."

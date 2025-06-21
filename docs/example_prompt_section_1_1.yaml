@@ -1,0 +1,25 @@
+# Section 1.1 環境準備 - 具体的作業指示プロンプト
+
+version: "1.0"
+task_context:
+  project: "SmartNippo (Expo × Convex Daily-Report App)"
+  current_phase: "Phase 1"
+  current_section: "Section 1.1"
+  section_title: "環境準備"
+
+work_instruction:
+  objective: |
+    @implementation_plan_checklist.md の「環境準備」セクションの
+    全タスクを順番に実行し、各チェックボックスを更新してください。
+
+  requirements:
+    - checklist_source: "@implementation_plan_checklist.md"
+    - update_checkboxes: true
+    - verify_completion: true
+    - follow_cursor_rules: true
+
+execution_notes:
+  - "Node.js LTS version を使用"
+  - "各ツールのインストール後は必ずversion確認"
+  - "エラーが発生した場合は詳細ログを記録"
+  - "次のSection 1.2に進む前に全ツールの動作確認"

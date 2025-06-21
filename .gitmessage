@@ -1,0 +1,35 @@
+# <type>(<scope>): <subject>
+#
+# <body>
+#
+# <footer>
+
+# Types:
+# feat:     新機能追加
+# fix:      バグ修正
+# docs:     ドキュメント変更
+# style:    コードフォーマット変更
+# refactor: リファクタリング
+# perf:     パフォーマンス改善
+# test:     テスト追加・修正
+# build:    ビルドシステム変更
+# ci:       CI設定変更
+# chore:    その他の変更
+# revert:   変更の取り消し
+#
+# Scope examples:
+# auth, ui, api, db, config, deps, docs
+#
+# Subject guidelines:
+# - 命令形で記述 (Add, Fix, Update など)
+# - 最初の文字は小文字
+# - 末尾にピリオドなし
+# - 72文字以内
+#
+# Body guidelines:
+# - 変更の理由や詳細を記述
+# - 各行100文字以内
+#
+# Footer guidelines:
+# - Breaking changes: BREAKING CHANGE: <description>
+# - Issue references: Closes #123, Fixes #456

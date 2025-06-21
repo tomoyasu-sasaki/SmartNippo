@@ -1,0 +1,20 @@
+{
+  "name": "@smartnippo/types",
+  "version": "0.1.0",
+  "description": "Shared type definitions for SmartNippo",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "lint": "eslint src/**/*.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "convex": "*"
+  },
+  "devDependencies": {
+    "typescript": "*",
+    "tsup": "*"
+  }
+}

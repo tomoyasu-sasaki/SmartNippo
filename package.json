@@ -1,0 +1,59 @@
+{
+  "name": "SmartNippo",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Expo × Convex Daily-Report App - A modern monorepo for daily report management",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build lint test && changeset publish",
+    "prepare": "husky install",
+    "dev:convex": "npx convex dev",
+    "deploy:convex": "npx convex deploy",
+    "convex:schema": "npx convex dashboard"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,json,md,yaml,yml}": [
+      "prettier --write"
+    ]
+  },
+  "keywords": [
+    "expo",
+    "convex",
+    "monorepo",
+    "daily-report",
+    "react-native",
+    "nextjs"
+  ],
+  "author": "SmartNippo Team",
+  "license": "MIT",
+  "packageManager": "pnpm@10.12.1",
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@eslint/js": "^9.29.0",
+    "@types/node": "^24.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.34.1",
+    "@typescript-eslint/parser": "^8.34.1",
+    "convex": "^1.24.8",
+    "eslint": "^9.29.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.5.3",
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "turbo": "^2.5.4"
+  }
+}
