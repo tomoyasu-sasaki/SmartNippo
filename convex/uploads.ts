@@ -123,11 +123,15 @@ export const deleteAvatar = mutation({
       console.warn("Failed to delete avatar file:", error);
     }
 
-    // プロフィールから参照削除
-    await ctx.db.patch(user._id, {
-      avatarStorageId: undefined,
+    // プロフィールから参照削除（avatarUrlにリセット）
+    const updateData: any = {
+      avatarUrl: user.avatarUrl,
       updated_at: Date.now(),
-    });
+    };
+    // avatarStorageIdを削除
+    const updatedUser = { ...user };
+    delete updatedUser.avatarStorageId;
+    await ctx.db.replace(user._id, updatedUser);
 
     // 監査ログ記録
     if (user.orgId) {

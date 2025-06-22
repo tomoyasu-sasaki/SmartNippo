@@ -13,7 +13,7 @@ export function cn(...inputs: ClassValue[]) {
  * 安全な文字列分割ユーティリティ
  */
 export function safeSplit(str: string, delimiter: string): string[] {
-  if (!str ?? typeof str !== 'string') {
+  if (!str || typeof str !== 'string') {
     return [];
   }
   return str.split(delimiter).filter(Boolean);
@@ -36,7 +36,7 @@ export function removeEmpty<T extends Record<string, unknown>>(obj: T): Partial<
  * 深いオブジェクトのクローン
  */
 export function deepClone<T>(obj: T): T {
-  if (obj === null ?? typeof obj !== 'object') {
+  if (obj === null || typeof obj !== 'object') {
     return obj;
   }
   if (obj instanceof Date) {

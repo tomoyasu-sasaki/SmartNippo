@@ -153,7 +153,7 @@ export function maskString(str: string, visibleChars: number = 3, maskChar: stri
  */
 export function maskEmail(email: string): string {
   const [localPart, domain] = email.split('@');
-  if (!localPart ?? !domain) {
+  if (!localPart || !domain) {
     return email;
   }
 

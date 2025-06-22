@@ -47,7 +47,8 @@ export const SOCIAL_PLATFORMS = {
   website: {
     name: 'Website',
     domain: '',
-    urlPattern: /^https?:\/\/[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\/?.*$/,
+    urlPattern:
+      /^https?:\/\/[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\/?.*$/,
     usernamePattern: /.*/,
     placeholder: 'https://your-website.com',
   },
@@ -75,12 +76,17 @@ export const socialLinkSchema = z.object({
   displayOrder: z.number().int().min(0).optional().default(0),
 });
 
-export const socialLinksArraySchema = z.array(socialLinkSchema).max(10, '最大10個のソーシャルリンクまで設定できます');
+export const socialLinksArraySchema = z
+  .array(socialLinkSchema)
+  .max(10, '最大10個のソーシャルリンクまで設定できます');
 
 /**
  * URL形式のバリデーション
  */
-export function validateSocialUrl(platform: SocialPlatform, url: string): {
+export function validateSocialUrl(
+  platform: SocialPlatform,
+  url: string
+): {
   isValid: boolean;
   error?: string;
   normalizedUrl?: string;
@@ -161,7 +167,7 @@ export function extractUsernameFromUrl(platform: SocialPlatform, url: string): s
 
   try {
     const urlObj = new URL(url);
-    const {pathname} = urlObj;
+    const { pathname } = urlObj;
 
     switch (platform) {
       case 'twitter':
@@ -240,7 +246,7 @@ export function validateSocialLinks(links: SocialLink[]): {
   // 基本的な配列検証
   const arrayValidation = socialLinksArraySchema.safeParse(links);
   if (!arrayValidation.success) {
-    errors.push(...arrayValidation.error.errors.map(e => e.message));
+    errors.push(...arrayValidation.error.errors.map((e) => e.message));
     return { isValid: false, errors, validLinks: [] };
   }
 
@@ -287,7 +293,7 @@ export function validateSocialLinks(links: SocialLink[]): {
  * ソーシャルリンクの可視性フィルタリング
  */
 export function filterPublicSocialLinks(links: SocialLink[]): SocialLink[] {
-  return links.filter(link => !link.isPrivate);
+  return links.filter((link) => !link.isPrivate);
 }
 
 /**
@@ -336,7 +342,7 @@ export function getSocialLinkPreview(link: SocialLink): SocialLinkPreview {
     platform: link.platform,
     platformName: platformConfig.name,
     url: link.url,
-    username: link.username,
+    username: link.username ?? undefined,
     icon: getSocialIcon(link.platform),
     color: colorMap[link.platform],
   };

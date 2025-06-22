@@ -116,7 +116,7 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
                   <FormLabel>プロフィール画像</FormLabel>
                   <FormControl>
                     <AvatarUpload
-                      avatarUrl={field.value || initialData.avatarUrl}
+                      avatarUrl={field.value || initialData.avatarUrl || undefined}
                       onUpload={(result: { url: string }) => {
                         // アップロード成功時の処理
                         field.onChange(result.url);
