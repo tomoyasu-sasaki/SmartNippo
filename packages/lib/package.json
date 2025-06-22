@@ -37,7 +37,7 @@
   ],
   "main": "dist/index.js",
   "scripts": {
-    "build": "rm -rf dist && tsup src/index.ts --format esm,cjs --clean",
+    "build": "rm -rf dist && tsup src/index.ts --format esm,cjs --dts --clean",
     "clean": "rm -rf dist",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
     "lint": "eslint src/**/*.ts",
@@ -45,5 +45,5 @@
     "type-check": "tsc --noEmit"
   },
   "sideEffects": false,
-  "types": "src/index.ts"
+  "types": "dist/index.d.ts"
 }
