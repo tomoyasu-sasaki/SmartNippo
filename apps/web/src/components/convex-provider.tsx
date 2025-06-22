@@ -1,7 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ConvexProvider, ConvexReactClient } from 'convex/react';
+import { ConvexReactClient, ConvexProvider } from 'convex/react';
 import { useState, type ReactNode } from 'react';
 
 // Convex URL with fallback for build-time
@@ -34,7 +34,9 @@ export function ConvexClientProvider({ children }: ConvexClientProviderProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ConvexProvider client={convex}>{children}</ConvexProvider>
+      <ConvexProvider client={convex}>
+        {children}
+      </ConvexProvider>
     </QueryClientProvider>
   );
 }

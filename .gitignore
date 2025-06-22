@@ -1,6 +1,5 @@
 # Expo
 .expo/
-expo-env.d.ts
 
 # Expo modules cache
 .expo-modulescdn/

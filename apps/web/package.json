@@ -1,15 +1,9 @@
 {
   "name": "@smartnippo/web",
   "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "type-check": "tsc --noEmit"
-  },
   "dependencies": {
+    "@clerk/clerk-react": "~5.32.0",
+    "@clerk/nextjs": "~6.22.0",
     "@hookform/resolvers": "^5.1.1",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
@@ -17,14 +11,17 @@
     "@smartnippo/types": "workspace:*",
     "@smartnippo/ui": "workspace:*",
     "@tanstack/react-query": "^5.80.10",
+    "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "convex": "^1.24.8",
+    "convex": "*",
+    "convex-helpers": "^0.1.94",
     "lucide-react": "^0.519.0",
-    "next": "15.1.3",
+    "next": "15.3.4",
     "nuqs": "^2.4.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "*",
+    "react-dom": "*",
+    "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.58.1",
     "tailwind-merge": "^3.3.1",
     "zod": "^3.25.67"
@@ -33,13 +30,21 @@
     "@eslint/eslintrc": "^3.3.1",
     "@tailwindcss/postcss": "^4.1.10",
     "@types/node": "^24.0.3",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.1",
-    "eslint": "^9.29.0",
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "eslint": "*",
     "eslint-config-next": "15.1.3",
-    "postcss": "^8.5.6",
+    "postcss": "^8.4.40",
     "tailwindcss": "^4.1.10",
-    "typescript": "^5.6.3"
+    "typescript": "^5.5.4"
   },
-  "packageManager": "pnpm@10.12.1"
+  "packageManager": "pnpm@10.12.1",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "lint": "next lint",
+    "start": "next start",
+    "type-check": "tsc --noEmit"
+  }
 }

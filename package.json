@@ -1,25 +1,40 @@
 {
   "name": "SmartNippo",
-  "version": "1.0.0",
-  "type": "module",
   "description": "Expo × Convex Daily-Report App - A modern monorepo for daily report management",
-  "private": true,
-  "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "test": "turbo run test",
-    "type-check": "turbo run type-check",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "turbo run build lint test && changeset publish",
-    "prepare": "husky install",
-    "dev:convex": "npx convex dev",
-    "deploy:convex": "npx convex deploy",
-    "convex:schema": "npx convex dashboard"
+  "version": "1.0.0",
+  "author": "SmartNippo Team",
+  "dependencies": {
+    "@types/jest": "*"
   },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@edge-runtime/vm": "^5.0.0",
+    "@eslint/js": "^9.29.0",
+    "@types/node": "^24.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.34.1",
+    "@typescript-eslint/parser": "^8.34.1",
+    "convex": "*",
+    "convex-test": "^0.0.37",
+    "eslint": "*",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^16.1.2",
+    "prettier": "*",
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "syncpack": "^13.0.4",
+    "turbo": "^2.5.4",
+    "vitest": "^3.2.4"
+  },
+  "keywords": [
+    "convex",
+    "daily-report",
+    "expo",
+    "monorepo",
+    "nextjs",
+    "react-native"
+  ],
+  "license": "MIT",
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",
@@ -29,31 +44,28 @@
       "prettier --write"
     ]
   },
-  "keywords": [
-    "expo",
-    "convex",
-    "monorepo",
-    "daily-report",
-    "react-native",
-    "nextjs"
-  ],
-  "author": "SmartNippo Team",
-  "license": "MIT",
   "packageManager": "pnpm@10.12.1",
-  "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1",
-    "@eslint/js": "^9.29.0",
-    "@types/node": "^24.0.3",
-    "@typescript-eslint/eslint-plugin": "^8.34.1",
-    "@typescript-eslint/parser": "^8.34.1",
-    "convex": "^1.24.8",
-    "eslint": "^9.29.0",
-    "eslint-config-prettier": "^9.1.0",
-    "husky": "^8.0.0",
-    "lint-staged": "^16.1.2",
-    "prettier": "^3.5.3",
-    "prettier-plugin-organize-imports": "^4.1.0",
-    "turbo": "^2.5.4"
-  }
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter=!@smartnippo/docs build",
+    "changeset": "changeset",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "convex:schema": "npx convex dashboard",
+    "deploy:convex": "npx convex deploy",
+    "dev": "pnpm --filter=!@smartnippo/docs dev",
+    "dev:convex": "npx convex dev",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "lint": "pnpm --filter=!@smartnippo/docs lint",
+    "lint:packages": "pnpm syncpack list-mismatches",
+    "prepare": "husky install",
+    "release": "turbo run build lint test && changeset publish",
+    "test": "turbo run test",
+    "test:convex": "vitest --config convex/vitest.config.mts convex/**/*.test.ts",
+    "test:convex:coverage": "vitest run --coverage --coverage.reporter=text --config convex/vitest.config.mts convex/**/*.test.ts",
+    "test:convex:debug": "vitest --inspect-brk --no-file-parallelism --config convex/vitest.config.mts convex/**/*.test.ts",
+    "test:convex:run": "vitest run --config convex/vitest.config.mts convex/**/*.test.ts",
+    "type-check": "pnpm --filter=!@smartnippo/docs type-check",
+    "version-packages": "changeset version"
+  },
+  "type": "module"
 }

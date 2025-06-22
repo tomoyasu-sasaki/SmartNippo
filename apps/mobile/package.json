@@ -1,29 +1,25 @@
 {
   "name": "mobile",
   "version": "1.0.0",
-  "main": "index.ts",
-  "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
-    "lint": "eslint 'app/**/*.{ts,tsx}'",
-    "type-check": "tsc --noEmit"
-  },
   "dependencies": {
+    "@clerk/clerk-expo": "~1.2.9",
+    "@clerk/types": "~4.60.1",
     "@hookform/resolvers": "^5.1.1",
     "@smartnippo/lib": "workspace:*",
     "@smartnippo/types": "workspace:*",
     "@tanstack/react-query": "^5.80.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "convex": "^1.24.8",
+    "convex": "*",
     "expo": "~53.0.12",
+    "expo-image-manipulator": "^13.1.7",
+    "expo-image-picker": "^16.1.4",
     "expo-router": "~5.1.0",
     "expo-status-bar": "~2.2.3",
     "lucide-react-native": "^0.519.0",
     "nativewind": "^4.1.23",
-    "react": "19.0.0",
+    "react": "*",
+    "react-dom": "*",
     "react-hook-form": "^7.58.1",
     "react-native": "0.79.4",
     "react-native-css-interop": "^0.1.22",
@@ -35,10 +31,25 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@types/react": "~19.0.10",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.2.0",
+    "@types/jest": "*",
+    "@types/react": "*",
+    "jest-expo": "^53.0.7",
     "prettier-plugin-tailwindcss": "^0.5.14",
     "tailwindcss": "^3.4.17",
+    "ts-jest": "^29.4.0",
     "typescript": "~5.8.3"
   },
-  "private": true
+  "main": "index.ts",
+  "private": true,
+  "scripts": {
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "lint": "eslint 'app/**/*.{ts,tsx}'",
+    "start": "expo start",
+    "test": "jest",
+    "type-check": "tsc --noEmit",
+    "web": "expo start --web"
+  }
 }

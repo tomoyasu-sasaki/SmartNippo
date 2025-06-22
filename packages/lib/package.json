@@ -1,32 +1,19 @@
 {
   "name": "@smartnippo/lib",
-  "version": "0.1.0",
   "description": "Shared utility functions for SmartNippo",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist/**/*"
-  ],
-  "sideEffects": false,
-  "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --clean",
-    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
-    "lint": "eslint src/**/*.ts",
-    "type-check": "tsc --noEmit",
-    "test": "jest",
-    "clean": "rm -rf dist"
-  },
+  "version": "0.1.0",
   "dependencies": {
     "clsx": "^2.1.1",
-    "tailwind-merge": "^2.5.4",
-    "zod": "^3.23.8",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
-    "typescript": "*",
-    "tsup": "*",
+    "@types/jest": "*",
     "jest": "*",
-    "@types/jest": "*"
+    "tsup": "*",
+    "typescript": "*",
+    "vitest": "^3.2.4"
   },
   "exports": {
     ".": {
@@ -44,5 +31,19 @@
       "import": "./dist/validation.js",
       "require": "./dist/validation.cjs"
     }
-  }
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rm -rf dist && tsup src/index.ts --format esm,cjs --clean",
+    "clean": "rm -rf dist",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "lint": "eslint src/**/*.ts",
+    "test": "jest --passWithNoTests",
+    "type-check": "tsc --noEmit"
+  },
+  "sideEffects": false,
+  "types": "src/index.ts"
 }

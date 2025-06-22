@@ -124,7 +124,6 @@ export const APP_CONFIG = {
   VERSION: '1.0.0',
   DESCRIPTION: 'Expo × Convex Daily-Report App',
   AUTHOR: 'SmartNippo Team',
-  SUPPORT_EMAIL: 'support@smartnippo.com',
 } as const;
 
 // Feature flags
