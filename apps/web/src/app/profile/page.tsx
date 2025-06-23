@@ -49,7 +49,10 @@ export default function ProfilePage() {
     if (isAuthenticated && userProfile === null) {
       storeUser()
         .then(() => {})
-        .catch(() => {});
+        .catch((error) => {
+          console.error('Failed to create user profile:', error);
+          toast.error('プロフィールの作成に失敗しました。ページを再読み込みしてください。');
+        });
     }
   }, [isLoading, isAuthenticated, userProfile, router, storeUser]);
 
