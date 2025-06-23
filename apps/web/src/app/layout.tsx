@@ -1,31 +1,35 @@
-import { ConvexClientProvider } from '@/components/convex-provider';
-import type { Metadata } from 'next';
-import './globals.css';
+import type { Metadata } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
+import './globals.css'
+import ConvexClientProvider from '@/providers/convex-client-provider'
+
+const geistSans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
+
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
   title: 'SmartNippo - Daily Report Management',
   description: 'Modern daily report management app with AI assistance',
-  keywords: ['daily report', 'team management', 'AI assistant'],
-  authors: [{ name: 'SmartNippo Team' }],
-  creator: 'SmartNippo Team',
-  publisher: 'SmartNippo',
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-};
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   return (
-    <html lang='ja' suppressHydrationWarning>
-      <body className='min-h-screen bg-background font-sans antialiased'>
+    <html lang="ja">
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ConvexClientProvider>
-          <div className='relative flex min-h-screen flex-col'>
-            <div className='flex-1'>{children}</div>
-          </div>
+          {children}
         </ConvexClientProvider>
-      </body>
-    </html>
-  );
+        </body>
+      </html>
+  )
 }

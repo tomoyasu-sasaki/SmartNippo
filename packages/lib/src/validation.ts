@@ -27,6 +27,13 @@ export const dateStringSchema = z
 // UUID validation
 export const uuidSchema = z.string().uuid('有効なUUIDである必要があります');
 
+// Avatar URL validation
+export const avatarUrlSchema = z
+  .string()
+  .url('有効なURLを入力してください')
+  .optional()
+  .or(z.literal(''));
+
 // Organization schema
 export const organizationSchema = z.object({
   id: uuidSchema,
@@ -43,6 +50,27 @@ export const userSchema = z.object({
   role: userRoleSchema,
   avatarUrl: z.string().url().optional(),
   pushToken: z.string().optional(),
+});
+
+// Profile update schema - 現在のスキーマに対応
+export const profileUpdateSchema = z.object({
+  name: z
+    .string()
+    .min(1, '名前は必須です')
+    .max(100, '名前は100文字以内で入力してください')
+    .optional(),
+  avatarUrl: avatarUrlSchema,
+  pushToken: z.string().optional(),
+  _version: z.number().optional(), // 楽観的ロック用
+});
+
+// Profile form schema - フォーム用（必須項目を含む）
+export const profileFormSchema = z.object({
+  name: z
+    .string()
+    .min(1, '名前は必須です')
+    .max(100, '名前は100文字以内で入力してください'),
+  avatarUrl: avatarUrlSchema,
 });
 
 // Report schema
@@ -95,6 +123,16 @@ export function validatePassword(password: string): boolean {
 export function isValidUUID(id: string): boolean {
   try {
     uuidSchema.parse(id);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Profile validation function
+export function validateProfile(profile: unknown): boolean {
+  try {
+    profileFormSchema.parse(profile);
     return true;
   } catch {
     return false;

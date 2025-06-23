@@ -1,53 +1,97 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { AuthSync } from '@/components/auth-sync';
+import { useRouter } from 'next/navigation';
+
 export default function HomePage() {
+  const router = useRouter();
+
   return (
-    <main className='container mx-auto px-4 py-8'>
-      <div className='flex flex-col items-center justify-center min-h-[60vh] text-center'>
-        <h1 className='text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl'>SmartNippo</h1>
-        <p className='mt-6 text-lg leading-8 text-gray-600 max-w-2xl'>
-          モダンな日報管理アプリケーション。AI アシスタントによる要約機能と、
-          リアルタイム承認フローで、チームの生産性を向上させます。
-        </p>
-        <div className='mt-10 flex items-center justify-center gap-x-6'>
-          <a
-            href='/dashboard'
-            className='rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
-          >
-            ダッシュボードへ
-          </a>
-          <a href='/auth/login' className='text-sm font-semibold leading-6 text-gray-900'>
-            ログイン <span aria-hidden='true'>→</span>
-          </a>
+    <>
+      <AuthSync />
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <header className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">SmartNippo</h1>
+              <p className="text-gray-600">日報管理システム</p>
+        </div>
+            <div className="flex items-center gap-4">
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button>ログイン</Button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <Button variant="outline">新規登録</Button>
+                </SignUpButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
+      </div>
+          </header>
+
+          <SignedOut>
+            <Card>
+              <CardHeader>
+                <CardTitle>ようこそ SmartNippo へ</CardTitle>
+                <CardDescription>
+                  日報管理システムを利用するにはログインしてください
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  SmartNippoは、チームの日報を効率的に管理するためのシステムです。
+                  ログインして、日報の作成・閲覧・承認を行いましょう。
+            </p>
+              </CardContent>
+            </Card>
+          </SignedOut>
+
+          <SignedIn>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>今日の日報</CardTitle>
+                  <CardDescription>本日の作業内容を記録しましょう</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full" disabled>
+                    日報を作成（準備中）
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>承認待ち</CardTitle>
+                  <CardDescription>承認が必要な日報があります</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button variant="outline" className="w-full" disabled>
+                    確認する（準備中）
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>プロフィール</CardTitle>
+                  <CardDescription>アカウント設定を変更</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button variant="outline" className="w-full" onClick={() => router.push('/profile')}>
+                    設定を開く
+                  </Button>
+                </CardContent>
+              </Card>
+          </div>
+          </SignedIn>
         </div>
       </div>
-
-      <div className='mt-16 grid grid-cols-1 md:grid-cols-3 gap-8'>
-        <div className='text-center'>
-          <div className='bg-indigo-100 rounded-lg p-6 mb-4'>
-            <h3 className='text-lg font-semibold mb-2'>AI要約機能</h3>
-            <p className='text-gray-600'>
-              日報の内容を AI が自動で要約し、重要なポイントを抽出します。
-            </p>
-          </div>
-        </div>
-
-        <div className='text-center'>
-          <div className='bg-green-100 rounded-lg p-6 mb-4'>
-            <h3 className='text-lg font-semibold mb-2'>リアルタイム承認</h3>
-            <p className='text-gray-600'>
-              承認者に即座に通知が届き、スムーズな承認フローを実現します。
-            </p>
-          </div>
-        </div>
-
-        <div className='text-center'>
-          <div className='bg-yellow-100 rounded-lg p-6 mb-4'>
-            <h3 className='text-lg font-semibold mb-2'>マルチプラットフォーム</h3>
-            <p className='text-gray-600'>
-              Web・iOS・Android で同一の体験を提供し、いつでもどこでも利用可能。
-            </p>
-          </div>
-        </div>
-      </div>
-    </main>
+    </>
   );
 }

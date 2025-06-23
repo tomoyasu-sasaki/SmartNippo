@@ -21,9 +21,10 @@
 | レイヤ        | 技術                                 | 補足                                     |
 | ------------- | ------------------------------------ | ---------------------------------------- |
 | モバイル      | **Expo (React Native/TS)**           | OTA 更新／EAS Build、NativeWind v4       |
-| Web           | **Next.js 15 (App Router)**          | RSC優先、Cloudflare Pages 配信           |
-| UI System     | **shadcn/ui + Tailwind CSS v4**      | 統一デザインシステム、lucide-react icons |
+| Web           | **Next.js 15.1.3 (App Router)**      | RSC優先、React 19対応、Cloudflare Pages 配信 |
+| UI System     | **shadcn/ui + Tailwind CSS v4.1.10** | 統一デザインシステム、lucide-react icons |
 | BaaS          | **Convex**                           | DB + Edge Functions + ACL                |
+| 認証          | **Clerk**                            | ソーシャルログイン、Magic Link、MFA対応   |
 | AI            | **Mastra GPT‑4o**                    | 要約・QA・改善提案 API                   |
 | 状態管理      | **useSWR + nuqs + React Context**    | 楽観的更新、URL状態、最小グローバル状態  |
 | CDN & Storage | Cloudflare Pages / R2                |                                          |
@@ -107,7 +108,8 @@ erDiagram
 
 ### 4.1 認証 & 権限
 
-- Magic‑Link 認証 (Convex Auth)
+- Clerk認証 (ソーシャルログイン、Magic Link、Email/Password)
+- Clerk JWT → Convex認証統合
 - RLS: `org_id` 完全分離
 - ロール別権限:
   - **viewer**: 読取のみ
@@ -124,8 +126,8 @@ erDiagram
 | 削除 | author or admin | `deleteReport (soft)` |
 | 承認 | manager 以上    | `approveReport`       |
 
-**Note**: Next.js App Router では API Routes を使用せず、Convex
-mutations/queries を直接使用
+**Note**: Next.js 15.1.3 App Router (React 19対応) では API Routes を使用せず、Convex
+mutations/queries を直接使用。Server Components優先でSSR最適化
 
 ### 4.3 コメント & AI
 
@@ -177,8 +179,8 @@ mutations/queries を直接使用
 
 ## 6. パフォーマンス & モニタリング
 
-- **Web**: App Router RSC, Cloudflare Pages Edge キャッシュ, `next/image`
-  で画像最適化, shadcn/ui コンポーネント最適化
+- **Web**: Next.js 15.1.3 App Router RSC + React 19, Cloudflare Pages Edge キャッシュ, `next/image`
+  で画像最適化, shadcn/ui + Tailwind CSS v4.1.10 コンポーネント最適化
 - **Mobile**: NativeWind v4, bundle splitting, Hermes + RAM bundles,
   lucide-react-native アイコン最適化
 - **状態管理**: useSWR 楽観的更新, nuqs URL状態管理, React Context 最小構成

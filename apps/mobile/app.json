@@ -26,7 +26,10 @@
       "package": "com.smartnippo.mobile",
       "permissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
       ]
     },
     "web": {
@@ -44,6 +47,16 @@
     },
     "owner": "smartnippo",
     "scheme": "smartnippo",
-    "plugins": ["expo-router"]
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you upload avatar and profile images.",
+          "cameraPermission": "The app accesses your camera to let you take avatar and profile photos.",
+          "microphonePermission": "The app accesses your microphone for video recording features."
+        }
+      ]
+    ]
   }
 }

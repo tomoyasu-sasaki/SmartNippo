@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConvexProvider, ConvexReactClient } from 'convex/react';
-import { useState, type ReactNode } from 'react';
+import React, { useState } from 'react';
 
 // Convex URL with fallback for build-time
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? 'https://rapid-tapir-749.convex.cloud';
@@ -10,7 +10,7 @@ const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? 'https://rapid-tapir-749
 const convex = new ConvexReactClient(convexUrl);
 
 interface ConvexClientProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export function ConvexClientProvider({ children }: ConvexClientProviderProps) {
@@ -29,12 +29,12 @@ export function ConvexClientProvider({ children }: ConvexClientProviderProps) {
 
   // If no Convex URL is provided, render children without Convex
   if (!convexUrl || convexUrl === 'undefined') {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    return <QueryClientProvider client={queryClient}>{children as any}</QueryClientProvider>;
   }
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ConvexProvider client={convex}>{children}</ConvexProvider>
+      <ConvexProvider client={convex}>{children as any}</ConvexProvider>
     </QueryClientProvider>
   );
 }

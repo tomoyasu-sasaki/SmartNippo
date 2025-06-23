@@ -1,0 +1,48 @@
+{
+  "dependencyTypes": ["dev", "prod", "peer", "pnpmOverrides"],
+  "versionGroups": [
+    {
+      "label": "Internal packages",
+      "packages": ["**"],
+      "dependencies": ["@smartnippo/**"],
+      "pinVersion": "workspace:*"
+    },
+    {
+      "label": "Use highest version in repository",
+      "packages": ["**"],
+      "dependencies": ["**"],
+      "policy": "highest",
+      "exclude": ["tailwindcss"]
+    }
+  ],
+  "semverGroups": [
+    {
+      "label": "Align versions of react",
+      "packages": ["**"],
+      "dependencies": ["react", "react-dom"],
+      "policy": "highest"
+    },
+    {
+      "label": "Align minor versions of convex",
+      "packages": ["**"],
+      "dependencies": ["convex"],
+      "range": "~"
+    },
+    {
+      "label": "Align minor versions of clerk",
+      "packages": ["**"],
+      "dependencies": ["@clerk/**"],
+      "range": "~"
+    }
+  ],
+  "sortAz": [
+    "contributors",
+    "dependencies",
+    "devDependencies",
+    "keywords",
+    "peerDependencies",
+    "scripts"
+  ],
+  "sortFirst": ["name", "description", "version", "author"],
+  "source": ["package.json", "packages/*/package.json", "apps/*/package.json", "convex/package.json"]
+}
