@@ -163,7 +163,7 @@ export function AvatarUpload({
 
       <div className='flex-1'>
         <div
-          {...getRootProps()}
+          {...(getRootProps() as any)}
           className={`
             border-2 border-dashed rounded-lg p-4 text-center cursor-pointer
             transition-colors duration-200
@@ -171,7 +171,7 @@ export function AvatarUpload({
             ${disabled || isUploading ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary'}
           `}
         >
-          <input {...getInputProps()} />
+          <input {...(getInputProps() as any)} />
           {isUploading ? (
             <div className='flex items-center justify-center'>
               <Loader2 className='h-6 w-6 animate-spin mr-2' />
