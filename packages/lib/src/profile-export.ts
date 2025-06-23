@@ -1,5 +1,5 @@
-import type { SocialLink } from './social-links';
 import type { PrivacySettings } from './privacy-settings';
+import type { SocialLink } from './social-links';
 
 // エクスポート形式定義
 export const EXPORT_FORMATS = {
@@ -63,7 +63,7 @@ export interface ProfileExportData {
   // プロフィール変更履歴
   profileHistory: Array<{
     action: string;
-    changes: Record<string, any>;
+    changes: Record<string, string>;
     timestamp: string;
   }>;
 
@@ -115,7 +115,7 @@ export const DEFAULT_EXPORT_OPTIONS: ExportOptions = {
  * プロフィールデータの準備
  */
 export function prepareProfileExportData(
-  rawData: any,
+  rawData: ProfileExportData,
   options: ExportOptions
 ): ProfileExportData {
   const exportData: ProfileExportData = {
@@ -128,19 +128,23 @@ export function prepareProfileExportData(
       updated_at: new Date(rawData.profile.updated_at).toISOString(),
     },
     socialLinks: options.includeSocialLinks ? (rawData.socialLinks ?? []) : [],
-    privacySettings: options.includePrivacySettings ? rawData.privacySettings : {},
+    privacySettings: options.includePrivacySettings
+      ? rawData.privacySettings
+      : ({} as PrivacySettings),
     reports: [],
     profileHistory: [],
     organization: {
       name: rawData.organization?.name ?? '',
       plan: rawData.organization?.plan ?? '',
-      joined_at: rawData.organization?.joined_at ? new Date(rawData.organization.joined_at).toISOString() : '',
+      joined_at: rawData.organization?.joined_at
+        ? new Date(rawData.organization.joined_at).toISOString()
+        : '',
     },
     exportMetadata: {
       exportedAt: new Date().toISOString(),
       format: options.format,
       version: '1.0',
-      requestedBy: rawData.requestedBy ?? 'user',
+      requestedBy: rawData.exportMetadata?.requestedBy ?? 'user',
       includesPersonalData: true,
       dataRetentionPeriod: '7年間（法定保存期間）',
     },
@@ -149,14 +153,14 @@ export function prepareProfileExportData(
   // 日報データの追加
   if (options.includeReports && rawData.reports) {
     exportData.reports = rawData.reports
-      .filter((report: any) => {
+      .filter((report: ProfileExportData['reports'][number]) => {
         if (!options.dateRange) {
           return true;
         }
         const reportDate = new Date(report.created_at);
         return reportDate >= options.dateRange.from && reportDate <= options.dateRange.to;
       })
-      .map((report: any) => ({
+      .map((report: ProfileExportData['reports'][number]) => ({
         id: report.id,
         title: report.title,
         content: report.content,
@@ -170,14 +174,14 @@ export function prepareProfileExportData(
   // プロフィール履歴の追加
   if (options.includeHistory && rawData.profileHistory) {
     exportData.profileHistory = rawData.profileHistory
-      .filter((history: any) => {
+      .filter((history: ProfileExportData['profileHistory'][number]) => {
         if (!options.dateRange) {
           return true;
         }
         const historyDate = new Date(history.timestamp);
         return historyDate >= options.dateRange.from && historyDate <= options.dateRange.to;
       })
-      .map((history: any) => ({
+      .map((history: ProfileExportData['profileHistory'][number]) => ({
         action: history.action,
         changes: history.changes,
         timestamp: new Date(history.timestamp).toISOString(),
@@ -225,18 +229,22 @@ export function exportToCSV(data: ProfileExportData): {
   csvRows.push(`Profile,Role,"${data.profile.role}","${data.profile.updated_at}"`);
 
   // ソーシャルリンク
-  data.socialLinks.forEach((link, index) => {
+  data.socialLinks.forEach((link) => {
     csvRows.push(`Social Links,${link.platform},"${link.url}",`);
   });
 
   // 日報データ
-  data.reports.forEach((report, index) => {
-    csvRows.push(`Reports,${report.title},"${report.content.substring(0, 100)}...","${report.created_at}"`);
+  data.reports.forEach((report) => {
+    csvRows.push(
+      `Reports,${report.title},"${report.content.substring(0, 100)}...","${report.created_at}"`
+    );
   });
 
   // プロフィール履歴
-  data.profileHistory.forEach((history, index) => {
-    csvRows.push(`History,${history.action},"${JSON.stringify(history.changes)}","${history.timestamp}"`);
+  data.profileHistory.forEach((history) => {
+    csvRows.push(
+      `History,${history.action},"${JSON.stringify(history.changes)}","${history.timestamp}"`
+    );
   });
 
   const content = csvRows.join('\n');
@@ -297,30 +305,46 @@ export function exportToHTML(data: ProfileExportData): {
     </div>
   </div>
 
-  ${data.socialLinks.length > 0 ? `
+  ${
+    data.socialLinks.length > 0
+      ? `
   <div class="section">
     <h2>ソーシャルリンク</h2>
-    ${data.socialLinks.map(link => `
+    ${data.socialLinks
+      .map(
+        (link) => `
       <div class="social-link">
         <strong>${link.platform}:</strong> <a href="${link.url}" target="_blank">${link.url}</a>
       </div>
-    `).join('')}
+    `
+      )
+      .join('')}
   </div>
-  ` : ''}
+  `
+      : ''
+  }
 
-  ${data.reports.length > 0 ? `
+  ${
+    data.reports.length > 0
+      ? `
   <div class="section">
     <h2>日報データ (${data.reports.length}件)</h2>
-    ${data.reports.map(report => `
+    ${data.reports
+      .map(
+        (report) => `
       <div class="report-item">
         <h3>${report.title}</h3>
         <p><strong>日付:</strong> ${report.reportDate}</p>
         <p><strong>ステータス:</strong> ${report.status}</p>
         <div>${report.content.substring(0, 200)}${report.content.length > 200 ? '...' : ''}</div>
       </div>
-    `).join('')}
+    `
+      )
+      .join('')}
   </div>
-  ` : ''}
+  `
+      : ''
+  }
 
   <div class="section">
     <h2>組織情報</h2>
@@ -359,7 +383,7 @@ export function exportToHTML(data: ProfileExportData): {
  * メインエクスポート関数
  */
 export function exportProfile(
-  rawData: any,
+  rawData: ProfileExportData,
   options: Partial<ExportOptions> = {}
 ): {
   content: string;
@@ -424,7 +448,7 @@ export interface ExportStatistics {
 }
 
 export function calculateExportStatistics(
-  rawData: any,
+  rawData: ProfileExportData,
   options: ExportOptions
 ): ExportStatistics {
   const exportData = prepareProfileExportData(rawData, options);

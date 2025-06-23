@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from 'convex/react';
-import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AvatarUpload } from '@/components/ui/avatar-upload';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -18,11 +20,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { AvatarUpload } from '@/components/ui/avatar-upload';
 
-import { api } from '../../../../../convex/_generated/api';
 import { profileFormSchema } from '@smartnippo/lib';
+import { api } from '../../../../../convex/_generated/api';
 import type { Id } from '../../../../../convex/_generated/dataModel';
 
 interface UserProfile {
@@ -52,7 +52,7 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
   const updateProfile = useMutation(api.users.updateProfile);
 
   const form = useForm<ProfileFormData>({
-    resolver: zodResolver(profileFormSchema as any),
+    resolver: zodResolver(profileFormSchema) as any,
     defaultValues: {
       name: initialData.name,
       avatarUrl: initialData.avatarUrl ?? '',
@@ -82,7 +82,7 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
       toast.success('プロフィールを更新しました');
       onSuccess?.();
     } catch (error) {
-      console.error('Profile update error:', error);
+      // console.error('Profile update error:', error);
 
       if (error instanceof Error && error.message.includes('updated by another process')) {
         toast.error('プロフィールが他の場所で更新されています。画面を再読み込みしてください。');
@@ -96,27 +96,27 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="flex items-center space-x-6">
-          <Avatar className="h-20 w-20">
+      <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
+        <div className='flex items-center space-x-6'>
+          <Avatar className='h-20 w-20'>
             <AvatarImage
               src={form.watch('avatarUrl') || initialData.avatarUrl}
               alt={initialData.name}
             />
-            <AvatarFallback className="text-lg">
+            <AvatarFallback className='text-lg'>
               {initialData.name[0]?.toUpperCase() ?? 'U'}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1">
+          <div className='flex-1'>
             <FormField
               control={form.control}
-              name="avatarUrl"
+              name='avatarUrl'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>プロフィール画像</FormLabel>
                   <FormControl>
                     <AvatarUpload
-                      avatarUrl={field.value || initialData.avatarUrl || undefined}
+                      avatarUrl={field.value ?? initialData.avatarUrl ?? ''}
                       onUpload={(result: { url: string }) => {
                         // アップロード成功時の処理
                         field.onChange(result.url);
@@ -140,49 +140,41 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
 
         <FormField
           control={form.control}
-          name="name"
+          name='name'
           render={({ field }) => (
             <FormItem>
               <FormLabel>名前</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="名前を入力してください"
-                  {...field}
-                  disabled={isLoading}
-                />
+                <Input placeholder='名前を入力してください' {...field} disabled={isLoading} />
               </FormControl>
-              <FormDescription>
-                表示名として使用されます
-              </FormDescription>
+              <FormDescription>表示名として使用されます</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className='space-y-4'>
+          <div className='grid grid-cols-2 gap-4'>
             <div>
-              <label className="text-sm font-medium text-gray-500">Email</label>
-              <p className="text-sm text-gray-900">
-                {initialData.email ?? 'Not set'}
-              </p>
+              <label className='text-sm font-medium text-gray-500'>Email</label>
+              <p className='text-sm text-gray-900'>{initialData.email ?? 'Not set'}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-500">Role</label>
-              <p className="text-sm text-gray-900 capitalize">{initialData.role}</p>
+              <label className='text-sm font-medium text-gray-500'>Role</label>
+              <p className='text-sm text-gray-900 capitalize'>{initialData.role}</p>
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-500">Member Since</label>
-            <p className="text-sm text-gray-900">
+            <label className='text-sm font-medium text-gray-500'>Member Since</label>
+            <p className='text-sm text-gray-900'>
               {new Date(initialData.created_at).toLocaleDateString()}
             </p>
           </div>
         </div>
 
-        <Button type="submit" disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button type='submit' disabled={isLoading}>
+          {isLoading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
           プロフィールを更新
         </Button>
       </form>

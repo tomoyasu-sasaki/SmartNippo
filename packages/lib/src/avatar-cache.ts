@@ -15,7 +15,7 @@ export interface AvatarCacheConfig {
 
 // デフォルト設定
 const DEFAULT_CONFIG: AvatarCacheConfig = {
-  maxEntries: 100,        // 最大100ユーザー分のアバター
+  maxEntries: 100, // 最大100ユーザー分のアバター
   maxAgeMs: 24 * 60 * 60 * 1000, // 24時間
   maxSizeBytes: 50 * 1024 * 1024, // 50MB
 };
@@ -52,7 +52,6 @@ export class AvatarCache {
     // サイズ制限チェック
     const entrySize = this.estimateEntrySize(cacheEntry);
     if (entrySize > this.config.maxSizeBytes) {
-      console.warn(`Avatar cache entry too large: ${entrySize} bytes`);
       return;
     }
 
@@ -195,8 +194,7 @@ export class AvatarCache {
         // 起動時クリーンアップ
         await this.cleanup();
       }
-    } catch (error) {
-      console.warn('Failed to load avatar cache from storage:', error);
+    } catch {
       this.cache.clear();
       this.totalSize = 0;
     }
@@ -219,8 +217,8 @@ export class AvatarCache {
       };
 
       localStorage.setItem('smartnippo_avatar_cache', JSON.stringify(data));
-    } catch (error) {
-      console.warn('Failed to save avatar cache to storage:', error);
+    } catch {
+      return;
     }
   }
 }

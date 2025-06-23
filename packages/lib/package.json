@@ -18,18 +18,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./utils": {
-      "types": "./dist/utils.d.ts",
-      "import": "./dist/utils.js",
-      "require": "./dist/utils.cjs"
-    },
-    "./validation": {
-      "types": "./dist/validation.d.ts",
-      "import": "./dist/validation.js",
-      "require": "./dist/validation.cjs"
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -37,9 +26,9 @@
   ],
   "main": "dist/index.js",
   "scripts": {
-    "build": "rm -rf dist && tsup src/index.ts --format esm,cjs --dts --clean",
+    "build": "tsup",
     "clean": "rm -rf dist",
-    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "dev": "tsup --watch",
     "lint": "eslint src/**/*.ts",
     "test": "jest --passWithNoTests",
     "type-check": "tsc --noEmit"

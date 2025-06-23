@@ -12,7 +12,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
-    "composite": true,
+    "declarationMap": true,
+    "composite": false,
     "baseUrl": ".",
     "outDir": "./dist",
     "rootDir": "./src"

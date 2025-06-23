@@ -1,15 +1,25 @@
-import { useUser, useClerk } from '@clerk/clerk-expo';
-import { router } from 'expo-router';
-import { Text, View, TouchableOpacity, Alert, Image, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useClerk, useUser } from '@clerk/clerk-expo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from 'convex/react';
-import { Loader2, Edit3, Save, X, Globe, Lock, Download, Plus } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { Download, Edit3, Loader2, Plus, Save, X } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import {
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import AvatarPicker from '../../components/AvatarPicker';
 
+import { PRIVACY_LEVELS, profileFormSchema, SOCIAL_PLATFORMS } from '@smartnippo/lib';
 import { api } from '../../../../convex/_generated/api';
-import { profileFormSchema, SOCIAL_PLATFORMS, PRIVACY_LEVELS, createProfileExport } from '@smartnippo/lib';
 
 interface ProfileFormData {
   name: string;
@@ -53,28 +63,21 @@ export default function ProfileScreen() {
   }, [userProfile, isEditing, form.reset]);
 
   const handleSignOut = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-              router.replace('/(auth)');
-            } catch (error) {
-              if (__DEV__) {
-                console.error('Sign out error:', error);
-              }
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
-            }
-          },
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut();
+            router.replace('/(auth)');
+          } catch {
+            Alert.alert('Error', 'Failed to sign out. Please try again.');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleSave = async (data: ProfileFormData) => {
@@ -96,12 +99,11 @@ export default function ProfileScreen() {
       Alert.alert('成功', 'プロフィールを更新しました');
       setIsEditing(false);
     } catch (error) {
-      if (__DEV__) {
-        console.error('Profile update error:', error);
-      }
-
       if (error instanceof Error && error.message.includes('updated by another process')) {
-        Alert.alert('エラー', 'プロフィールが他の場所で更新されています。画面を再読み込みしてください。');
+        Alert.alert(
+          'エラー',
+          'プロフィールが他の場所で更新されています。画面を再読み込みしてください。'
+        );
       } else {
         Alert.alert('エラー', 'プロフィールの更新に失敗しました');
       }
@@ -124,16 +126,16 @@ export default function ProfileScreen() {
 
   if (!isLoaded || !userProfile) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <Text className="text-gray-600">Loading...</Text>
+      <View className='flex-1 items-center justify-center bg-white'>
+        <Text className='text-gray-600'>Loading...</Text>
       </View>
     );
   }
 
   if (!user) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <Text className="text-red-600">Not authenticated</Text>
+      <View className='flex-1 items-center justify-center bg-white'>
+        <Text className='text-red-600'>Not authenticated</Text>
       </View>
     );
   }
@@ -143,48 +145,48 @@ export default function ProfileScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-white"
+      className='flex-1 bg-white'
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
-        <View className="px-6 py-8">
-          <View className="flex-row items-center justify-between mb-6">
-            <Text className="text-2xl font-bold text-gray-900">Profile</Text>
+      <ScrollView className='flex-1' contentContainerStyle={{ paddingBottom: 100 }}>
+        <View className='px-6 py-8'>
+          <View className='flex-row items-center justify-between mb-6'>
+            <Text className='text-2xl font-bold text-gray-900'>Profile</Text>
             {!isEditing ? (
               <TouchableOpacity
-                className="bg-blue-600 px-4 py-2 rounded-lg"
+                className='bg-blue-600 px-4 py-2 rounded-lg'
                 onPress={() => setIsEditing(true)}
               >
-                <Edit3 size={20} color="white" />
+                <Edit3 size={20} color='white' />
               </TouchableOpacity>
             ) : (
-              <View className="flex-row space-x-2">
+              <View className='flex-row space-x-2'>
                 <TouchableOpacity
-                  className="bg-green-600 px-4 py-2 rounded-lg"
+                  className='bg-green-600 px-4 py-2 rounded-lg'
                   onPress={form.handleSubmit(handleSave)}
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <Loader2 size={20} color="white" />
+                    <Loader2 size={20} color='white' />
                   ) : (
-                    <Save size={20} color="white" />
+                    <Save size={20} color='white' />
                   )}
                 </TouchableOpacity>
                 <TouchableOpacity
-                  className="bg-gray-600 px-4 py-2 rounded-lg"
+                  className='bg-gray-600 px-4 py-2 rounded-lg'
                   onPress={handleCancel}
                   disabled={isLoading}
                 >
-                  <X size={20} color="white" />
+                  <X size={20} color='white' />
                 </TouchableOpacity>
               </View>
             )}
           </View>
 
           {/* Avatar Section */}
-          <View className="items-center mb-8">
+          <View className='items-center mb-8'>
             {isEditing ? (
-                            <AvatarPicker
+              <AvatarPicker
                 currentAvatarUrl={avatarUrl}
                 onImageSelected={async (result) => {
                   // Convexのファイルストレージにアップロード
@@ -195,10 +197,12 @@ export default function ProfileScreen() {
                     const response = await fetch(uploadUrl, {
                       method: 'POST',
                       headers: { 'Content-Type': result.mimeType },
-                      body: await fetch(result.uri).then(r => r.blob()),
+                      body: await fetch(result.uri).then((r) => r.blob()),
                     });
 
-                    if (!response.ok) {throw new Error('Upload failed');}
+                    if (!response.ok) {
+                      throw new Error('Upload failed');
+                    }
 
                     const { storageId } = await response.json();
 
@@ -209,70 +213,58 @@ export default function ProfileScreen() {
                       fileName: result.fileName,
                     });
 
-                    console.log('Result from saveAvatarToProfile:', resultUrl);
-
-                    if(resultUrl?.url) {
+                    if (resultUrl?.url) {
                       form.setValue('avatarUrl', resultUrl.url);
                       Alert.alert('成功', '画像がアップロードされました');
                     } else {
-                      throw new Error("Failed to get avatar URL after saving.");
+                      throw new Error('Failed to get avatar URL after saving.');
                     }
-                  } catch (error) {
-                    console.error('Upload error:', error);
+                  } catch {
                     Alert.alert('エラー', '画像のアップロードに失敗しました');
                   }
                 }}
                 disabled={isLoading}
               />
+            ) : avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} className='w-24 h-24 rounded-full mb-4' />
             ) : (
-              avatarUrl ? (
-                <Image
-                  source={{ uri: avatarUrl }}
-                  className="w-24 h-24 rounded-full mb-4"
-                />
-              ) : (
-                <View className="w-24 h-24 rounded-full bg-gray-200 items-center justify-center mb-4">
-                  <Text className="text-2xl font-semibold text-gray-600">
-                    {userProfile.name?.[0]?.toUpperCase() ?? 'U'}
-                  </Text>
-                </View>
-              )
+              <View className='w-24 h-24 rounded-full bg-gray-200 items-center justify-center mb-4'>
+                <Text className='text-2xl font-semibold text-gray-600'>
+                  {userProfile.name?.[0]?.toUpperCase() ?? 'U'}
+                </Text>
+              </View>
             )}
           </View>
 
           {/* Name Section */}
-          <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-700 mb-2">名前</Text>
+          <View className='mb-6'>
+            <Text className='text-sm font-medium text-gray-700 mb-2'>名前</Text>
             {isEditing ? (
               <Controller
                 control={form.control}
-                name="name"
+                name='name'
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
                   <View>
                     <TextInput
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900"
-                      placeholder="名前を入力してください"
+                      className='w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900'
+                      placeholder='名前を入力してください'
                       value={value}
                       onChangeText={onChange}
                       editable={!isLoading}
                     />
-                    {error && (
-                      <Text className="text-red-600 text-sm mt-1">{error.message}</Text>
-                    )}
+                    {error && <Text className='text-red-600 text-sm mt-1'>{error.message}</Text>}
                   </View>
                 )}
               />
             ) : (
-              <Text className="text-xl font-semibold text-gray-900">
-                {userProfile.name}
-              </Text>
+              <Text className='text-xl font-semibold text-gray-900'>{userProfile.name}</Text>
             )}
           </View>
 
           {/* Social Links Section */}
           {isEditing && (
-            <View className="mb-6">
-              <Text className="text-sm font-medium text-gray-700 mb-2">ソーシャルリンク</Text>
+            <View className='mb-6'>
+              <Text className='text-sm font-medium text-gray-700 mb-2'>ソーシャルリンク</Text>
               <SocialLinksEditor
                 socialLinks={form.watch('socialLinks') ?? userProfile.socialLinks ?? {}}
                 onChange={(links) => {
@@ -284,8 +276,8 @@ export default function ProfileScreen() {
 
           {/* Privacy Settings Section */}
           {isEditing && (
-            <View className="mb-6">
-              <Text className="text-sm font-medium text-gray-700 mb-2">プライバシー設定</Text>
+            <View className='mb-6'>
+              <Text className='text-sm font-medium text-gray-700 mb-2'>プライバシー設定</Text>
               <PrivacySettingsEditor
                 privacySettings={form.watch('privacySettings') ?? userProfile.privacySettings ?? {}}
                 onChange={(settings) => {
@@ -296,46 +288,45 @@ export default function ProfileScreen() {
           )}
 
           {/* Account Details */}
-          <View className="space-y-4">
-            <View className="bg-gray-50 p-4 rounded-lg">
-              <Text className="text-sm font-medium text-gray-700 mb-1">Email</Text>
-              <Text className="text-base text-gray-900">
+          <View className='space-y-4'>
+            <View className='bg-gray-50 p-4 rounded-lg'>
+              <Text className='text-sm font-medium text-gray-700 mb-1'>Email</Text>
+              <Text className='text-base text-gray-900'>
                 {userProfile.email ?? user.primaryEmailAddress?.emailAddress ?? 'Not set'}
               </Text>
             </View>
 
-            <View className="bg-gray-50 p-4 rounded-lg">
-              <Text className="text-sm font-medium text-gray-700 mb-1">Role</Text>
-              <Text className="text-base text-gray-900 capitalize">{userProfile.role}</Text>
+            <View className='bg-gray-50 p-4 rounded-lg'>
+              <Text className='text-sm font-medium text-gray-700 mb-1'>Role</Text>
+              <Text className='text-base text-gray-900 capitalize'>{userProfile.role}</Text>
             </View>
 
-            <View className="bg-gray-50 p-4 rounded-lg">
-              <Text className="text-sm font-medium text-gray-700 mb-1">Member Since</Text>
-              <Text className="text-base text-gray-900">
+            <View className='bg-gray-50 p-4 rounded-lg'>
+              <Text className='text-sm font-medium text-gray-700 mb-1'>Member Since</Text>
+              <Text className='text-base text-gray-900'>
                 {new Date(userProfile.created_at).toLocaleDateString()}
               </Text>
             </View>
 
             {/* Export Profile Button */}
             <TouchableOpacity
-              className="bg-gray-600 p-4 rounded-lg mt-4 flex-row items-center justify-center"
+              className='bg-gray-600 p-4 rounded-lg mt-4 flex-row items-center justify-center'
               onPress={() => {
-                const exportData = createProfileExport(userProfile);
                 // React NativeでのエクスポートはファイルシステムAPIを使用
                 Alert.alert('プロフィールエクスポート', 'この機能は準備中です');
               }}
               disabled={isLoading}
             >
-              <Download size={20} color="white" />
-              <Text className="ml-2 text-center font-semibold text-white">Export Profile</Text>
+              <Download size={20} color='white' />
+              <Text className='ml-2 text-center font-semibold text-white'>Export Profile</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="bg-red-600 p-4 rounded-lg mt-6"
+              className='bg-red-600 p-4 rounded-lg mt-6'
               onPress={handleSignOut}
               disabled={isLoading}
             >
-              <Text className="text-center font-semibold text-white">Sign Out</Text>
+              <Text className='text-center font-semibold text-white'>Sign Out</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -345,51 +336,66 @@ export default function ProfileScreen() {
 }
 
 // ソーシャルリンクエディターコンポーネント
-function SocialLinksEditor({ socialLinks, onChange }: { socialLinks: any, onChange: (links: any) => void }) {
+function SocialLinksEditor({
+  socialLinks,
+  onChange,
+}: {
+  socialLinks: Record<string, string>;
+  onChange: (links: Record<string, string>) => void;
+}) {
   const [links, setLinks] = useState(socialLinks);
 
   return (
-    <View className="space-y-2">
-      {Object.entries(links).map(([platform, url]) => (
-        <View key={platform} className="flex-row items-center justify-between bg-gray-50 p-3 rounded-lg">
-          <Text className="text-sm">{SOCIAL_PLATFORMS[platform as keyof typeof SOCIAL_PLATFORMS]?.name ?? platform}</Text>
-          <TouchableOpacity onPress={() => {
-            const newLinks = { ...links };
-            delete newLinks[platform];
-            setLinks(newLinks);
-            onChange(newLinks);
-          }}>
-            <X size={16} color="#ef4444" />
+    <View className='space-y-2'>
+      {Object.entries(links).map(([platform]) => (
+        <View
+          key={platform}
+          className='flex-row items-center justify-between bg-gray-50 p-3 rounded-lg'
+        >
+          <Text className='text-sm'>
+            {SOCIAL_PLATFORMS[platform as keyof typeof SOCIAL_PLATFORMS]?.name ?? platform}
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              const newLinks = { ...links };
+              delete newLinks[platform];
+              setLinks(newLinks);
+              onChange(newLinks);
+            }}
+          >
+            <X size={16} color='#ef4444' />
           </TouchableOpacity>
         </View>
       ))}
 
       <TouchableOpacity
-        className="bg-blue-50 p-3 rounded-lg flex-row items-center justify-center"
+        className='bg-blue-50 p-3 rounded-lg flex-row items-center justify-center'
         onPress={() => {
-          Alert.prompt(
-            'ソーシャルリンクを追加',
-            'URLを入力してください',
-            (url) => {
-              if (url) {
-                // URLからプラットフォームを推測する処理
-                const newLinks = { ...links, twitter: url }; // 簡易実装
-                setLinks(newLinks);
-                onChange(newLinks);
-              }
+          Alert.prompt('ソーシャルリンクを追加', 'URLを入力してください', (url) => {
+            if (url) {
+              // URLからプラットフォームを推測する処理
+              const newLinks = { ...links, twitter: url }; // 簡易実装
+              setLinks(newLinks);
+              onChange(newLinks);
             }
-          );
+          });
         }}
       >
-        <Plus size={16} color="#3b82f6" />
-        <Text className="ml-2 text-blue-600 text-sm">リンクを追加</Text>
+        <Plus size={16} color='#3b82f6' />
+        <Text className='ml-2 text-blue-600 text-sm'>リンクを追加</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 // プライバシー設定エディターコンポーネント
-function PrivacySettingsEditor({ privacySettings, onChange }: { privacySettings: any, onChange: (settings: any) => void }) {
+function PrivacySettingsEditor({
+  privacySettings,
+  onChange,
+}: {
+  privacySettings: Record<string, string>;
+  onChange: (settings: Record<string, string>) => void;
+}) {
   const [settings, setSettings] = useState(privacySettings);
 
   const privacyOptions = [
@@ -400,11 +406,11 @@ function PrivacySettingsEditor({ privacySettings, onChange }: { privacySettings:
   ];
 
   return (
-    <View className="space-y-2">
+    <View className='space-y-2'>
       {privacyOptions.map(({ key, label }) => (
-        <View key={key} className="flex-row items-center justify-between bg-gray-50 p-3 rounded-lg">
-          <Text className="text-sm">{label}</Text>
-          <View className="flex-row space-x-2">
+        <View key={key} className='flex-row items-center justify-between bg-gray-50 p-3 rounded-lg'>
+          <Text className='text-sm'>{label}</Text>
+          <View className='flex-row space-x-2'>
             {Object.entries(PRIVACY_LEVELS).map(([level, { label: levelLabel }]) => (
               <TouchableOpacity
                 key={level}
@@ -417,7 +423,9 @@ function PrivacySettingsEditor({ privacySettings, onChange }: { privacySettings:
                   onChange(newSettings);
                 }}
               >
-                <Text className={`text-xs ${settings[key] === level ? 'text-white' : 'text-gray-600'}`}>
+                <Text
+                  className={`text-xs ${settings[key] === level ? 'text-white' : 'text-gray-600'}`}
+                >
                   {levelLabel}
                 </Text>
               </TouchableOpacity>

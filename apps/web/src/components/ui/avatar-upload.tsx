@@ -1,17 +1,22 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
 import imageCompression from 'browser-image-compression';
-import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
-import { Avatar, AvatarImage, AvatarFallback } from './avatar';
-import { Button } from './button';
 import { useMutation } from 'convex/react';
+import { Image as ImageIcon, Loader2, Upload, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { api } from '../../../../../convex/_generated/api';
+import { Avatar, AvatarFallback, AvatarImage } from './avatar';
+import { Button } from './button';
 
 interface AvatarUploadProps {
   avatarUrl?: string;
-  onUpload: (result: { url: string; storageId?: string; fileSize: number; fileType: string }) => void;
+  onUpload: (result: {
+    url: string;
+    storageId?: string;
+    fileSize: number;
+    fileType: string;
+  }) => void;
   onRemove?: () => void;
   disabled?: boolean;
   maxSize?: number;
@@ -34,48 +39,49 @@ export function AvatarUpload({
   const generateUploadUrl = useMutation(api.uploads.generateAvatarUploadUrl);
   const saveAvatarToProfile = useMutation(api.uploads.saveAvatarToProfile);
 
-  const uploadToConvex = async (file: File): Promise<{ url: string; storageId: string }> => {
-    try {
-      // Generate upload URL
-      const uploadUrl = await generateUploadUrl();
-
-      // Upload file to Convex storage
-      const response = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
+  const uploadToConvex = useCallback(
+    async (file: File) => {
+      if (!generateUploadUrl || !saveAvatarToProfile) {
+        throw new Error('Convex functions not available');
       }
 
-      const { storageId } = await response.json();
+      try {
+        // Generate upload URL
+        const uploadUrl = await generateUploadUrl();
 
-      // Save to profile and get URL
-      const result = await saveAvatarToProfile({
-        storageId,
-        fileSize: file.size,
-        fileType: file.type,
-        fileName: file.name
-      });
+        // Upload file to Convex storage
+        const response = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': file.type,
+          },
+          body: file,
+        });
 
-      if (!result?.url) {
-        throw new Error("Failed to get URL from saveAvatarToProfile");
+        if (!response.ok) {
+          throw new Error('Failed to upload file');
+        }
+
+        const { storageId } = await response.json();
+
+        // Save avatar reference to user profile
+        await saveAvatarToProfile({ storageId, fileSize: file.size, fileType: file.type });
+
+        return storageId;
+      } catch (error) {
+        throw error;
       }
-
-      return { url: result.url, storageId };
-    } catch (error) {
-      console.error('Convex upload error:', error);
-      throw new Error('Failed to upload to server');
-    }
-  };
+    },
+    [generateUploadUrl, saveAvatarToProfile]
+  );
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
-      if (acceptedFiles.length === 0) {return;}
+      if (acceptedFiles.length === 0) {
+        return;
+      }
 
-      const file = acceptedFiles[0];
+      const [file] = acceptedFiles;
       setError(null);
       setIsUploading(true);
 
@@ -108,25 +114,24 @@ export function AvatarUpload({
         reader.readAsDataURL(compressedFile);
 
         // Upload to Convex
-        const { url, storageId } = await uploadToConvex(compressedFile);
+        const storageId = await uploadToConvex(compressedFile);
 
         // Notify parent component
         onUpload({
-          url,
+          url: storageId,
           storageId,
           fileSize: compressedFile.size,
-          fileType: compressedFile.type
+          fileType: compressedFile.type,
         });
         setError(null);
       } catch (err) {
-        console.error('Upload error:', err);
         setError(err instanceof Error ? err.message : 'アップロードに失敗しました');
         setPreview(avatarUrl ?? null);
       } finally {
         setIsUploading(false);
       }
     },
-    [avatarUrl, maxSize, onUpload, generateUploadUrl, saveAvatarToProfile]
+    [avatarUrl, maxSize, onUpload, uploadToConvex]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -146,17 +151,17 @@ export function AvatarUpload({
 
   return (
     <div className={`flex items-center space-x-4 ${className}`}>
-      <Avatar className="h-24 w-24">
+      <Avatar className='h-24 w-24'>
         {preview ? (
-          <AvatarImage src={preview} alt="Avatar" />
+          <AvatarImage src={preview} alt='Avatar' />
         ) : (
           <AvatarFallback>
-            <ImageIcon className="h-12 w-12 text-muted-foreground" />
+            <ImageIcon className='h-12 w-12 text-muted-foreground' />
           </AvatarFallback>
         )}
       </Avatar>
 
-      <div className="flex-1">
+      <div className='flex-1'>
         <div
           {...getRootProps()}
           className={`
@@ -168,38 +173,36 @@ export function AvatarUpload({
         >
           <input {...getInputProps()} />
           {isUploading ? (
-            <div className="flex items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span className="text-sm">アップロード中...</span>
+            <div className='flex items-center justify-center'>
+              <Loader2 className='h-6 w-6 animate-spin mr-2' />
+              <span className='text-sm'>アップロード中...</span>
             </div>
           ) : isDragActive ? (
-            <p className="text-sm">ここにドロップしてください</p>
+            <p className='text-sm'>ここにドロップしてください</p>
           ) : (
             <div>
-              <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
+              <Upload className='h-6 w-6 mx-auto mb-2 text-muted-foreground' />
+              <p className='text-sm text-muted-foreground'>
                 クリックまたはドラッグ&ドロップで画像をアップロード
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className='text-xs text-muted-foreground mt-1'>
                 最大{maxSize}MB（JPEG, PNG, GIF, WebP）
               </p>
             </div>
           )}
         </div>
 
-        {error && (
-          <p className="text-sm text-destructive mt-2">{error}</p>
-        )}
+        {error && <p className='text-sm text-destructive mt-2'>{error}</p>}
 
         {preview && onRemove && !isUploading && (
           <Button
-            variant="outline"
-            size="sm"
+            variant='outline'
+            size='sm'
             onClick={handleRemove}
-            className="mt-2"
+            className='mt-2'
             disabled={disabled}
           >
-            <X className="h-4 w-4 mr-1" />
+            <X className='h-4 w-4 mr-1' />
             画像を削除
           </Button>
         )}

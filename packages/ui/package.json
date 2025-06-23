@@ -43,9 +43,9 @@
     "tailwindcss": "^4.1.10"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --clean",
+    "build": "tsup",
     "clean": "rm -rf dist",
-    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "dev": "tsup --watch",
     "lint": "eslint src/**/*.{ts,tsx}",
     "test": "jest --passWithNoTests",
     "type-check": "tsc --noEmit"

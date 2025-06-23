@@ -30,20 +30,6 @@ export const SOCIAL_PLATFORMS = {
     usernamePattern: /^[a-zA-Z0-9_.]{1,30}$/,
     placeholder: 'username',
   },
-  facebook: {
-    name: 'Facebook',
-    domain: 'facebook.com',
-    urlPattern: /^https?:\/\/(www\.)?facebook\.com\/[a-zA-Z0-9.]+\/?$/,
-    usernamePattern: /^[a-zA-Z0-9.]{1,50}$/,
-    placeholder: 'your.name',
-  },
-  youtube: {
-    name: 'YouTube',
-    domain: 'youtube.com',
-    urlPattern: /^https?:\/\/(www\.)?youtube\.com\/(c\/|channel\/|user\/|@)?[a-zA-Z0-9_-]+\/?$/,
-    usernamePattern: /^[a-zA-Z0-9_-]{1,100}$/,
-    placeholder: 'channel-name',
-  },
   website: {
     name: 'Website',
     domain: '',
@@ -146,10 +132,6 @@ export function generateSocialUrl(platform: SocialPlatform, username: string): s
       return `https://github.com/${username}`;
     case 'instagram':
       return `https://instagram.com/${username}`;
-    case 'facebook':
-      return `https://facebook.com/${username}`;
-    case 'youtube':
-      return `https://youtube.com/@${username}`;
     case 'website':
       return username.startsWith('http') ? username : `https://${username}`;
     default:
@@ -185,14 +167,6 @@ export function extractUsernameFromUrl(platform: SocialPlatform, url: string): s
       case 'instagram':
         const instagramMatch = pathname.match(/^\/([a-zA-Z0-9_.]+)\/?$/);
         return instagramMatch ? instagramMatch[1] : null;
-
-      case 'facebook':
-        const facebookMatch = pathname.match(/^\/([a-zA-Z0-9.]+)\/?$/);
-        return facebookMatch ? facebookMatch[1] : null;
-
-      case 'youtube':
-        const youtubeMatch = pathname.match(/^\/(c\/|channel\/|user\/|@)?([a-zA-Z0-9_-]+)\/?$/);
-        return youtubeMatch ? youtubeMatch[2] : null;
 
       case 'website':
         return urlObj.hostname;
@@ -305,8 +279,6 @@ export function getSocialIcon(platform: SocialPlatform): string {
     linkedin: 'Linkedin',
     github: 'Github',
     instagram: 'Instagram',
-    facebook: 'Facebook',
-    youtube: 'Youtube',
     website: 'Globe',
   };
 
@@ -333,8 +305,6 @@ export function getSocialLinkPreview(link: SocialLink): SocialLinkPreview {
     linkedin: '#0077B5',
     github: '#333333',
     instagram: '#E4405F',
-    facebook: '#1877F2',
-    youtube: '#FF0000',
     website: '#6B7280',
   };
 

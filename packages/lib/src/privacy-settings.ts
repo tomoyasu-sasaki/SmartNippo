@@ -138,7 +138,11 @@ export function checkElementVisibility(
   }
 
   // 管理者は組織内の全て表示（プライベート以外）
-  if (relationship.viewerRole === 'admin' && relationship.isSameOrganization && privacyLevel !== 'private') {
+  if (
+    relationship.viewerRole === 'admin' &&
+    relationship.isSameOrganization &&
+    privacyLevel !== 'private'
+  ) {
     return true;
   }
 
@@ -169,21 +173,21 @@ export interface FilteredProfile {
   email?: string;
   avatar?: string;
   role?: string;
-  socialLinks?: any[];
-  reports?: any[];
-  profileHistory?: any[];
+  socialLinks?: string[];
+  reports?: string[];
+  profileHistory?: string[];
   lastActive?: Date;
 }
 
 export function filterProfileByPrivacy(
-  profile: any,
+  profile: FilteredProfile,
   privacySettings: PrivacySettings,
   relationship: UserRelationship
 ): FilteredProfile {
   const filtered: FilteredProfile = {};
 
   // 各要素の可視性をチェック
-  Object.entries(PROFILE_ELEMENTS).forEach(([elementKey, elementConfig]) => {
+  Object.entries(PROFILE_ELEMENTS).forEach(([elementKey]) => {
     const element = elementKey as ProfileElement;
     const privacyLevel = privacySettings[element];
 
@@ -214,7 +218,7 @@ export function validatePrivacySettings(settings: Partial<Record<ProfileElement,
   });
 
   if (!schemaValidation.success) {
-    errors.push(...schemaValidation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`));
+    errors.push(...schemaValidation.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`));
     return { isValid: false, errors, validatedSettings: validated };
   }
 
@@ -360,15 +364,20 @@ export function analyzePrivacyChanges(
   const levelOrder = ['private', 'team', 'organization', 'public'];
   const getVisibilityCount = (level: PrivacyLevel): number => {
     switch (level) {
-      case 'private': return 1;
-      case 'team': return teamMemberCount;
-      case 'organization': return orgMemberCount;
-      case 'public': return 9999; // 仮の値
-      default: return 0;
+      case 'private':
+        return 1;
+      case 'team':
+        return teamMemberCount;
+      case 'organization':
+        return orgMemberCount;
+      case 'public':
+        return 9999; // 仮の値
+      default:
+        return 0;
     }
   };
 
-  Object.entries(PROFILE_ELEMENTS).forEach(([elementKey, elementConfig]) => {
+  Object.entries(PROFILE_ELEMENTS).forEach(([elementKey]) => {
     const element = elementKey as ProfileElement;
     const currentLevel = currentSettings[element];
     const newLevel = newSettings[element];
@@ -387,9 +396,10 @@ export function analyzePrivacyChanges(
         newLevel,
         impact,
         affectedUsers: [], // 実際の実装では具体的なユーザーリストを返す
-        description: impact === 'increase'
-          ? `約${newCount - currentCount}人に新たに公開されます`
-          : `約${currentCount - newCount}人から非公開になります`,
+        description:
+          impact === 'increase'
+            ? `約${newCount - currentCount}人に新たに公開されます`
+            : `約${currentCount - newCount}人から非公開になります`,
       });
     }
   });
