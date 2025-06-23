@@ -15,8 +15,8 @@
     "@testing-library/jest-dom": "*",
     "@testing-library/react": "*",
     "@types/jest": "*",
-    "@types/react": "*",
-    "@types/react-dom": "*",
+    "@types/react": "^19.0.14",
+    "@types/react-dom": "^19.0.14",
     "jest": "*",
     "tsup": "*",
     "typescript": "*"

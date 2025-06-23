@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
-import { profileFormSchema } from '@smartnippo/lib';
+import { profileFormSchema, type ProfileFormData } from '@smartnippo/lib';
 import { api } from '../../../../../convex/_generated/api';
 import type { Id } from '../../../../../convex/_generated/dataModel';
 
@@ -37,11 +37,6 @@ interface UserProfile {
   updated_at: number;
 }
 
-interface ProfileFormData {
-  name: string;
-  avatarUrl: string;
-}
-
 interface ProfileFormProps {
   initialData: UserProfile;
   onSuccess?: () => void;
@@ -52,10 +47,10 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
   const updateProfile = useMutation(api.users.updateProfile);
 
   const form = useForm<ProfileFormData>({
-    resolver: zodResolver(profileFormSchema) as any,
+    resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: initialData.name,
-      avatarUrl: initialData.avatarUrl ?? '',
+      avatarUrl: initialData.avatarUrl,
     },
   });
 
@@ -72,7 +67,7 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
         _version: initialData.updated_at,
       };
 
-      // avatarUrlが空文字でない場合のみ追加
+      // avatarUrlが存在し、空文字でない場合のみ追加
       if (data.avatarUrl && data.avatarUrl.trim() !== '') {
         updateData.avatarUrl = data.avatarUrl;
       }
@@ -100,42 +95,40 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
         <div className='flex items-center space-x-6'>
           <Avatar className='h-20 w-20'>
             <AvatarImage
-              src={form.watch('avatarUrl') || initialData.avatarUrl}
+              src={form.watch('avatarUrl') ?? initialData.avatarUrl}
               alt={initialData.name}
             />
             <AvatarFallback className='text-lg'>
               {initialData.name[0]?.toUpperCase() ?? 'U'}
             </AvatarFallback>
           </Avatar>
-          <div className='flex-1'>
-            <FormField
-              control={form.control}
-              name='avatarUrl'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>プロフィール画像</FormLabel>
-                  <FormControl>
-                    <AvatarUpload
-                      avatarUrl={field.value ?? initialData.avatarUrl ?? ''}
-                      onUpload={(result: { url: string }) => {
-                        // アップロード成功時の処理
-                        field.onChange(result.url);
-                        toast.success('画像がアップロードされました');
-                      }}
-                      onRemove={() => {
-                        field.onChange('');
-                      }}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    プロフィール画像をアップロードまたはドラッグ&ドロップしてください
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name='avatarUrl'
+            render={({ field }) => (
+              <FormItem className='flex-1'>
+                <FormLabel>プロフィール画像</FormLabel>
+                <FormControl>
+                  <AvatarUpload
+                    avatarUrl={field.value ?? initialData.avatarUrl ?? ''}
+                    onUpload={(result: { url: string }) => {
+                      // アップロード成功時の処理
+                      field.onChange(result.url);
+                      toast.success('画像がアップロードされました');
+                    }}
+                    onRemove={() => {
+                      field.onChange(undefined);
+                    }}
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <FormDescription>
+                  プロフィール画像をアップロードまたはドラッグ&ドロップしてください
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <FormField

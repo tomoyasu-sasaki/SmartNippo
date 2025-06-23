@@ -1,17 +1,11 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { getAuthenticatedUser } from "./lib/auth";
+import { v } from 'convex/values';
+import { mutation, query } from './_generated/server';
+import { getAuthenticatedUser } from './lib/auth';
 
 // ファイル制限設定
 const AVATAR_LIMITS = {
   MAX_SIZE: 5 * 1024 * 1024, // 5MB
-  ALLOWED_TYPES: [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/webp',
-    'image/gif'
-  ] as const,
+  ALLOWED_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'] as const,
   MAX_DIMENSION: 2048, // 最大2048px
 } as const;
 
@@ -24,7 +18,7 @@ export const generateAvatarUploadUrl = mutation({
   handler: async (ctx) => {
     const user = await getAuthenticatedUser(ctx);
     if (!user) {
-      throw new Error("Authentication required for avatar upload");
+      throw new Error('Authentication required for avatar upload');
     }
 
     // アップロードURL生成（1時間有効）
@@ -38,7 +32,7 @@ export const generateAvatarUploadUrl = mutation({
  */
 export const saveAvatarToProfile = mutation({
   args: {
-    storageId: v.id("_storage"),
+    storageId: v.id('_storage'),
     fileSize: v.number(),
     fileType: v.string(),
     fileName: v.optional(v.string()),
@@ -46,17 +40,21 @@ export const saveAvatarToProfile = mutation({
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
     if (!user) {
-      throw new Error("Authentication required");
+      throw new Error('Authentication required');
     }
 
     // ファイル形式チェック
     if (!AVATAR_LIMITS.ALLOWED_TYPES.includes(args.fileType as any)) {
-      throw new Error(`Unsupported file type: ${args.fileType}. Allowed types: ${AVATAR_LIMITS.ALLOWED_TYPES.join(', ')}`);
+      throw new Error(
+        `Unsupported file type: ${args.fileType}. Allowed types: ${AVATAR_LIMITS.ALLOWED_TYPES.join(', ')}`
+      );
     }
 
     // ファイルサイズチェック
     if (args.fileSize > AVATAR_LIMITS.MAX_SIZE) {
-      throw new Error(`File size ${args.fileSize} exceeds maximum allowed size of ${AVATAR_LIMITS.MAX_SIZE} bytes`);
+      throw new Error(
+        `File size ${args.fileSize} exceeds maximum allowed size of ${AVATAR_LIMITS.MAX_SIZE} bytes`
+      );
     }
 
     // 古いアバターが存在する場合は削除
@@ -65,7 +63,7 @@ export const saveAvatarToProfile = mutation({
         await ctx.storage.delete(user.avatarStorageId);
       } catch (error) {
         // 削除エラーは無視（ファイルが既に存在しない可能性）
-        console.warn("Failed to delete old avatar:", error);
+        console.warn('Failed to delete old avatar:', error);
       }
     }
 
@@ -77,9 +75,9 @@ export const saveAvatarToProfile = mutation({
 
     // 監査ログ記録
     if (user.orgId) {
-      await ctx.db.insert("audit_logs", {
+      await ctx.db.insert('audit_logs', {
         actor_id: user._id,
-        action: "update_avatar",
+        action: 'update_avatar',
         payload: {
           newStorageId: args.storageId,
           fileName: args.fileName,
@@ -93,7 +91,7 @@ export const saveAvatarToProfile = mutation({
 
     const url = await ctx.storage.getUrl(args.storageId);
     if (!url) {
-      throw new Error("Could not get URL for uploaded file.");
+      throw new Error('Could not get URL for uploaded file.');
     }
 
     return { success: true, url };
@@ -109,18 +107,18 @@ export const deleteAvatar = mutation({
   handler: async (ctx) => {
     const user = await getAuthenticatedUser(ctx);
     if (!user) {
-      throw new Error("Authentication required");
+      throw new Error('Authentication required');
     }
 
     if (!user.avatarStorageId) {
-      throw new Error("No avatar to delete");
+      throw new Error('No avatar to delete');
     }
 
     // ストレージからファイル削除
     try {
       await ctx.storage.delete(user.avatarStorageId);
     } catch (error) {
-      console.warn("Failed to delete avatar file:", error);
+      console.warn('Failed to delete avatar file:', error);
     }
 
     // プロフィールから参照削除（avatarUrlにリセット）
@@ -135,9 +133,9 @@ export const deleteAvatar = mutation({
 
     // 監査ログ記録
     if (user.orgId) {
-      await ctx.db.insert("audit_logs", {
+      await ctx.db.insert('audit_logs', {
         actor_id: user._id,
-        action: "delete_avatar",
+        action: 'delete_avatar',
         payload: {
           deletedStorageId: user.avatarStorageId,
         },
@@ -155,7 +153,7 @@ export const deleteAvatar = mutation({
  * ユーザーのアバター画像URLを取得（キャッシュ対応）
  */
 export const getAvatarUrl = query({
-  args: { userId: v.id("userProfiles") },
+  args: { userId: v.id('userProfiles') },
   handler: async (ctx, args) => {
     const targetUser = await ctx.db.get(args.userId);
     if (!targetUser) {
@@ -168,7 +166,7 @@ export const getAvatarUrl = query({
         const url = await ctx.storage.getUrl(targetUser.avatarStorageId);
         return { url, source: 'storage' };
       } catch (error) {
-        console.warn("Failed to get avatar URL from storage:", error);
+        console.warn('Failed to get avatar URL from storage:', error);
       }
     }
 
@@ -195,7 +193,7 @@ export const validateAvatarFile = mutation({
     // 認証チェック
     const user = await getAuthenticatedUser(ctx);
     if (!user) {
-      throw new Error("Authentication required");
+      throw new Error('Authentication required');
     }
 
     const errors: string[] = [];
@@ -207,12 +205,14 @@ export const validateAvatarFile = mutation({
 
     // ファイルサイズチェック
     if (args.fileSize > AVATAR_LIMITS.MAX_SIZE) {
-      errors.push(`File size ${Math.round(args.fileSize / 1024 / 1024 * 100) / 100}MB exceeds maximum of ${AVATAR_LIMITS.MAX_SIZE / 1024 / 1024}MB`);
+      errors.push(
+        `File size ${Math.round((args.fileSize / 1024 / 1024) * 100) / 100}MB exceeds maximum of ${AVATAR_LIMITS.MAX_SIZE / 1024 / 1024}MB`
+      );
     }
 
     // ファイル名チェック（オプション）
     if (args.fileName && args.fileName.length > 255) {
-      errors.push("File name too long (max 255 characters)");
+      errors.push('File name too long (max 255 characters)');
     }
 
     return {
@@ -231,20 +231,20 @@ export const getUploadStats = query({
   handler: async (ctx) => {
     const user = await getAuthenticatedUser(ctx);
     if (!user || user.role !== 'admin') {
-      throw new Error("Admin access required");
+      throw new Error('Admin access required');
     }
 
     // 組織内のアバターアップロード統計
     const profiles = await ctx.db
-      .query("userProfiles")
-      .withIndex("by_org", (q) => q.eq("orgId", user.orgId))
+      .query('userProfiles')
+      .withIndex('by_org', (q) => q.eq('orgId', user.orgId))
       .collect();
 
     const stats = {
       totalUsers: profiles.length,
-      usersWithAvatar: profiles.filter(p => p.avatarStorageId ?? p.avatarUrl).length,
-      usersWithStorageAvatar: profiles.filter(p => p.avatarStorageId).length,
-      usersWithExternalAvatar: profiles.filter(p => p.avatarUrl && !p.avatarStorageId).length,
+      usersWithAvatar: profiles.filter((p) => p.avatarStorageId ?? p.avatarUrl).length,
+      usersWithStorageAvatar: profiles.filter((p) => p.avatarStorageId).length,
+      usersWithExternalAvatar: profiles.filter((p) => p.avatarUrl && !p.avatarStorageId).length,
     };
 
     return {

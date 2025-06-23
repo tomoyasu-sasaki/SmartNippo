@@ -2,11 +2,10 @@
 
 import imageCompression from 'browser-image-compression';
 import { useMutation } from 'convex/react';
-import { Image as ImageIcon, Loader2, Upload, X } from 'lucide-react';
+import { Loader2, Upload, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { api } from '../../../../../convex/_generated/api';
-import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import { Button } from './button';
 
 interface AvatarUploadProps {
@@ -64,10 +63,19 @@ export function AvatarUpload({
 
         const { storageId } = await response.json();
 
-        // Save avatar reference to user profile
-        await saveAvatarToProfile({ storageId, fileSize: file.size, fileType: file.type });
+        // Save avatar reference to user profile and get the URL
+        const result = await saveAvatarToProfile({
+          storageId,
+          fileSize: file.size,
+          fileType: file.type,
+          fileName: file.name,
+        });
 
-        return storageId;
+        // Return the actual URL from Convex storage
+        return {
+          url: result.url,
+          storageId,
+        };
       } catch (error) {
         throw error;
       }
@@ -106,7 +114,7 @@ export function AvatarUpload({
 
         const compressedFile = await imageCompression(file, options);
 
-        // Create preview
+        // Update preview for immediate feedback
         const reader = new FileReader();
         reader.onloadend = () => {
           setPreview(reader.result as string);
@@ -114,12 +122,12 @@ export function AvatarUpload({
         reader.readAsDataURL(compressedFile);
 
         // Upload to Convex
-        const storageId = await uploadToConvex(compressedFile);
+        const result = await uploadToConvex(compressedFile);
 
-        // Notify parent component
+        // Notify parent component with the actual URL
         onUpload({
-          url: storageId,
-          storageId,
+          url: result.url,
+          storageId: result.storageId,
           fileSize: compressedFile.size,
           fileType: compressedFile.type,
         });
@@ -150,63 +158,51 @@ export function AvatarUpload({
   };
 
   return (
-    <div className={`flex items-center space-x-4 ${className}`}>
-      <Avatar className='h-24 w-24'>
-        {preview ? (
-          <AvatarImage src={preview} alt='Avatar' />
+    <div className={`space-y-3 ${className}`}>
+      <div
+        {...getRootProps()}
+        className={`
+          border-2 border-dashed rounded-lg p-4 text-center cursor-pointer
+          transition-colors duration-200
+          ${isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
+          ${disabled || isUploading ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary'}
+        `}
+      >
+        <input {...getInputProps()} />
+        {isUploading ? (
+          <div className='flex items-center justify-center'>
+            <Loader2 className='h-6 w-6 animate-spin mr-2' />
+            <span className='text-sm'>アップロード中...</span>
+          </div>
+        ) : isDragActive ? (
+          <p className='text-sm'>ここにドロップしてください</p>
         ) : (
-          <AvatarFallback>
-            <ImageIcon className='h-12 w-12 text-muted-foreground' />
-          </AvatarFallback>
-        )}
-      </Avatar>
-
-      <div className='flex-1'>
-        <div
-          {...(getRootProps() as any)}
-          className={`
-            border-2 border-dashed rounded-lg p-4 text-center cursor-pointer
-            transition-colors duration-200
-            ${isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
-            ${disabled || isUploading ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary'}
-          `}
-        >
-          <input {...(getInputProps() as any)} />
-          {isUploading ? (
-            <div className='flex items-center justify-center'>
-              <Loader2 className='h-6 w-6 animate-spin mr-2' />
-              <span className='text-sm'>アップロード中...</span>
-            </div>
-          ) : isDragActive ? (
-            <p className='text-sm'>ここにドロップしてください</p>
-          ) : (
-            <div>
-              <Upload className='h-6 w-6 mx-auto mb-2 text-muted-foreground' />
-              <p className='text-sm text-muted-foreground'>
-                クリックまたはドラッグ&ドロップで画像をアップロード
-              </p>
-              <p className='text-xs text-muted-foreground mt-1'>
-                最大{maxSize}MB（JPEG, PNG, GIF, WebP）
-              </p>
-            </div>
-          )}
-        </div>
-
-        {error && <p className='text-sm text-destructive mt-2'>{error}</p>}
-
-        {preview && onRemove && !isUploading && (
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={handleRemove}
-            className='mt-2'
-            disabled={disabled}
-          >
-            <X className='h-4 w-4 mr-1' />
-            画像を削除
-          </Button>
+          <div>
+            <Upload className='h-6 w-6 mx-auto mb-2 text-muted-foreground' />
+            <p className='text-sm text-muted-foreground'>
+              クリックまたはドラッグ&ドロップで画像をアップロード
+            </p>
+            <p className='text-xs text-muted-foreground mt-1'>
+              最大{maxSize}MB（JPEG, PNG, GIF, WebP）
+            </p>
+          </div>
         )}
       </div>
+
+      {error && <p className='text-sm text-destructive'>{error}</p>}
+
+      {onRemove && !isUploading && (avatarUrl ?? preview) && (
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={handleRemove}
+          className='w-full'
+          disabled={disabled}
+        >
+          <X className='h-4 w-4 mr-1' />
+          画像を削除
+        </Button>
+      )}
     </div>
   );
 }

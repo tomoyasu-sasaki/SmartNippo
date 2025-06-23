@@ -12,6 +12,7 @@
     "clsx": "^2.1.1",
     "convex": "*",
     "expo": "~53.0.12",
+    "expo-file-system": "~18.1.10",
     "expo-image-manipulator": "^13.1.7",
     "expo-image-picker": "^16.1.4",
     "expo-router": "~5.1.0",
@@ -50,8 +51,7 @@
     "start": "expo start",
     "test": "echo \"⚠️  Mobile tests temporarily skipped due to React Native setup issues\" && exit 0",
     "test:original": "jest",
-    "type-check": "echo \"⚠️  Mobile type-check temporarily skipped due to React Native + React 19 compatibility issues\" && exit 0",
-    "type-check:original": "tsc --noEmit",
+    "type-check": "tsc --noEmit",
     "web": "expo start --web"
   }
 }
