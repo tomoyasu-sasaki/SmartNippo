@@ -405,6 +405,43 @@ export const deleteReport = mutation({
 });
 
 /**
+ * 日報を編集用に取得するquery
+ * 権限: 作成者本人またはmanager/admin
+ * isDeletedがtrueの場合は取得不可
+ */
+export const getReportForEdit = query({
+  args: {
+    reportId: v.id('reports'),
+  },
+  handler: async (ctx, args) => {
+    // レポート取得
+    const report = await ctx.db.get(args.reportId);
+
+    if (!report || report.isDeleted) {
+      console.error(`Attempt to fetch deleted or non-existent report for edit: ${args.reportId}`);
+      return null;
+    }
+
+    // 権限チェック - 作成者本人またはmanager/admin
+    await requireOwnershipOrManagerRole(ctx, report.authorId, report.orgId);
+
+    // ユーザープロファイル情報を取得
+    const authorProfile = await ctx.db.get(report.authorId);
+
+    return {
+      ...report,
+      author: authorProfile
+        ? {
+            _id: authorProfile._id,
+            name: authorProfile.name,
+            avatarUrl: authorProfile.avatarUrl,
+          }
+        : null,
+    };
+  },
+});
+
+/**
  * 日報復元 mutation
  * 権限: adminのみ
  * 削除された日報を復元する
@@ -1292,36 +1329,5 @@ export const getDashboardStats = query({
     }
 
     return result;
-  },
-});
-
-/**
- * 日報編集用のデータ取得 query
- * 権限: 作成者本人またはadmin
- * フォームの初期値とバージョン情報のみを返す
- */
-export const getReportForEdit = query({
-  args: {
-    reportId: v.id('reports'),
-  },
-  handler: async (ctx, args) => {
-    // レポート取得
-    const report = await ctx.db.get(args.reportId);
-    if (!report || report.isDeleted) {
-      return null;
-    }
-
-    // 権限チェック
-    await requireOwnershipOrManagerRole(ctx, report.authorId, report.orgId);
-
-    return {
-      initialValues: {
-        reportDate: new Date(report.reportDate),
-        title: report.title,
-        content: report.content,
-        tasks: report.tasks,
-      },
-      updatedAt: report.updated_at,
-    };
   },
 });

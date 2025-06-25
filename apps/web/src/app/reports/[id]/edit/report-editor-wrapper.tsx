@@ -57,8 +57,11 @@ export default function ReportEditorWrapper({ params }: ReportEditorWrapperProps
   return (
     <ReportEditor
       reportId={params.id}
-      initialData={reportData.initialValues}
-      expectedUpdatedAt={reportData.updatedAt}
+      initialData={{
+        ...reportData,
+        reportDate: new Date(reportData.reportDate),
+      }}
+      expectedUpdatedAt={reportData.updated_at}
     />
   );
 }

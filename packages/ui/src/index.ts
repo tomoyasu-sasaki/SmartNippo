@@ -11,13 +11,11 @@ export * from './components/button';
 export * from './components/calendar';
 export * from './components/card';
 export * from './components/checkbox';
-export * from './components/data-table';
 export * from './components/data-table-columns';
 export * from './components/date-picker';
 export * from './components/dialog';
 export * from './components/dropdown-menu';
 export * from './components/form';
-export * from './components/input';
 export * from './components/label';
 export * from './components/loading';
 export * from './components/popover';
@@ -32,11 +30,3 @@ export * from './lib/utils';
 // Export layout components
 export * from './layout/container';
 export * from './layout/header';
-
-// TODO: Implement UI components in future sections
-// export { default as Button } from "./components/Button";
-// export { default as Input } from "./components/Input";
-
-// TODO: Export component types when components are implemented
-// export type { ButtonProps } from "./components/Button";
-// export type { InputProps } from "./components/Input";

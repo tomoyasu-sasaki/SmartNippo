@@ -1,12 +1,9 @@
 'use client';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarUpload } from '@/components/ui/avatar-upload';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Button,
   Form,
   FormControl,
   FormDescription,
@@ -14,8 +11,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
-} from '@smartnippo/ui';
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from 'convex/react';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
