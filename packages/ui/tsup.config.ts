@@ -1,33 +1,35 @@
+import path from 'path';
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm', 'cjs'],
-  dts: {
-    resolve: true,
-    // Build .d.ts files only
-    only: false,
-    // Enable experimental dts generation
-    compilerOptions: {
-      composite: false,
-      incremental: false,
-    },
-  },
+  dts: true,
   clean: true,
   sourcemap: true,
-  treeshake: true,
-  splitting: false,
-  minify: false,
-  tsconfig: './tsconfig.json',
   external: [
     'react',
     'react-dom',
-    'react-native',
-    'class-variance-authority',
-    'clsx',
-    'tailwind-merge',
+    'date-fns',
+    'react-day-picker',
+    'tailwindcss',
+    'lucide-react',
+    'react-hook-form',
+    'browser-image-compression',
+    'next-themes',
+    'next/link',
+    // Convex関連を除外
+    'convex/react',
+    'convex/server',
   ],
   esbuildOptions(options) {
     options.platform = 'neutral';
+    // パスエイリアスの解決を追加
+    options.alias = {
+      '@': path.resolve(__dirname, 'src'),
+    };
+  },
+  onSuccess: async () => {
+    console.log('Build completed successfully');
   },
 });

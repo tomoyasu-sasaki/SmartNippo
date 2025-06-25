@@ -1,16 +1,12 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from 'convex/react';
-import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarUpload } from '@/components/ui/avatar-upload';
-import { Button } from '@/components/ui/button';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Button,
   Form,
   FormControl,
   FormDescription,
@@ -18,12 +14,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+  Input,
+} from '@smartnippo/ui';
+import { useMutation } from 'convex/react';
+import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 import { profileFormSchema, type ProfileFormData } from '@smartnippo/lib';
-import { api } from '../../../../../convex/_generated/api';
-import type { Id } from '../../../../../convex/_generated/dataModel';
+import { api } from 'convex/_generated/api';
+import type { Id } from 'convex/_generated/dataModel';
 
 interface UserProfile {
   _id: Id<'userProfiles'>;

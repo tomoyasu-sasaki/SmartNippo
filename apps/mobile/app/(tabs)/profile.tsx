@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,17 +15,22 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { z } from 'zod';
 import AvatarPicker from '../../components/AvatarPicker';
 
-import { PRIVACY_LEVELS, profileFormSchema, SOCIAL_PLATFORMS } from '@smartnippo/lib';
-import { api } from '../../../../convex/_generated/api';
+import { PRIVACY_LEVELS, SOCIAL_PLATFORMS } from '@smartnippo/lib';
+import { api } from 'convex/_generated/api';
+import { Image as ExpoImage } from 'expo-image';
 
-interface ProfileFormData {
-  name: string;
-  avatarUrl?: string;
-  socialLinks?: Record<string, string>;
-  privacySettings?: Record<string, string>;
-}
+// Zodスキーマをこのファイル内で直接定義
+const profileFormSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
+  avatarUrl: z.string().optional(),
+  socialLinks: z.record(z.string()).optional(),
+  privacySettings: z.record(z.string()).optional(),
+});
+
+type ProfileFormData = z.infer<typeof profileFormSchema>;
 
 export default function ProfileScreen() {
   const { user, isLoaded } = useUser();
@@ -226,7 +230,13 @@ export default function ProfileScreen() {
                 disabled={isLoading}
               />
             ) : avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} className='w-24 h-24 rounded-full mb-4' />
+              <ExpoImage
+                source={{ uri: avatarUrl }}
+                style={{ width: 96, height: 96, borderRadius: 48, marginBottom: 16 }}
+                placeholder='|r--r,L;00jt?w?bfQj[fQj[fQfQfQfQfQ'
+                transition={500}
+                cachePolicy='disk'
+              />
             ) : (
               <View className='w-24 h-24 rounded-full bg-gray-200 items-center justify-center mb-4'>
                 <Text className='text-2xl font-semibold text-gray-600'>

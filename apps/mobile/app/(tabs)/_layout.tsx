@@ -1,6 +1,7 @@
 import { useUser } from '@clerk/clerk-expo';
 import { Redirect, Tabs } from 'expo-router';
-import { View, ActivityIndicator } from 'react-native';
+import { FileText, Home, User } from 'lucide-react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 export default function TabLayout() {
   const { user, isLoaded } = useUser();
@@ -8,31 +9,55 @@ export default function TabLayout() {
   // 認証状態の読み込み中
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#3B82F6" />
+      <View className='flex-1 items-center justify-center bg-white'>
+        <ActivityIndicator size='large' color='#3B82F6' />
       </View>
     );
   }
 
   // 未認証の場合は認証画面へリダイレクト
   if (!user) {
-    return <Redirect href="/(auth)" />;
+    return <Redirect href='/(auth)' />;
   }
 
   return (
-    <Tabs>
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: '#3B82F6',
+        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#E5E7EB',
+        },
+        headerStyle: {
+          backgroundColor: '#3B82F6',
+        },
+        headerTintColor: '#FFFFFF',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    >
       <Tabs.Screen
         name='index'
         options={{
-          title: 'Reports',
-          tabBarIcon: ({ color }) => <TabBarIcon name='list' color={color} />,
+          title: 'ホーム',
+          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name='reports'
+        options={{
+          title: '日報',
+          tabBarIcon: ({ color, size }) => <FileText size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name='profile'
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <TabBarIcon name='user' color={color} />,
+          title: 'プロフィール',
+          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
         }}
       />
     </Tabs>

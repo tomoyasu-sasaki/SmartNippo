@@ -1,11 +1,13 @@
 {
-  "extends": "../config/tsconfig/base.json",
+  "extends": "../../packages/config/tsconfig/base.json",
   "compilerOptions": {
-    "composite": true,
     "baseUrl": ".",
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

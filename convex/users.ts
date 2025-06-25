@@ -17,37 +17,48 @@ export const store = mutation({
       .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
       .unique();
 
+    // 既存ユーザーの処理
     if (user !== null) {
-      // ユーザーが既に存在する場合は、更新日時のみ更新
-      await ctx.db.patch(user._id, {
-        updated_at: Date.now(),
-      });
+      // orgIdがない場合は、新しい組織を作成して割り当てる（データ移行用）
+      if (!user.orgId) {
+        const orgId = await ctx.db.insert('orgs', {
+          name: `${identity.name ?? 'New'}'s Organization`,
+          plan: 'free',
+          created_at: Date.now(),
+          updated_at: Date.now(),
+        });
+        await ctx.db.patch(user._id, {
+          orgId,
+          role: 'admin', // 最初のユーザーはadmin
+          updated_at: Date.now(),
+        });
+        return user._id;
+      }
       return user._id;
     }
 
-    // 新規ユーザーを作成
-    const newUserData: {
-      name: string;
-      email?: string;
-      tokenIdentifier: string;
-      avatarUrl?: string;
-      role: 'user';
-      created_at: number;
-      updated_at: number;
-    } = {
+    // 新規ユーザーの処理
+    // 新しい組織を作成
+    const orgId = await ctx.db.insert('orgs', {
+      name: `${identity.name ?? 'New User'}'s Organization`,
+      plan: 'free',
+      created_at: Date.now(),
+      updated_at: Date.now(),
+    });
+
+    // 新規ユーザーをadminとして作成
+    const newUserData: any = {
       name: identity.name ?? 'New User',
       tokenIdentifier: identity.tokenIdentifier,
-      role: 'user' as const,
+      role: 'admin',
+      orgId,
       created_at: Date.now(),
       updated_at: Date.now(),
     };
 
-    // emailが存在する場合のみ追加
     if (identity.email) {
       newUserData.email = identity.email;
     }
-
-    // pictureUrlが存在する場合のみ追加
     if (identity.pictureUrl) {
       newUserData.avatarUrl = identity.pictureUrl;
     }

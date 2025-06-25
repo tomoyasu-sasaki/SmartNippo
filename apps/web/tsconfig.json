@@ -8,7 +8,12 @@
       "@/lib/*": ["./src/lib/*"],
       "@/hooks/*": ["./src/hooks/*"],
       "@/styles/*": ["./src/styles/*"],
-      "@/app/*": ["./src/app/*"]
+      "@/app/*": ["./src/app/*"],
+      "@smartnippo/lib": ["../../packages/lib/src"],
+      "@smartnippo/lib/*": ["../../packages/lib/src/*"],
+      "@smartnippo/ui": ["../../packages/ui/src"],
+      "@smartnippo/ui/*": ["../../packages/ui/src/*"],
+      "convex/*": ["../../convex/*"]
     },
     "noEmit": true,
     "plugins": [

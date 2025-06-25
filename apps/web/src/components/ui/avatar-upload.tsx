@@ -1,11 +1,11 @@
 'use client';
 
 import imageCompression from 'browser-image-compression';
+import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { Loader2, Upload, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { api } from '../../../../../convex/_generated/api';
 import { Button } from './button';
 
 interface AvatarUploadProps {

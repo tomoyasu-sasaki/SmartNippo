@@ -11,8 +11,11 @@ export * from './format';
 export * from './privacy-settings';
 export * from './profile-export';
 export * from './social-links';
-export * from './utils';
 export * from './validation';
+
+// Re-export specific constants that might not be covered by *
+export { PRIVACY_LEVELS } from './privacy-settings';
+export { SOCIAL_PLATFORMS } from './social-links';
 
 // Explicitly export schemas (excluding duplicates already exported above)
 export {

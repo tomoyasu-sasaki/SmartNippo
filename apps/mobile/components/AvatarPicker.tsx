@@ -1,16 +1,8 @@
-import React, { useState } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  Image,
-  Alert,
-  Text,
-  Modal,
-  StyleSheet,
-} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { Camera, ImageIcon, X } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Camera, ImageIcon } from 'lucide-react-native';
+import { useState } from 'react';
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface AvatarPickerProps {
   currentAvatarUrl?: string;
@@ -32,7 +24,6 @@ export default function AvatarPicker({
   size = 120,
   disabled = false,
 }: AvatarPickerProps) {
-  const [modalVisible, setModalVisible] = useState(false);
   const [processing, setProcessing] = useState(false);
 
   // 画像処理設定
@@ -85,12 +76,10 @@ export default function AvatarPicker({
       };
 
       onImageSelected(result);
-    } catch (error) {
-      console.error('Image processing error:', error);
+    } catch {
       Alert.alert('エラー', '画像の処理中にエラーが発生しました');
     } finally {
       setProcessing(false);
-      setModalVisible(false);
     }
   };
 
@@ -122,10 +111,7 @@ export default function AvatarPicker({
     const { cameraStatus } = await requestPermissions();
 
     if (cameraStatus !== 'granted') {
-      Alert.alert(
-        '権限が必要です',
-        'カメラへのアクセス権限が必要です。設定で許可してください。'
-      );
+      Alert.alert('権限が必要です', 'カメラへのアクセス権限が必要です。設定で許可してください。');
       return;
     }
 
@@ -156,11 +142,7 @@ export default function AvatarPicker({
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[
-          styles.avatarContainer,
-          { width: size, height: size },
-          disabled && styles.disabled,
-        ]}
+        style={[styles.avatarContainer, { width: size, height: size }, disabled && styles.disabled]}
         onPress={showImagePicker}
         disabled={disabled || processing}
       >
@@ -171,13 +153,13 @@ export default function AvatarPicker({
           />
         ) : (
           <View style={[styles.placeholder, { width: size, height: size }]}>
-            <ImageIcon size={size * 0.4} color="#9CA3AF" />
+            <ImageIcon size={size * 0.4} color='#9CA3AF' />
           </View>
         )}
 
         {!disabled && (
           <View style={styles.editBadge}>
-            <Camera size={16} color="white" />
+            <Camera size={16} color='white' />
           </View>
         )}
       </TouchableOpacity>
@@ -246,3 +228,51 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
+// Skeleton Loading Components
+export function ReportCardSkeleton() {
+  return (
+    <View className='mb-4 rounded-lg bg-white p-4 shadow-sm'>
+      {/* Header skeleton */}
+      <View className='mb-2 flex-row items-center justify-between'>
+        <View className='flex-row items-center'>
+          <View className='h-4 w-4 rounded bg-gray-200' />
+          <View className='ml-1 h-4 w-20 rounded bg-gray-200' />
+        </View>
+        <View className='h-6 w-16 rounded-full bg-gray-200' />
+      </View>
+
+      {/* Title skeleton */}
+      <View className='mb-2 h-5 w-3/4 rounded bg-gray-200' />
+
+      {/* Content skeleton */}
+      <View className='mb-3 space-y-1'>
+        <View className='h-4 w-full rounded bg-gray-200' />
+        <View className='h-4 w-5/6 rounded bg-gray-200' />
+        <View className='h-4 w-2/3 rounded bg-gray-200' />
+      </View>
+
+      {/* Footer skeleton */}
+      <View className='flex-row items-center justify-between'>
+        <View className='flex-row items-center'>
+          <View className='h-3 w-3 rounded bg-gray-200' />
+          <View className='ml-1 h-3 w-16 rounded bg-gray-200' />
+        </View>
+        <View className='flex-row items-center'>
+          <View className='h-3 w-3 rounded bg-gray-200' />
+          <View className='ml-1 h-3 w-12 rounded bg-gray-200' />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+export function ReportListSkeleton() {
+  return (
+    <View className='p-4'>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <ReportCardSkeleton key={index} />
+      ))}
+    </View>
+  );
+}

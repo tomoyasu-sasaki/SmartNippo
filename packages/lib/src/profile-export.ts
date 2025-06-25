@@ -123,7 +123,7 @@ export function prepareProfileExportData(
       name: rawData.profile.name ?? '',
       email: rawData.profile.email ?? '',
       role: rawData.profile.role ?? '',
-      avatarUrl: rawData.profile.avatarUrl,
+      avatarUrl: rawData.profile.avatarUrl ?? '',
       created_at: new Date(rawData.profile.created_at).toISOString(),
       updated_at: new Date(rawData.profile.updated_at).toISOString(),
     },

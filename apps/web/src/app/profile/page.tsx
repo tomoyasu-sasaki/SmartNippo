@@ -1,15 +1,5 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   exportProfile,
   getSocialIcon,
@@ -19,13 +9,27 @@ import {
   type PrivacyLevel,
   type SocialPlatform,
 } from '@smartnippo/lib';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@smartnippo/ui';
+import { api } from 'convex/_generated/api';
+import type { Doc } from 'convex/_generated/dataModel';
 import { useConvexAuth, useMutation, useQuery } from 'convex/react';
 import { Download, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { api } from '../../../../../convex/_generated/api';
-import type { Doc } from '../../../../../convex/_generated/dataModel';
 import { ProfileForm } from './profile-form';
 
 type UserProfile = Doc<'userProfiles'>;

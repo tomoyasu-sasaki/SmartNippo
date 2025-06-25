@@ -3,14 +3,10 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@smartnippo/ui": ["./packages/ui/src"],
-      "@smartnippo/ui/*": ["./packages/ui/src/*"],
-      "@smartnippo/lib": ["./packages/lib/src"],
-      "@smartnippo/lib/*": ["./packages/lib/src/*"],
-      "@smartnippo/types": ["./packages/types/src"],
-      "@smartnippo/types/*": ["./packages/types/src/*"],
-      "@smartnippo/config": ["./packages/config/src"],
-      "@smartnippo/config/*": ["./packages/config/src/*"]
+      "@smartnippo/ui/*": ["packages/ui/src/*"],
+      "@smartnippo/lib/*": ["packages/lib/src/*"],
+      "@smartnippo/types/*": ["packages/types/src/*"],
+      "@/convex/*": ["convex/*"]
     }
   },
   "include": ["packages/**/*", "apps/**/*"],
