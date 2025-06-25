@@ -23,9 +23,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='ja' suppressHydrationWarning>
-      <body className={inter.className}>
-        <ClerkProvider>
+    <ClerkProvider>
+      <html lang='ja' suppressHydrationWarning>
+        <body className={inter.className}>
           <ThemeProvider
             attribute='class'
             defaultTheme='system'
@@ -40,8 +40,8 @@ export default function RootLayout({
               </NuqsAdapter>
             </ConvexClientProvider>
           </ThemeProvider>
-        </ClerkProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
