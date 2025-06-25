@@ -113,21 +113,14 @@ export const recordMigrationProgress = mutation({
     error: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // 現在の組織を取得（システム操作用）
+    // 現在の組織を取得（システム操作用）。存在しない場合はnull。
     const firstOrg = await ctx.db.query('orgs').first();
-    if (!firstOrg) {
-      throw new Error('No organization found for logging migration progress');
-    }
 
-    // 現在のユーザーを取得（システム操作用）
+    // 現在のユーザーを取得（システム操作用）。存在しない場合はnull。
     const firstUser = await ctx.db.query('userProfiles').first();
-    if (!firstUser) {
-      throw new Error('No user found for logging migration progress');
-    }
 
     // audit_logs テーブルに記録
-    await ctx.db.insert('audit_logs', {
-      actor_id: firstUser._id,
+    const auditEntry: any = {
       action: `migration_${args.status}`,
       payload: {
         migrationName: args.migrationName,
@@ -136,8 +129,17 @@ export const recordMigrationProgress = mutation({
         timestamp: Date.now(),
       },
       created_at: Date.now(),
-      org_id: firstOrg._id,
-    });
+    };
+
+    if (firstUser) {
+      auditEntry.actor_id = firstUser._id;
+    }
+
+    if (firstOrg) {
+      auditEntry.org_id = firstOrg._id;
+    }
+
+    await ctx.db.insert('audit_logs', auditEntry);
 
     return { success: true };
   },

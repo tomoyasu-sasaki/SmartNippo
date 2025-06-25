@@ -239,11 +239,11 @@ export default defineSchema({
 
   // Audit logs table - compliance & monitoring
   audit_logs: defineTable({
-    actor_id: v.id('userProfiles'),
+    actor_id: v.optional(v.id('userProfiles')), // nullable for system events like migration
     action: v.string(), // approveReport, deleteReport, etc.
     payload: v.any(), // JSON object with action details
     created_at: v.number(),
-    org_id: v.id('orgs'), // RLS: org-based isolation
+    org_id: v.optional(v.id('orgs')), // RLS: org-based isolation, nullable for system-wide logs
   })
     .index('by_org', ['org_id'])
     .index('by_actor', ['actor_id'])

@@ -2,22 +2,23 @@
 
 import { AuthSync } from '@/components/auth-sync';
 import { SignInButton, SignUpButton, useAuth } from '@clerk/nextjs';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function HomePage() {
   const { isSignedIn, isLoaded } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      redirect('/dashboard');
+      router.push('/dashboard');
     }
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, router]);
 
   // Show loading state while checking auth
-  if (!isLoaded) {
+  if (!isLoaded || isSignedIn) {
     return (
       <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
         <div className='text-center'>
