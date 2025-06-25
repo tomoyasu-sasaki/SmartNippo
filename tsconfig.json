@@ -3,7 +3,6 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@smartnippo/ui/*": ["packages/ui/src/*"],
       "@smartnippo/lib/*": ["packages/lib/src/*"],
       "@smartnippo/types/*": ["packages/types/src/*"],
       "@/convex/*": ["convex/*"]
@@ -19,9 +18,6 @@
     "**/coverage"
   ],
   "references": [
-    {
-      "path": "./packages/ui"
-    },
     {
       "path": "./packages/lib"
     },

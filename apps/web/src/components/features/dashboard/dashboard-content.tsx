@@ -1,10 +1,10 @@
 'use client';
 
-import { ErrorBoundaryWrapper } from '@/components/error-boundary-wrapper';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
 import { useAuth } from '@clerk/nextjs';
 import { api } from 'convex/_generated/api';
 import { useQuery } from 'convex/react';
@@ -288,7 +288,9 @@ function DashboardContentInner() {
           </CardHeader>
           <CardContent>
             {chartData.length > 0 ? (
-              <ReportsChart data={chartData} />
+              <ErrorBoundaryProvider>
+                <ReportsChart data={chartData} />
+              </ErrorBoundaryProvider>
             ) : (
               <p className='text-sm text-gray-600 text-center py-10'>
                 チャートを表示するのに十分なデータがありません。
@@ -303,8 +305,8 @@ function DashboardContentInner() {
 
 export function DashboardContent() {
   return (
-    <ErrorBoundaryWrapper>
+    <ErrorBoundaryProvider>
       <DashboardContentInner />
-    </ErrorBoundaryWrapper>
+    </ErrorBoundaryProvider>
   );
 }

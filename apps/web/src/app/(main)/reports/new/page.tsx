@@ -1,7 +1,7 @@
+import { ReportEditor } from '@/components/features/reports/report-editor';
 import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { ReportEditor } from '../report-editor';
 
 export const metadata: Metadata = {
   title: '日報作成 | SmartNippo',

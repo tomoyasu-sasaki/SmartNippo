@@ -1,7 +1,7 @@
+import { ReportDetail } from '@/components/features/reports/report-detail';
 import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { ReportDetail } from './report-detail';
 
 export const metadata: Metadata = {
   title: '日報詳細 | SmartNippo',

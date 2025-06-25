@@ -34,7 +34,7 @@ export function ConvexClientProvider({ children }: ConvexClientProviderProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ConvexProvider client={convex}>{children as any}</ConvexProvider>
+      <ConvexProvider client={convex}>{children}</ConvexProvider>
     </QueryClientProvider>
   );
 }

@@ -1,6 +1,5 @@
 'use client';
 
-import { ErrorBoundaryWrapper } from '@/components/error-boundary-wrapper';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
@@ -484,12 +484,12 @@ function ReportEditorInner({ reportId, initialData, expectedUpdatedAt }: ReportE
 
 export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: ReportEditorProps) {
   return (
-    <ErrorBoundaryWrapper>
+    <ErrorBoundaryProvider>
       <ReportEditorInner
         reportId={reportId!}
         initialData={initialData!}
         expectedUpdatedAt={expectedUpdatedAt!}
       />
-    </ErrorBoundaryWrapper>
+    </ErrorBoundaryProvider>
   );
 }

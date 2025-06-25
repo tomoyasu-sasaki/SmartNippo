@@ -7,7 +7,7 @@ import { useQuery } from 'convex/react';
 import dynamic from 'next/dynamic';
 
 const ReportEditor = dynamic(
-  () => import('@/app/reports/report-editor').then((mod) => mod.ReportEditor),
+  () => import('@/components/features/reports/report-editor').then((mod) => mod.ReportEditor),
   {
     ssr: false,
     loading: () => <ReportEditorSkeleton />,

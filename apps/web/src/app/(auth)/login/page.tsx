@@ -1,11 +1,11 @@
 'use client';
 
-import { AuthSync } from '@/components/auth-sync';
+import { AuthSync } from '@/components/features/auth/auth-sync';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SignInButton, SignUpButton, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function HomePage() {
   const { isSignedIn, isLoaded } = useAuth();

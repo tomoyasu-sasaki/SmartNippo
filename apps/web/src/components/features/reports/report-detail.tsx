@@ -1,6 +1,5 @@
 'use client';
 
-import { ErrorBoundaryWrapper } from '@/components/error-boundary-wrapper';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
@@ -317,16 +317,18 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       )}
 
       {/* AI要約 */}
-      {report.summary && (
+      <div className='mt-6'>
+        <h3 className='text-lg font-semibold mb-2'>AI Summary</h3>
         <Card>
-          <CardHeader>
-            <CardTitle>AI要約</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className='text-gray-700'>{report.summary}</p>
+          <CardContent className='p-4'>
+            <ErrorBoundaryProvider>
+              <p className='text-gray-700 whitespace-pre-wrap'>
+                {report.summary ?? 'AI summary is not available yet.'}
+              </p>
+            </ErrorBoundaryProvider>
           </CardContent>
         </Card>
-      )}
+      </div>
 
       {/* 承認情報 */}
       {report.approvals.length > 0 && (
@@ -493,8 +495,8 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
 
 export function ReportDetail({ reportId }: ReportDetailProps) {
   return (
-    <ErrorBoundaryWrapper>
+    <ErrorBoundaryProvider>
       <ReportDetailInner reportId={reportId} />
-    </ErrorBoundaryWrapper>
+    </ErrorBoundaryProvider>
   );
 }

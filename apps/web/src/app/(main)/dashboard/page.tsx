@@ -1,10 +1,10 @@
+import { DashboardContent } from '@/components/features/dashboard/dashboard-content';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
-import { DashboardContent } from './dashboard-content';
 
 export const metadata: Metadata = {
   title: 'ダッシュボード | SmartNippo',

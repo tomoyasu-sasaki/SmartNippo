@@ -1,8 +1,8 @@
+import ReportEditorWrapper from '@/components/features/reports/report-editor-wrapper';
 import { auth } from '@clerk/nextjs/server';
 import type { Id } from 'convex/_generated/dataModel';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import ReportEditorWrapper from './report-editor-wrapper';
 
 export const metadata: Metadata = {
   title: '日報編集 | SmartNippo',

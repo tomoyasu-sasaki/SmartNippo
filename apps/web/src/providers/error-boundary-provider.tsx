@@ -3,11 +3,11 @@
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import type { ReactNode } from 'react';
 
-interface ErrorBoundaryWrapperProps {
+interface ErrorBoundaryProviderProps {
   children: ReactNode;
 }
 
-export function ErrorBoundaryWrapper({ children }: ErrorBoundaryWrapperProps) {
+export function ErrorBoundaryProvider({ children }: ErrorBoundaryProviderProps) {
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {

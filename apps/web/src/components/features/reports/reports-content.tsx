@@ -1,6 +1,5 @@
 'use client';
 
-import { ErrorBoundaryWrapper } from '@/components/error-boundary-wrapper';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
 import { api } from 'convex/_generated/api';
 import { useQuery } from 'convex/react';
 import { format } from 'date-fns';
@@ -338,8 +338,8 @@ function ReportsContentInner() {
 
 export function ReportsContent() {
   return (
-    <ErrorBoundaryWrapper>
+    <ErrorBoundaryProvider>
       <ReportsContentInner />
-    </ErrorBoundaryWrapper>
+    </ErrorBoundaryProvider>
   );
 }

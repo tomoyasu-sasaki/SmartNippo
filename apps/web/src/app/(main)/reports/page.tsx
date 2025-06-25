@@ -1,8 +1,8 @@
+import { ReportsContent } from '@/components/features/reports/reports-content';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { ReportsContent } from './reports-content';
 
 export const metadata: Metadata = {
   title: '日報一覧 | SmartNippo',

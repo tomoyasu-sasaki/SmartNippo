@@ -2,15 +2,15 @@ import { ClerkProvider } from '@clerk/nextjs';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 
-import { Navigation } from '@/components/navigation';
+import { Navigation } from '@/components/layouts/navigation';
 import { Toaster } from '@/components/ui/sonner';
 import ConvexClientProvider from '@/providers/convex-client-provider';
-import { ThemeProvider } from 'next-themes';
+import { ThemeProvider } from '@/providers/theme-provider';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import './globals.css';
 
-const inter = Inter({ subsets: ['greek'] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'SmartNippo',
@@ -23,9 +23,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang='ja' suppressHydrationWarning>
-        <body className={inter.className}>
+    <html lang='ja' suppressHydrationWarning>
+      <body className={inter.className}>
+        <ClerkProvider>
           <ThemeProvider
             attribute='class'
             defaultTheme='system'
@@ -40,8 +40,8 @@ export default function RootLayout({
               </NuqsAdapter>
             </ConvexClientProvider>
           </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

@@ -13,6 +13,7 @@ import { SignedIn, SignedOut, UserButton, useAuth } from '@clerk/nextjs';
 import { BarChart3, FileText, Home, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ThemeToggle } from './theme-toggle';
 
 export function Navigation() {
   const pathname = usePathname();
@@ -24,7 +25,7 @@ export function Navigation() {
   }
 
   return (
-    <header className='sticky top-0 z-50 w-full border-b bg-white'>
+    <header className='sticky top-0 z-50 w-full border-b bg-background'>
       <div className='container flex h-16 items-center justify-between'>
         <div className='flex items-center gap-6'>
           <Link href={isSignedIn ? '/dashboard' : '/'} className='flex items-center gap-2'>
@@ -108,6 +109,7 @@ export function Navigation() {
             </Link>
           </SignedOut>
           <SignedIn>
+            <ThemeToggle />
             <UserButton
               afterSignOutUrl='/'
               appearance={{
