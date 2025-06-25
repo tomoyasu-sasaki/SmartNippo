@@ -1,8 +1,34 @@
-import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
-import { getAuthenticatedUser } from './lib/auth';
+/**
+ * @fileoverview ユーザープロファイル操作のMutation
+ *
+ * @description ユーザープロファイルの作成、更新、削除を管理するMutation関数を提供します。
+ * 認証済みユーザーのプロファイル管理、組織の自動作成、楽観的ロック、監査ログの記録などを実装します。
+ *
+ * @since 1.0.0
+ */
 
-// ユーザー情報を保存する
+import { v } from 'convex/values';
+import { mutation } from '../_generated/server';
+import { getAuthenticatedUser } from '../auth/auth';
+
+/**
+ * ユーザー情報の初期保存
+ *
+ * @description 認証プロバイダー（Clerk）からのユーザー情報を基に、
+ * 新規ユーザーの場合は組織を自動作成してユーザープロファイルを作成し、
+ * 既存ユーザーの場合は組織情報のマイグレーションを実行します。
+ *
+ * @mutation
+ * @returns {Promise<Id<'userProfiles'>>} 作成または更新されたユーザーのID
+ * @throws {Error} 認証情報が無効な場合
+ * @example
+ * ```typescript
+ * // 新規ユーザー登録時に自動実行
+ * const userId = await store();
+ * console.log('User created with ID:', userId);
+ * ```
+ * @since 1.0.0
+ */
 export const store = mutation({
   args: {},
   handler: async (ctx) => {
@@ -67,25 +93,39 @@ export const store = mutation({
   },
 });
 
-// 現在のユーザー情報を取得する
-export const current = query({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return null;
-    }
-
-    const user = await ctx.db
-      .query('userProfiles')
-      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
-      .unique();
-
-    return user;
-  },
-});
-
-// プロフィール更新mutation（楽観的ロック対応）
+/**
+ * プロファイル情報の更新
+ *
+ * @description ユーザープロファイルの包括的な更新機能を提供します。
+ * 楽観的ロックによる競合回避、変更履歴の追跡、監査ログの記録を実装し、
+ * 名前、アバター、ソーシャルリンク、プライバシー設定などを安全に更新します。
+ *
+ * @mutation
+ * @param {Object} args - 更新するプロファイルデータ
+ * @param {string} [args.name] - ユーザー名
+ * @param {string} [args.avatarUrl] - アバター画像のURL
+ * @param {string} [args.pushToken] - プッシュ通知用トークン
+ * @param {Object} [args.socialLinks] - ソーシャルメディアリンク
+ * @param {Object} [args.privacySettings] - プライバシー設定
+ * @param {number} [args._version] - 楽観的ロック用バージョン番号
+ * @returns {Promise<{success: boolean, changes?: string[], message?: string}>} 更新結果
+ * @throws {Error} ユーザーが見つからない場合または楽観的ロック競合の場合
+ * @example
+ * ```typescript
+ * const result = await updateProfile({
+ *   name: 'New Name',
+ *   socialLinks: {
+ *     twitter: 'https://twitter.com/newhandle'
+ *   },
+ *   _version: currentVersion
+ * });
+ *
+ * if (result.success) {
+ *   console.log('Updated fields:', result.changes);
+ * }
+ * ```
+ * @since 1.0.0
+ */
 export const updateProfile = mutation({
   args: {
     name: v.optional(v.string()),
@@ -244,7 +284,29 @@ export const updateProfile = mutation({
   },
 });
 
-// プロフィール削除mutation（論理削除）
+/**
+ * プロファイルの論理削除
+ *
+ * @description ユーザープロファイルを論理削除します。管理者ユーザーは削除できません。
+ * データの完全削除ではなく、ユーザー名の匿名化と個人情報の除去を行い、
+ * 監査ログに削除履歴を記録してデータトレーサビリティを維持します。
+ *
+ * @mutation
+ * @returns {Promise<{success: boolean}>} 削除処理の結果
+ * @throws {Error} ユーザーが見つからない場合または管理者ユーザーの場合
+ * @example
+ * ```typescript
+ * try {
+ *   const result = await deleteProfile();
+ *   if (result.success) {
+ *     console.log('Profile deleted successfully');
+ *   }
+ * } catch (error) {
+ *   console.error('Cannot delete admin profile:', error.message);
+ * }
+ * ```
+ * @since 1.0.0
+ */
 export const deleteProfile = mutation({
   args: {},
   handler: async (ctx) => {
@@ -292,43 +354,5 @@ export const deleteProfile = mutation({
     }
 
     return { success: true };
-  },
-});
-
-// プロフィール変更履歴を取得するquery
-export const getProfileHistory = query({
-  args: {
-    userId: v.optional(v.id('userProfiles')),
-    limit: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const user = await getAuthenticatedUser(ctx);
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // 管理者または本人のみ履歴を閲覧可能
-    const targetUserId = args.userId ?? user._id;
-    if (targetUserId !== user._id && user.role !== 'admin' && user.role !== 'manager') {
-      throw new Error('Insufficient permissions to view profile history');
-    }
-
-    if (!user.orgId) {
-      return [];
-    }
-
-    const history = await ctx.db
-      .query('audit_logs')
-      .withIndex('by_org', (q) => q.eq('org_id', user.orgId!))
-      .filter((q) =>
-        q.and(
-          q.eq(q.field('actor_id'), targetUserId),
-          q.or(q.eq(q.field('action'), 'updateProfile'), q.eq(q.field('action'), 'deleteProfile'))
-        )
-      )
-      .order('desc')
-      .take(args.limit ?? 50);
-
-    return history;
   },
 });

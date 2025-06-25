@@ -1,17 +1,51 @@
-import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
-import { getAuthenticatedUser } from './lib/auth';
+/**
+ * @fileoverview ファイルアップロード機能
+ *
+ * @description ユーザーアバターのアップロード、保存、削除、URL取得、バリデーション、
+ * および統計情報取得に関する機能を提供します。Convex File Storage を使用し、
+ * セキュアなファイル管理を実現します。
+ *
+ * @since 1.0.0
+ */
 
-// ファイル制限設定
+import { v } from 'convex/values';
+import { mutation, query } from '../_generated/server';
+import { getAuthenticatedUser } from '../auth/auth';
+
+/**
+ * アバターファイル制限設定
+ *
+ * @description アバターとしてアップロード可能なファイルの最大サイズ、許可される
+ * MIMEタイプ、最大画像寸法を定義します。
+ *
+ * @constant
+ * @readonly
+ * @since 1.0.0
+ */
 const AVATAR_LIMITS = {
+  /** 最大ファイルサイズ (5MB) */
   MAX_SIZE: 5 * 1024 * 1024, // 5MB
+  /** 許可されるファイルタイプ */
   ALLOWED_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'] as const,
+  /** 最大画像寸法 (px) */
   MAX_DIMENSION: 2048, // 最大2048px
 } as const;
 
 /**
- * アバターアップロードURL生成
- * 認証が必要で、1時間有効なアップロードURLを返す
+ * アバターアップロード用URLの生成
+ *
+ * @description 認証済みユーザーに対して、1時間有効な一意のアップロードURLを生成します。
+ * クライアントはこのURLを使用して直接ファイルをアップロードできます。
+ *
+ * @mutation
+ * @returns {Promise<string>} アップロード用URL
+ * @throws {Error} 認証されていない場合
+ * @example
+ * ```typescript
+ * const uploadUrl = await generateAvatarUploadUrl();
+ * // クライアント側でこのURLにファイルをPOSTする
+ * ```
+ * @since 1.0.0
  */
 export const generateAvatarUploadUrl = mutation({
   args: {},
@@ -27,8 +61,30 @@ export const generateAvatarUploadUrl = mutation({
 });
 
 /**
- * アバター保存
- * アップロード完了後にユーザープロフィールにStorageIDを保存
+ * アップロード済みアバターのプロフィールへの保存
+ *
+ * @description アップロードが完了したファイルのstorageIdをユーザープロファイルに保存します。
+ * ファイルの形式とサイズを検証し、古いアバターが存在する場合は削除します。
+ *
+ * @mutation
+ * @param {Object} args - ファイル情報
+ * @param {Id<'_storage'>} args.storageId - アップロードされたファイルのstorageId
+ * @param {number} args.fileSize - ファイルサイズ（バイト）
+ * @param {string} args.fileType - ファイルのMIMEタイプ
+ * @param {string} [args.fileName] - ファイル名
+ * @returns {Promise<{success: boolean, url: string}>} 保存結果とファイルURL
+ * @throws {Error} 認証失敗、ファイル形式またはサイズ違反、URL取得失敗の場合
+ * @example
+ * ```typescript
+ * const result = await saveAvatarToProfile({
+ *   storageId: uploadedFileId,
+ *   fileSize: 102400, // 100KB
+ *   fileType: 'image/png',
+ *   fileName: 'my-avatar.png'
+ * });
+ * console.log('Avatar URL:', result.url);
+ * ```
+ * @since 1.0.0
  */
 export const saveAvatarToProfile = mutation({
   args: {
@@ -99,8 +155,20 @@ export const saveAvatarToProfile = mutation({
 });
 
 /**
- * アバター削除
- * ユーザー自身のアバターを削除
+ * ユーザーアバターの削除
+ *
+ * @description 現在のユーザーアバターをConvex File Storageから削除し、
+ * プロフィール情報から関連付けを解除します。
+ *
+ * @mutation
+ * @returns {Promise<{success: boolean}>} 削除成功を示すオブジェクト
+ * @throws {Error} 認証失敗または削除対象アバターが存在しない場合
+ * @example
+ * ```typescript
+ * await deleteAvatar();
+ * console.log('Avatar deleted successfully.');
+ * ```
+ * @since 1.0.0
  */
 export const deleteAvatar = mutation({
   args: {},
@@ -149,8 +217,24 @@ export const deleteAvatar = mutation({
 });
 
 /**
- * アバターURL取得
- * ユーザーのアバター画像URLを取得（キャッシュ対応）
+ * アバター画像のURL取得
+ *
+ * @description 指定されたユーザーのアバター画像のURLを取得します。
+ * Convex File Storageに保存されている場合はそのURLを、ない場合は
+ * 従来の外部URL（`avatarUrl`）にフォールバックします。
+ *
+ * @query
+ * @param {Object} args - 取得対象
+ * @param {Id<'userProfiles'>} args.userId - 対象ユーザーのID
+ * @returns {Promise<{url: string, source: 'storage' | 'external'} | null>} URLとソース情報、またはnull
+ * @example
+ * ```typescript
+ * const avatarInfo = await getAvatarUrl({ userId: 'user123' });
+ * if (avatarInfo) {
+ *   console.log(`Avatar URL: ${avatarInfo.url} (from ${avatarInfo.source})`);
+ * }
+ * ```
+ * @since 1.0.0
  */
 export const getAvatarUrl = query({
   args: { userId: v.id('userProfiles') },
@@ -180,8 +264,29 @@ export const getAvatarUrl = query({
 });
 
 /**
- * ファイル形式バリデーション（HTTP Action用）
- * アップロード前にクライアントで使用
+ * アバターファイルの事前バリデーション
+ *
+ * @description ファイルアップロード前にクライアントサイドでファイルの妥当性を
+ * 確認するためのバリデーション関数です。ファイルサイズ、タイプ、名前の長さを検証します。
+ *
+ * @mutation
+ * @param {Object} args - 検証対象のファイル情報
+ * @param {number} args.fileSize - ファイルサイズ（バイト）
+ * @param {string} args.fileType - ファイルのMIMEタイプ
+ * @param {string} [args.fileName] - ファイル名
+ * @returns {Promise<{valid: boolean, errors: string[], limits: typeof AVATAR_LIMITS}>} 検証結果
+ * @throws {Error} 認証されていない場合
+ * @example
+ * ```typescript
+ * const result = await validateAvatarFile({
+ *   fileSize: 6 * 1024 * 1024, // 6MB
+ *   fileType: 'image/bmp'
+ * });
+ * if (!result.valid) {
+ *   console.log('Validation errors:', result.errors);
+ * }
+ * ```
+ * @since 1.0.0
  */
 export const validateAvatarFile = mutation({
   args: {
@@ -224,7 +329,20 @@ export const validateAvatarFile = mutation({
 });
 
 /**
- * アップロード統計取得（管理者用）
+ * アバターアップロード統計の取得（管理者向け）
+ *
+ * @description 組織内のアバターアップロード状況に関する統計情報を取得します。
+ * 全ユーザー数、アバター設定済みユーザー数、ストレージ利用率などを集計します。
+ *
+ * @query
+ * @returns {Promise<Object>} アバター統計情報
+ * @throws {Error} 認証失敗または管理者権限がない場合
+ * @example
+ * ```typescript
+ * const stats = await getUploadStats();
+ * console.log(`Avatar coverage: ${stats.avatarCoverage}%`);
+ * ```
+ * @since 1.0.0
  */
 export const getUploadStats = query({
   args: {},

@@ -1,8 +1,29 @@
+/**
+ * @fileoverview データベーススキーマ定義
+ *
+ * @description アプリケーション全体のデータベーススキーマを定義します。
+ * 各テーブルのカラム、データ型、インデックス、検索インデックスなどを一元管理し、
+ * データの整合性とクエリパフォーマンスを保証します。
+ *
+ * @since 1.0.0
+ */
+
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
+/**
+ * SmartNippo データベーススキーマ
+ *
+ * @description 全てのテーブル定義とインデックス設定を含むスキーマオブジェクト。
+ * 各テーブルは機能別に整理され、詳細なコメントが付与されています。
+ *
+ * @exports defineSchema
+ */
 export default defineSchema({
-  // Organizations table - multi-tenant base
+  /**
+   * 組織テーブル (orgs)
+   * @description マルチテナントの基盤となる組織情報を管理します。
+   */
   orgs: defineTable({
     name: v.string(),
     plan: v.union(v.literal('free'), v.literal('pro'), v.literal('enterprise')),
@@ -12,7 +33,10 @@ export default defineSchema({
     .index('by_created_at', ['created_at'])
     .index('by_plan', ['plan']),
 
-  // User profiles table - simplified without auth dependency
+  /**
+   * ユーザープロファイルテーブル (userProfiles)
+   * @description ユーザーアカウント情報、ロール、所属組織、設定などを管理します。
+   */
   userProfiles: defineTable({
     email: v.optional(v.string()), // Optional for backward compatibility
     userId: v.optional(v.string()), // Legacy field for backward compatibility
@@ -94,7 +118,10 @@ export default defineSchema({
     .index('by_org_role', ['orgId', 'role'])
     .index('by_created_at', ['created_at']),
 
-  // Reports table - core daily report functionality (Enhanced)
+  /**
+   * 日報テーブル (reports)
+   * @description 中核機能である日報データを管理します。AI要約、タスク、添付ファイルなどの拡張機能を持ちます。
+   */
   reports: defineTable({
     authorId: v.id('userProfiles'),
     reportDate: v.string(), // YYYY-MM-DD format
@@ -210,7 +237,10 @@ export default defineSchema({
       filterFields: ['orgId'],
     }),
 
-  // Comments table - user/system/AI feedback
+  /**
+   * コメントテーブル (comments)
+   * @description ユーザー、システム、AIによるコメントを管理します。
+   */
   comments: defineTable({
     reportId: v.id('reports'),
     authorId: v.optional(v.id('userProfiles')), // nullable for system/AI comments
@@ -227,7 +257,10 @@ export default defineSchema({
     .index('by_author', ['authorId'])
     .index('by_created_at', ['created_at']),
 
-  // Approvals table - manager approval tracking
+  /**
+   * 承認テーブル (approvals)
+   * @description マネージャーによる日報の承認記録を管理します。
+   */
   approvals: defineTable({
     reportId: v.id('reports'),
     managerId: v.id('userProfiles'), // manager/admin role required
@@ -237,7 +270,10 @@ export default defineSchema({
     .index('by_manager', ['managerId'])
     .index('by_approval_time', ['approved_at']),
 
-  // Audit logs table - compliance & monitoring
+  /**
+   * 監査ログテーブル (audit_logs)
+   * @description コンプライアンスと監視のため、重要な操作履歴を記録します。
+   */
   audit_logs: defineTable({
     actor_id: v.optional(v.id('userProfiles')), // nullable for system events like migration
     action: v.string(), // approveReport, deleteReport, etc.
@@ -250,7 +286,10 @@ export default defineSchema({
     .index('by_org_action', ['org_id', 'action'])
     .index('by_created_at', ['created_at']),
 
-  // Schema versions table - migration management
+  /**
+   * スキーマバージョンテーブル (schema_versions)
+   * @description データベースマイグレーションの履歴を管理します。
+   */
   schema_versions: defineTable({
     version: v.number(),
     name: v.string(),

@@ -1,245 +1,38 @@
+/**
+ * @fileoverview 日報データバリデーション機能
+ *
+ * @description 日報の作成・更新時に使用される包括的なデータバリデーション機能、
+ * およびバリデーション関連の統計情報取得、エラーログ記録機能を提供します。
+ *
+ * @since 1.0.0
+ */
+
 import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
+import { mutation, query } from '../_generated/server';
+import type { ValidationError, ValidationResult } from './common';
 
-// バリデーションエラー型定義
-export interface ValidationError {
-  field: string;
-  message: string;
-  code: string;
-  value?: any;
-}
-
-// バリデーション結果型
-export interface ValidationResult {
-  isValid: boolean;
-  errors: ValidationError[];
-}
-
-// 共通バリデーション関数
-const validateEmail = (email: string): ValidationError[] => {
-  const errors: ValidationError[] = [];
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!email) {
-    errors.push({ field: 'email', message: 'Email is required', code: 'REQUIRED' });
-  } else if (!emailRegex.test(email)) {
-    errors.push({
-      field: 'email',
-      message: 'Invalid email format',
-      code: 'INVALID_FORMAT',
-      value: email,
-    });
-  } else if (email.length > 254) {
-    errors.push({
-      field: 'email',
-      message: 'Email too long (max 254 characters)',
-      code: 'TOO_LONG',
-      value: email,
-    });
-  }
-
-  return errors;
-};
-
-const validateName = (name: string, fieldName: string): ValidationError[] => {
-  const errors: ValidationError[] = [];
-
-  if (!name || name.trim().length === 0) {
-    errors.push({ field: fieldName, message: `${fieldName} is required`, code: 'REQUIRED' });
-  } else if (name.length < 2) {
-    errors.push({
-      field: fieldName,
-      message: `${fieldName} must be at least 2 characters`,
-      code: 'TOO_SHORT',
-      value: name,
-    });
-  } else if (name.length > 100) {
-    errors.push({
-      field: fieldName,
-      message: `${fieldName} too long (max 100 characters)`,
-      code: 'TOO_LONG',
-      value: name,
-    });
-  } else if (!/^[a-zA-Z0-9\s\-_.]+$/.test(name)) {
-    errors.push({
-      field: fieldName,
-      message: `${fieldName} contains invalid characters`,
-      code: 'INVALID_FORMAT',
-      value: name,
-    });
-  }
-
-  return errors;
-};
-
-const validateUrl = (url: string, fieldName: string, required = false): ValidationError[] => {
-  const errors: ValidationError[] = [];
-
-  if (!url && required) {
-    errors.push({ field: fieldName, message: `${fieldName} is required`, code: 'REQUIRED' });
-  } else if (url && url.length > 0) {
-    try {
-      new URL(url);
-      if (url.length > 2048) {
-        errors.push({
-          field: fieldName,
-          message: `${fieldName} too long (max 2048 characters)`,
-          code: 'TOO_LONG',
-          value: url,
-        });
-      }
-    } catch {
-      errors.push({
-        field: fieldName,
-        message: `${fieldName} is not a valid URL`,
-        code: 'INVALID_FORMAT',
-        value: url,
-      });
-    }
-  }
-
-  return errors;
-};
-
-// Organization バリデーション
-export const validateOrganization = mutation({
-  args: {
-    name: v.string(),
-    plan: v.union(v.literal('free'), v.literal('pro'), v.literal('enterprise')),
-  },
-  handler: async (ctx, args): Promise<ValidationResult> => {
-    const errors: ValidationError[] = [];
-
-    // Name validation
-    errors.push(...validateName(args.name, 'name'));
-
-    // Plan validation
-    const validPlans = ['free', 'pro', 'enterprise'];
-    if (!validPlans.includes(args.plan)) {
-      errors.push({
-        field: 'plan',
-        message: 'Invalid plan type',
-        code: 'INVALID_VALUE',
-        value: args.plan,
-      });
-    }
-
-    // Check for duplicate organization names
-    if (args.name) {
-      const existingOrg = await ctx.db
-        .query('orgs')
-        .filter((q) => q.eq(q.field('name'), args.name))
-        .first();
-
-      if (existingOrg) {
-        errors.push({
-          field: 'name',
-          message: 'Organization name already exists',
-          code: 'DUPLICATE',
-          value: args.name,
-        });
-      }
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  },
-});
-
-// User Profile バリデーション
-export const validateUserProfile = mutation({
-  args: {
-    email: v.optional(v.string()),
-    name: v.string(),
-    role: v.union(v.literal('viewer'), v.literal('user'), v.literal('manager'), v.literal('admin')),
-    orgId: v.optional(v.id('orgs')),
-    avatarUrl: v.optional(v.string()),
-    socialLinks: v.optional(
-      v.object({
-        twitter: v.optional(v.string()),
-        linkedin: v.optional(v.string()),
-        github: v.optional(v.string()),
-        instagram: v.optional(v.string()),
-        facebook: v.optional(v.string()),
-        youtube: v.optional(v.string()),
-        website: v.optional(v.string()),
-      })
-    ),
-  },
-  handler: async (ctx, args): Promise<ValidationResult> => {
-    const errors: ValidationError[] = [];
-
-    // Email validation (if provided)
-    if (args.email) {
-      errors.push(...validateEmail(args.email));
-
-      // Check for duplicate email
-      const existingUser = await ctx.db
-        .query('userProfiles')
-        .filter((q) => q.eq(q.field('email'), args.email))
-        .first();
-
-      if (existingUser) {
-        errors.push({
-          field: 'email',
-          message: 'Email already registered',
-          code: 'DUPLICATE',
-          value: args.email,
-        });
-      }
-    }
-
-    // Name validation
-    errors.push(...validateName(args.name, 'name'));
-
-    // Role validation
-    const validRoles = ['viewer', 'user', 'manager', 'admin'];
-    if (!validRoles.includes(args.role)) {
-      errors.push({
-        field: 'role',
-        message: 'Invalid role',
-        code: 'INVALID_VALUE',
-        value: args.role,
-      });
-    }
-
-    // Organization validation
-    if (args.orgId) {
-      const org = await ctx.db.get(args.orgId);
-      if (!org) {
-        errors.push({
-          field: 'orgId',
-          message: 'Organization not found',
-          code: 'NOT_FOUND',
-          value: args.orgId,
-        });
-      }
-    }
-
-    // Avatar URL validation
-    if (args.avatarUrl) {
-      errors.push(...validateUrl(args.avatarUrl, 'avatarUrl'));
-    }
-
-    // Social links validation
-    if (args.socialLinks) {
-      Object.entries(args.socialLinks).forEach(([platform, url]) => {
-        if (url) {
-          errors.push(...validateUrl(url, `socialLinks.${platform}`));
-        }
-      });
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  },
-});
-
-// Report バリデーション
+/**
+ * 日報データの包括的バリデーション
+ *
+ * @description 日報の作成・更新時に使用されるバリデーション mutation です。
+ * 著者・組織の存在確認、日付の妥当性、タイトル・内容の文字数制限、
+ * タスク・添付ファイルの整合性、重複日報のチェックなど、包括的な検証を行います。
+ *
+ * @mutation
+ * @param {Object} args - 検証対象の日報データ
+ * @returns {Promise<ValidationResult>} バリデーション結果
+ * @throws {Error} データベースアクセスエラーが発生した場合
+ * @example
+ * ```typescript
+ * const result = await validateReport({ ...reportData });
+ * if (result.isValid) {
+ *   // 日報を保存
+ * } else {
+ *   console.log('Validation errors:', result.errors);
+ * }
+ * ```
+ * @since 1.0.0
+ */
 export const validateReport = mutation({
   args: {
     authorId: v.id('userProfiles'),
@@ -512,7 +305,27 @@ export const validateReport = mutation({
   },
 });
 
-// バリデーション統計取得
+/**
+ * バリデーションエラー統計の取得
+ *
+ * @description 直近100件のバリデーションエラーを監査ログから集計し、
+ * エラーコード別、フィールド別の統計情報を提供します。
+ * システムの入力品質やユーザーの混乱箇所を特定するのに役立ちます。
+ *
+ * @query
+ * @returns {Promise<Object>} バリデーションエラー統計
+ * @returns {number} returns.totalErrors - 直近のエラー総数
+ * @returns {Record<string, number>} returns.errorsByType - エラーコード別集計
+ * @returns {Record<string, number>} returns.errorsByField - フィールド別集計
+ * @returns {number} returns.timestamp - 統計取得時刻
+ * @example
+ * ```typescript
+ * const stats = await getValidationStats();
+ * console.log('Top error type:', Object.keys(stats.errorsByType)[0]);
+ * console.log('Most problematic field:', Object.keys(stats.errorsByField)[0]);
+ * ```
+ * @since 1.0.0
+ */
 export const getValidationStats = query({
   args: {},
   handler: async (ctx) => {
@@ -550,7 +363,33 @@ export const getValidationStats = query({
   },
 });
 
-// バリデーションエラーログ記録
+/**
+ * バリデーションエラーのログ記録
+ *
+ * @description 発生したバリデーションエラーを監査ログに記録します。
+ * エラーの追跡、デバッグ、品質改善のためのデータソースとして利用されます。
+ *
+ * @mutation
+ * @param {Object} args - エラーログ情報
+ * @param {string} args.tableName - エラーが発生したテーブル名
+ * @param {ValidationError[]} args.errors - エラー詳細の配列
+ * @param {Id<'userProfiles'>} [args.userId] - 操作ユーザーID
+ * @param {Id<'orgs'>} [args.orgId] - 組織ID
+ * @returns {Promise<{success: boolean, errorsLogged: number}>} 記録結果
+ * @example
+ * ```typescript
+ * const validationResult = await validateReport({ ... });
+ * if (!validationResult.isValid) {
+ *   await logValidationError({
+ *     tableName: 'reports',
+ *     errors: validationResult.errors,
+ *     userId: currentUser._id,
+ *     orgId: currentUser.orgId
+ *   });
+ * }
+ * ```
+ * @since 1.0.0
+ */
 export const logValidationError = mutation({
   args: {
     tableName: v.string(),

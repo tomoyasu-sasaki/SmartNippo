@@ -1,13 +1,43 @@
-import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
+/**
+ * @fileoverview スキーマバージョニングシステム
+ *
+ * @description データベーススキーマのバージョン管理、健全性チェック、
+ * マイグレーション進行状況の追跡を行うシステムを提供します。
+ *
+ * @since 1.0.0
+ */
 
-// スキーマバージョン定義
+import { v } from 'convex/values';
+import { mutation, query } from '../_generated/server';
+
+/**
+ * スキーマバージョン定義
+ *
+ * @description アプリケーションでサポートされているスキーマバージョンの定義です。
+ * 新しいスキーマバージョンを追加する際は、この定数オブジェクトを更新してください。
+ *
+ * @constant
+ * @readonly
+ * @since 1.0.0
+ */
 export const SCHEMA_VERSIONS = {
+  /** 初期スキーマバージョン */
   V1_INITIAL: 1,
+  /** レポート機能強化バージョン */
   V2_ENHANCED_REPORTS: 2,
+  /** パフォーマンス向上インデックス追加バージョン */
   V3_PERFORMANCE_INDEXES: 3,
 } as const;
 
+/**
+ * 現在の目標スキーマバージョン
+ *
+ * @description アプリケーションが対応している最新のスキーマバージョンです。
+ * マイグレーション実行時の目標バージョンとして使用されます。
+ *
+ * @constant
+ * @since 1.0.0
+ */
 export const CURRENT_SCHEMA_VERSION = SCHEMA_VERSIONS.V3_PERFORMANCE_INDEXES;
 
 // 現在のスキーマバージョンを取得
