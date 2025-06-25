@@ -356,10 +356,10 @@ function ProfileExportSection({ userProfile }: { userProfile: UserProfile }) {
         updated_at: new Date(userProfile.updated_at).toISOString(),
       },
       socialLinks: Object.entries(userProfile.socialLinks ?? {})
-        .filter(([, url]) => url !== undefined)
+        .filter(([, url]) => Boolean(url))
         .map(([platformKey, url]) => ({
           platform: platformKey as SocialPlatform,
-          url: url ?? '',
+          url: url as string,
         })),
       privacySettings: userProfile.privacySettings ?? ({} as any),
       reports: [],

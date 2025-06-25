@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
 import { useAuth } from '@clerk/nextjs';
 import { api } from 'convex/_generated/api';
+import type { Doc } from 'convex/_generated/dataModel';
 import { useQuery } from 'convex/react';
 import { endOfMonth, format, startOfMonth, subDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -80,15 +81,16 @@ function DashboardContentInner() {
   // 統計情報の計算
   const stats = {
     total: myReports.reports.length,
-    draft: myReports.reports.filter((r) => r.status === 'draft').length,
-    submitted: myReports.reports.filter((r) => r.status === 'submitted').length,
-    approved: myReports.reports.filter((r) => r.status === 'approved').length,
-    rejected: myReports.reports.filter((r) => r.status === 'rejected').length,
+    draft: myReports.reports.filter((r: Doc<'reports'>) => r.status === 'draft').length,
+    submitted: myReports.reports.filter((r: Doc<'reports'>) => r.status === 'submitted').length,
+    approved: myReports.reports.filter((r: Doc<'reports'>) => r.status === 'approved').length,
+    rejected: myReports.reports.filter((r: Doc<'reports'>) => r.status === 'rejected').length,
   };
 
   const teamStats = {
     total: allReports.reports.length,
-    pendingApproval: allReports.reports.filter((r) => r.status === 'submitted').length,
+    pendingApproval: allReports.reports.filter((r: Doc<'reports'>) => r.status === 'submitted')
+      .length,
   };
 
   return (
@@ -169,7 +171,7 @@ function DashboardContentInner() {
             {recentReports.reports.length === 0 ? (
               <p className='text-center text-gray-500 py-8'>最近の日報はありません</p>
             ) : (
-              recentReports.reports.map((report) => (
+              recentReports.reports.map((report: Doc<'reports'>) => (
                 <div
                   key={report._id}
                   className='flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50'

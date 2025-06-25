@@ -19,7 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
 import { api } from 'convex/_generated/api';
-import type { Id } from 'convex/_generated/dataModel';
+import type { Doc, Id } from 'convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -286,7 +286,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
           </CardHeader>
           <CardContent>
             <div className='space-y-2'>
-              {report.tasks.map((task) => (
+              {report.tasks.map((task: Doc<'reports'>['tasks'][number]) => (
                 <div
                   key={task.id}
                   className='flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50'
@@ -338,7 +338,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
           </CardHeader>
           <CardContent>
             <div className='space-y-3'>
-              {report.approvals.map((approval) => (
+              {report.approvals.map((approval: any) => (
                 <div key={approval._id} className='flex items-center gap-3'>
                   <Avatar className='h-8 w-8'>
                     <AvatarImage src={approval.manager?.avatarUrl} />
@@ -364,7 +364,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
           <CardDescription>{report.comments.length} 件のコメント</CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
-          {report.comments.map((comment) => (
+          {report.comments.map((comment: any) => (
             <div key={comment._id} className='flex gap-3'>
               <Avatar className='h-8 w-8'>
                 {comment.author?.avatarUrl ? (

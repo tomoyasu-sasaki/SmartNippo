@@ -1,6 +1,7 @@
 'use client';
 
 import { api } from 'convex/_generated/api';
+import type { Doc } from 'convex/_generated/dataModel';
 import { useQuery } from 'convex/react';
 import { File } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -86,7 +87,7 @@ function ReportSearchContent() {
         )}
         {searchResults && searchResults.length > 0 && (
           <CommandGroup heading='検索結果'>
-            {searchResults.map((report) => (
+            {searchResults.map((report: Doc<'reports'>) => (
               <CommandItem
                 key={report._id}
                 value={`${report.title} ${report.author?.name} ${report.reportDate}`}
