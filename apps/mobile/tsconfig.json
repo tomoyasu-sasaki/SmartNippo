@@ -4,7 +4,9 @@
     "strict": false,
     "baseUrl": "../../",
     "paths": {
-      "convex/*": ["convex/*"]
+      "convex/*": ["convex/*"],
+      "@smartnippo/lib": ["packages/lib/src"],
+      "@smartnippo/lib/*": ["packages/lib/src/*"]
     },
     "jsx": "react-jsx",
     "jsxImportSource": "react",

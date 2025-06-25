@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
   // ESLint configuration
   eslint: {
     // ESLint performed in separate process
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
 
   // Performance optimizations

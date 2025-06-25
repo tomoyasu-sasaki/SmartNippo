@@ -245,7 +245,7 @@ export function validateSocialLinks(links: SocialLink[]): {
     const normalizedLink: SocialLink = {
       ...link,
       url: urlValidation.normalizedUrl ?? link.url,
-      username: link.username ?? extractUsernameFromUrl(link.platform, link.url) ?? undefined,
+      username: link.username ?? extractUsernameFromUrl(link.platform, link.url) ?? null,
       displayOrder: link.displayOrder ?? i,
     };
 
@@ -312,7 +312,7 @@ export function getSocialLinkPreview(link: SocialLink): SocialLinkPreview {
     platform: link.platform,
     platformName: platformConfig.name,
     url: link.url,
-    username: link.username ?? undefined,
+    username: link.username ?? '',
     icon: getSocialIcon(link.platform),
     color: colorMap[link.platform],
   };

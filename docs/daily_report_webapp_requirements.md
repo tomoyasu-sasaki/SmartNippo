@@ -18,18 +18,18 @@
 
 ## 2. システム構成
 
-| レイヤ        | 技術                                 | 補足                                     |
-| ------------- | ------------------------------------ | ---------------------------------------- |
-| モバイル      | **Expo (React Native/TS)**           | OTA 更新／EAS Build、NativeWind v4       |
+| レイヤ        | 技術                                 | 補足                                         |
+| ------------- | ------------------------------------ | -------------------------------------------- |
+| モバイル      | **Expo (React Native/TS)**           | OTA 更新／EAS Build、NativeWind v4           |
 | Web           | **Next.js 15.1.3 (App Router)**      | RSC優先、React 19対応、Cloudflare Pages 配信 |
-| UI System     | **shadcn/ui + Tailwind CSS v4.1.10** | 統一デザインシステム、lucide-react icons |
-| BaaS          | **Convex**                           | DB + Edge Functions + ACL                |
-| 認証          | **Clerk**                            | ソーシャルログイン、Magic Link、MFA対応   |
-| AI            | **Mastra GPT‑4o**                    | 要約・QA・改善提案 API                   |
-| 状態管理      | **useSWR + nuqs + React Context**    | 楽観的更新、URL状態、最小グローバル状態  |
-| CDN & Storage | Cloudflare Pages / R2                |                                          |
-| モニタリング  | Sentry + Convex logs export          |                                          |
-| CI/CD         | GitHub Actions + Turborepo + EAS CLI |                                          |
+| UI System     | **shadcn/ui + Tailwind CSS v4.1.10** | 統一デザインシステム、lucide-react icons     |
+| BaaS          | **Convex**                           | DB + Edge Functions + ACL                    |
+| 認証          | **Clerk**                            | ソーシャルログイン、Magic Link、MFA対応      |
+| AI            | **Mastra GPT‑4o**                    | 要約・QA・改善提案 API                       |
+| 状態管理      | **useSWR + nuqs + React Context**    | 楽観的更新、URL状態、最小グローバル状態      |
+| CDN & Storage | Cloudflare Pages / R2                |                                              |
+| モニタリング  | Sentry + Convex logs export          |                                              |
+| CI/CD         | GitHub Actions + Turborepo + EAS CLI |                                              |
 
 ---
 
@@ -61,15 +61,23 @@ erDiagram
     text reportDate
     text title
     text content
-    text status "draft|submitted|approved"
+    text status "draft|submitted|approved|rejected"
     text summary
-    array tasks
-    array attachments
-    object metadata
+    text aiSummaryStatus "pending|processing|completed|failed"
+    array tasks "with estimatedHours, actualHours, category"
+    array attachments "with uploadedAt, description, metadata"
+    object metadata "version, previousReportId, template, difficulty, achievements, challenges, learnings, nextActionItems"
     boolean isDeleted
     uuid orgId FK
     timestamptz created_at
     timestamptz updated_at
+    timestamptz submittedAt
+    timestamptz approvedAt
+    timestamptz rejectedAt
+    text rejectionReason
+    array editHistory "timestamp, field, oldValue, newValue"
+    timestamptz deletedAt
+    uuid deletedBy FK
   }
   comments {
     uuid id PK
@@ -92,6 +100,15 @@ erDiagram
     json payload
     timestamptz created_at
     uuid org_id
+  }
+  schema_versions {
+    uuid id PK
+    number version
+    text name
+    text description
+    text rollbackScript
+    timestamptz appliedAt
+    uuid appliedBy FK
   }
   orgs ||--o{ users : "has"
   users ||--o{ reports : "creates"
@@ -125,9 +142,13 @@ erDiagram
 | 更新 | author or admin | `updateReport`        |
 | 削除 | author or admin | `deleteReport (soft)` |
 | 承認 | manager 以上    | `approveReport`       |
+| 拒否 | manager 以上    | `rejectReport`        |
+| 検証 | システム        | `validateReport`      |
+| 復旧 | admin のみ      | `restoreReport`       |
 
-**Note**: Next.js 15.1.3 App Router (React 19対応) では API Routes を使用せず、Convex
-mutations/queries を直接使用。Server Components優先でSSR最適化
+**Note**: Next.js 15.1.3 App Router (React 19対応) では API
+Routes を使用せず、Convex mutations/queries を直接使用。Server
+Components優先でSSR最適化
 
 ### 4.3 コメント & AI
 
@@ -142,8 +163,14 @@ mutations/queries を直接使用。Server Components優先でSSR最適化
 
 ### 4.5 バックアップ / DR
 
-- Convex export → Cloudflare R2 へ 1 日 1 回 JSON スナップショット (RPO ≤24h)
-- 復旧手順: export → import (RTO ≤4h)
+- **自動バックアップ**: 24時間間隔でフルバックアップ、増分バックアップ対応
+- **スキーマバージョニング**: `schema_versions` テーブルでマイグレーション管理
+- **データ整合性**: チェックサム生成・検証による整合性保証
+- **復旧手順**:
+  5段階復旧プロセス（バックアップ確認→システム停止→復旧→検証→再開）
+- **保持期間**: 30日分のバックアップを保持、90日後自動削除
+- **バリデーション**: サーバーサイドデータバリデーション、エラーログ記録
+- 目標: RPO ≤24h, RTO ≤4h
 
 ### 4.6 国際化 (i18n)
 
@@ -179,8 +206,9 @@ mutations/queries を直接使用。Server Components優先でSSR最適化
 
 ## 6. パフォーマンス & モニタリング
 
-- **Web**: Next.js 15.1.3 App Router RSC + React 19, Cloudflare Pages Edge キャッシュ, `next/image`
-  で画像最適化, shadcn/ui + Tailwind CSS v4.1.10 コンポーネント最適化
+- **Web**: Next.js 15.1.3 App Router RSC + React 19, Cloudflare Pages
+  Edge キャッシュ, `next/image` で画像最適化, shadcn/ui + Tailwind CSS
+  v4.1.10 コンポーネント最適化
 - **Mobile**: NativeWind v4, bundle splitting, Hermes + RAM bundles,
   lucide-react-native アイコン最適化
 - **状態管理**: useSWR 楽観的更新, nuqs URL状態管理, React Context 最小構成

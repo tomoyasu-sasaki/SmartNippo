@@ -4,7 +4,6 @@
 export const version = '0.1.0';
 
 // Re-export Convex types (conditional export based on availability)
-// export type { Doc, Id } from "convex/values";
 
 // Convex document base type
 export type ConvexDocument<T = Record<string, unknown>> = T & {

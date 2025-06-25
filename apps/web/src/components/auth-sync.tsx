@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
-import { api } from '../../../../convex/_generated/api';
+import { useEffect } from 'react';
 
 export function AuthSync() {
   const { isLoaded, isSignedIn, user } = useUser();

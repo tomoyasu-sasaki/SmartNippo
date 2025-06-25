@@ -18,7 +18,9 @@ config.resolver.disableHierarchicalLookup = false;
 
 // convexディレクトリへのalias設定
 config.resolver.alias = {
-  'convex': path.resolve(workspaceRoot, 'convex'),
+  convex: path.resolve(workspaceRoot, 'convex'),
+  '@smartnippo/lib': path.resolve(workspaceRoot, 'packages/lib/src'),
+  '@smartnippo/types': path.resolve(workspaceRoot, 'packages/types/src'),
 };
 
 module.exports = withNativeWind(config, { input: './global.css' });
