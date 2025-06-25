@@ -2,7 +2,7 @@
 
 import { CircleUser, Menu, Package2 } from 'lucide-react';
 
-import { Button } from '../components/button';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,8 +10,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../components/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '../components/sheet';
+} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export function Header() {
   return (
