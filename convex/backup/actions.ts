@@ -8,8 +8,8 @@
  */
 
 import { v } from 'convex/values';
-import { api } from '../_generated/api';
-import { action, mutation } from '../_generated/server';
+import { internal } from '../_generated/api';
+import { action, internalMutation } from '../_generated/server';
 import type { BackupMetadata } from './config';
 import { collectAllTableData, collectIncrementalData, generateChecksum } from './helpers';
 
@@ -77,7 +77,7 @@ export const createFullBackup = action({
       };
 
       // バックアップ記録をaudit_logsに保存
-      await ctx.runMutation(api.index.recordBackupEvent, {
+      await ctx.runMutation(internal.backup.actions.recordBackupEvent, {
         eventType: 'backup_started',
         metadata,
         details: 'Full backup initiated',
@@ -89,7 +89,7 @@ export const createFullBackup = action({
       console.log(`Backup completed in ${duration}ms`);
 
       // 完了記録
-      await ctx.runMutation(api.index.recordBackupEvent, {
+      await ctx.runMutation(internal.backup.actions.recordBackupEvent, {
         eventType: 'backup_completed',
         metadata,
         details: `Backup completed successfully in ${Math.round(duration / 1000)}s`,
@@ -105,7 +105,7 @@ export const createFullBackup = action({
     } catch (error) {
       console.error('Backup failed:', error);
 
-      await ctx.runMutation(api.index.recordBackupEvent, {
+      await ctx.runMutation(internal.backup.actions.recordBackupEvent, {
         eventType: 'backup_failed',
         metadata: { timestamp: backupStartTime, error: String(error) },
         details: `Backup failed: ${String(error)}`,
@@ -182,7 +182,7 @@ export const createIncrementalBackup = action({
 
       const duration = Date.now() - backupStartTime;
 
-      await ctx.runMutation(api.index.recordBackupEvent, {
+      await ctx.runMutation(internal.backup.actions.recordBackupEvent, {
         eventType: 'incremental_backup_completed',
         metadata,
         details: `Incremental backup completed in ${Math.round(duration / 1000)}s`,
@@ -293,7 +293,7 @@ export const verifyBackupIntegrity = action({
  * ```
  * @since 1.0.0
  */
-export const recordBackupEvent = mutation({
+export const recordBackupEvent = internalMutation({
   args: {
     eventType: v.string(),
     metadata: v.any(),

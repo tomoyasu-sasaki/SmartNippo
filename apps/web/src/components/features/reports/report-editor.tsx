@@ -143,6 +143,14 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
     setPendingValues(null);
   };
 
+  const processSubmit = (values: ReportFormValues, event?: React.BaseSyntheticEvent) => {
+    // `submitter`プロパティにアクセスするために、nativeEventをSubmitEventにキャストする必要があります
+    const submitter = (event?.nativeEvent as SubmitEvent)?.submitter as HTMLButtonElement | null;
+    const submitType = (submitter?.name as 'draft' | 'submit') ?? 'draft';
+    setSubmitType(submitType);
+    handleFormSubmit(values, submitType);
+  };
+
   const handleFormSubmit = async (values: ReportFormValues, submitType: 'draft' | 'submit') => {
     try {
       setIsSubmitting(true);
@@ -283,7 +291,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
 
         {/* フォーム */}
         <Form {...form}>
-          <form onSubmit={(e) => e.preventDefault()} className='space-y-6'>
+          <form onSubmit={form.handleSubmit(processSubmit)} className='space-y-6'>
             <Card>
               <CardHeader>
                 <CardTitle>基本情報</CardTitle>
@@ -427,25 +435,19 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                 キャンセル
               </Button>
               <Button
-                type='button'
+                type='submit'
+                name='draft'
                 variant='outline'
                 disabled={isSubmitting}
-                onClick={() => {
-                  setSubmitType('draft');
-                  form.handleSubmit((values) => handleFormSubmit(values, 'draft'))();
-                }}
                 loading={isSubmitting && submitType === 'draft'}
               >
                 <Save className='h-4 w-4 mr-2' />
                 下書き保存
               </Button>
               <Button
-                type='button'
+                type='submit'
+                name='submit'
                 disabled={isSubmitting}
-                onClick={() => {
-                  setSubmitType('submit');
-                  form.handleSubmit((values) => handleFormSubmit(values, 'submit'))();
-                }}
                 loading={isSubmitting && submitType === 'submit'}
               >
                 <Send className='h-4 w-4 mr-2' />
