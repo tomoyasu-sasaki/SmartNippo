@@ -48,7 +48,10 @@ function ReportSearchContent() {
   const debouncedQuery = useDebounce(query, 300);
   const [isPending, startTransition] = useTransition();
 
-  const searchResults = useQuery(api.index.searchReports, query ? { searchQuery: query } : 'skip');
+  const searchResults = useQuery(
+    api.index.searchReports,
+    debouncedQuery ? { searchQuery: debouncedQuery } : 'skip'
+  );
 
   // Effect to handle closing the dialog
   useEffect(() => {

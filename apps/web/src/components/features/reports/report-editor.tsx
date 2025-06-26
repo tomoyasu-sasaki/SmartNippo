@@ -427,15 +427,24 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                 キャンセル
               </Button>
               <Button
-                type='submit'
+                type='button'
                 variant='outline'
                 disabled={isSubmitting}
-                onClick={() => setSubmitType('draft')}
+                onClick={() => {
+                  setSubmitType('draft');
+                  form.handleSubmit(onSubmit)();
+                }}
+                loading={isSubmitting && submitType === 'draft'}
               >
                 <Save className='h-4 w-4 mr-2' />
                 下書き保存
               </Button>
-              <Button type='submit' disabled={isSubmitting} onClick={() => setSubmitType('submit')}>
+              <Button
+                type='submit'
+                disabled={isSubmitting}
+                onClick={() => setSubmitType('submit')}
+                loading={isSubmitting && submitType === 'submit'}
+              >
                 <Send className='h-4 w-4 mr-2' />
                 提出
               </Button>
