@@ -70,8 +70,7 @@ const getAuthConfig = (): AuthProvider => {
   // 設定の妥当性チェック
   if (!clerkDomain) {
     throw new Error(
-      'NEXT_PUBLIC_CLERK_FRONTEND_API_URL environment variable not set! ' +
-        'Refer to the Convex + Clerk integration documentation.'
+      'Add NEXT_PUBLIC_CLERK_FRONTEND_API_URL, CLERK_FRONTEND_API_URL, or CLERK_DOMAIN to .env.local'
     );
   }
 

@@ -143,7 +143,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
     setPendingValues(null);
   };
 
-  const onSubmit = async (values: ReportFormValues) => {
+  const handleFormSubmit = async (values: ReportFormValues, submitType: 'draft' | 'submit') => {
     try {
       setIsSubmitting(true);
 
@@ -283,7 +283,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
 
         {/* フォーム */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
+          <form onSubmit={(e) => e.preventDefault()} className='space-y-6'>
             <Card>
               <CardHeader>
                 <CardTitle>基本情報</CardTitle>
@@ -432,7 +432,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                 disabled={isSubmitting}
                 onClick={() => {
                   setSubmitType('draft');
-                  form.handleSubmit(onSubmit)();
+                  form.handleSubmit((values) => handleFormSubmit(values, 'draft'))();
                 }}
                 loading={isSubmitting && submitType === 'draft'}
               >
@@ -440,9 +440,12 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                 下書き保存
               </Button>
               <Button
-                type='submit'
+                type='button'
                 disabled={isSubmitting}
-                onClick={() => setSubmitType('submit')}
+                onClick={() => {
+                  setSubmitType('submit');
+                  form.handleSubmit((values) => handleFormSubmit(values, 'submit'))();
+                }}
                 loading={isSubmitting && submitType === 'submit'}
               >
                 <Send className='h-4 w-4 mr-2' />
