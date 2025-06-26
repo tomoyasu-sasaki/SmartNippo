@@ -35,7 +35,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ArrowLeft, CalendarIcon, Plus, Save, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -79,7 +79,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
   const router = useRouter();
   const convex = useConvex();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitType, setSubmitType] = useState<'draft' | 'submit'>('draft');
+  const submitTypeRef = useRef<'draft' | 'submit'>('draft');
   const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<ReportFormValues | null>(null);
 
@@ -119,7 +119,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
           content: pendingValues.content,
           tasks: pendingValues.tasks ?? [],
           reportDate: format(pendingValues.reportDate, 'yyyy-MM-dd'),
-          status: submitType === 'submit' ? 'submitted' : 'draft',
+          status: submitTypeRef.current === 'submit' ? 'submitted' : 'draft',
         });
 
         toast.success('日報を上書き保存しました', {
@@ -143,15 +143,8 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
     setPendingValues(null);
   };
 
-  const processSubmit = (values: ReportFormValues, event?: React.BaseSyntheticEvent) => {
-    // `submitter`プロパティにアクセスするために、nativeEventをSubmitEventにキャストする必要があります
-    const submitter = (event?.nativeEvent as SubmitEvent)?.submitter as HTMLButtonElement | null;
-    const submitType = (submitter?.name as 'draft' | 'submit') ?? 'draft';
-    setSubmitType(submitType);
-    handleFormSubmit(values, submitType);
-  };
-
-  const handleFormSubmit = async (values: ReportFormValues, submitType: 'draft' | 'submit') => {
+  const onSubmit = async (values: ReportFormValues) => {
+    const submitType = submitTypeRef.current;
     try {
       setIsSubmitting(true);
 
@@ -291,7 +284,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
 
         {/* フォーム */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(processSubmit)} className='space-y-6'>
+          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
             <Card>
               <CardHeader>
                 <CardTitle>基本情報</CardTitle>
@@ -439,7 +432,8 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                 name='draft'
                 variant='outline'
                 disabled={isSubmitting}
-                loading={isSubmitting && submitType === 'draft'}
+                onClick={() => (submitTypeRef.current = 'draft')}
+                loading={isSubmitting && submitTypeRef.current === 'draft'}
               >
                 <Save className='h-4 w-4 mr-2' />
                 下書き保存
@@ -448,7 +442,8 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                 type='submit'
                 name='submit'
                 disabled={isSubmitting}
-                loading={isSubmitting && submitType === 'submit'}
+                onClick={() => (submitTypeRef.current = 'submit')}
+                loading={isSubmitting && submitTypeRef.current === 'submit'}
               >
                 <Send className='h-4 w-4 mr-2' />
                 提出
