@@ -1,12 +1,13 @@
 import { ReportsContent } from '@/components/features/reports/reports-content';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { REPORTS_CONSTANTS } from '@/constants/reports';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 export const metadata: Metadata = {
-  title: '日報一覧 | SmartNippo',
-  description: '日報の作成・管理',
+  title: REPORTS_CONSTANTS.META_LIST_TITLE,
+  description: REPORTS_CONSTANTS.META_LIST_DESCRIPTION,
 };
 
 // 日報一覧のスケルトンローダー

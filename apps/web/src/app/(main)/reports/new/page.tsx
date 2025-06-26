@@ -1,11 +1,12 @@
 import { ReportEditor } from '@/components/features/reports/report-editor';
+import { REPORTS_CONSTANTS } from '@/constants/reports';
 import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: '日報作成 | SmartNippo',
-  description: '新しい日報を作成',
+  title: REPORTS_CONSTANTS.META_NEW_TITLE,
+  description: REPORTS_CONSTANTS.META_NEW_DESCRIPTION,
 };
 
 export default async function NewReportPage() {

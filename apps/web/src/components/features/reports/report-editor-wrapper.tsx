@@ -1,14 +1,12 @@
 'use client';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import type { ReportEditorWrapperProps } from '@/types';
 import { api } from 'convex/_generated/api';
-import type { Id } from 'convex/_generated/dataModel';
 import { useQuery } from 'convex/react';
 import { ReportEditor } from './report-editor';
 
-interface ReportEditorWrapperProps {
-  params: { id: Id<'reports'> };
-}
+import { REPORTS_CONSTANTS } from '@/constants/reports';
 
 function ReportEditorSkeleton() {
   return (
@@ -43,7 +41,7 @@ export function ReportEditorWrapper({ params }: ReportEditorWrapperProps) {
   }
 
   if (reportData === null) {
-    return <div>日報が見つかりません。</div>;
+    return <div>{REPORTS_CONSTANTS.NO_REPORTS_MESSAGE}</div>;
   }
 
   return (

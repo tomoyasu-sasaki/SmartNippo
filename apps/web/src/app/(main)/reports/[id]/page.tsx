@@ -1,11 +1,12 @@
 import { ReportDetail } from '@/components/features/reports/report-detail';
+import { REPORTS_CONSTANTS } from '@/constants/reports';
 import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: '日報詳細 | SmartNippo',
-  description: '日報の詳細を表示',
+  title: REPORTS_CONSTANTS.META_DETAIL_TITLE,
+  description: REPORTS_CONSTANTS.META_DETAIL_DESCRIPTION,
 };
 
 interface ReportDetailPageProps {

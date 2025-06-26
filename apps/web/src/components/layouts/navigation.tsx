@@ -8,6 +8,7 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
+import { LAYOUT_CONSTANTS } from '@/constants/layout';
 import { cn } from '@/lib/utils';
 import { SignedIn, SignedOut, UserButton, useAuth } from '@clerk/nextjs';
 import { BarChart3, FileText, Home, User } from 'lucide-react';
@@ -30,7 +31,7 @@ export function Navigation() {
         <div className='flex items-center gap-6'>
           <Link href={isSignedIn ? '/dashboard' : '/'} className='flex items-center gap-2'>
             <FileText className='h-6 w-6' />
-            <span className='text-xl font-bold'>SmartNippo</span>
+            <span className='text-xl font-bold'>{LAYOUT_CONSTANTS.APP_NAME}</span>
           </Link>
 
           <SignedIn>
@@ -46,7 +47,7 @@ export function Navigation() {
                       )}
                     >
                       <Home className='mr-2 h-4 w-4' />
-                      ダッシュボード
+                      {LAYOUT_CONSTANTS.NAV_LINKS.DASHBOARD}
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -61,7 +62,7 @@ export function Navigation() {
                       )}
                     >
                       <FileText className='mr-2 h-4 w-4' />
-                      日報
+                      {LAYOUT_CONSTANTS.NAV_LINKS.REPORTS}
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -76,7 +77,7 @@ export function Navigation() {
                       )}
                     >
                       <User className='mr-2 h-4 w-4' />
-                      プロフィール
+                      {LAYOUT_CONSTANTS.NAV_LINKS.PROFILE}
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -93,7 +94,7 @@ export function Navigation() {
                       onClick={(e: React.MouseEvent) => e.preventDefault()}
                     >
                       <BarChart3 className='mr-2 h-4 w-4' />
-                      分析（準備中）
+                      {LAYOUT_CONSTANTS.NAV_LINKS.ANALYTICS}
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -105,7 +106,7 @@ export function Navigation() {
         <div className='flex items-center gap-4'>
           <SignedOut>
             <Link href='/'>
-              <Button>ログイン</Button>
+              <Button>{LAYOUT_CONSTANTS.LOGIN_BUTTON}</Button>
             </Link>
           </SignedOut>
           <SignedIn>

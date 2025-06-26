@@ -20,6 +20,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
+import { PROFILE_CONSTANTS } from '@/constants/profile';
 import { profileFormSchema, type ProfileFormData } from '@smartnippo/lib';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
@@ -73,15 +74,15 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
 
       await updateProfile(updateData);
 
-      toast.success('プロフィールを更新しました');
+      toast.success(PROFILE_CONSTANTS.UPDATE_SUCCESS_MESSAGE);
       onSuccess?.();
     } catch (error) {
       // console.error('Profile update error:', error);
 
       if (error instanceof Error && error.message.includes('updated by another process')) {
-        toast.error('プロフィールが他の場所で更新されています。画面を再読み込みしてください。');
+        toast.error(PROFILE_CONSTANTS.UPDATE_CONFLICT_ERROR_MESSAGE);
       } else {
-        toast.error('プロフィールの更新に失敗しました');
+        toast.error(PROFILE_CONSTANTS.UPDATE_GENERAL_ERROR_MESSAGE);
       }
     } finally {
       setIsLoading(false);
@@ -106,14 +107,14 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
             name='avatarUrl'
             render={({ field }) => (
               <FormItem className='flex-1'>
-                <FormLabel>プロフィール画像</FormLabel>
+                <FormLabel>{PROFILE_CONSTANTS.AVATAR_LABEL}</FormLabel>
                 <FormControl>
                   <AvatarUpload
                     avatarUrl={field.value ?? initialData.avatarUrl ?? ''}
                     onUpload={(result: { url: string }) => {
                       // アップロード成功時の処理
                       field.onChange(result.url);
-                      toast.success('画像がアップロードされました');
+                      toast.success(PROFILE_CONSTANTS.AVATAR_UPLOAD_SUCCESS_MESSAGE);
                     }}
                     onRemove={() => {
                       field.onChange(undefined);
@@ -121,9 +122,7 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
                     disabled={isLoading}
                   />
                 </FormControl>
-                <FormDescription>
-                  プロフィール画像をアップロードまたはドラッグ&ドロップしてください
-                </FormDescription>
+                <FormDescription>{PROFILE_CONSTANTS.AVATAR_DESCRIPTION}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -135,11 +134,15 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
           name='name'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>名前</FormLabel>
+              <FormLabel>{PROFILE_CONSTANTS.NAME_LABEL}</FormLabel>
               <FormControl>
-                <Input placeholder='名前を入力してください' {...field} disabled={isLoading} />
+                <Input
+                  placeholder={PROFILE_CONSTANTS.NAME_PLACEHOLDER}
+                  {...field}
+                  disabled={isLoading}
+                />
               </FormControl>
-              <FormDescription>表示名として使用されます</FormDescription>
+              <FormDescription>{PROFILE_CONSTANTS.NAME_DESCRIPTION}</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -148,17 +151,25 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
         <div className='space-y-4'>
           <div className='grid grid-cols-2 gap-4'>
             <div>
-              <label className='text-sm font-medium text-gray-500'>Email</label>
-              <p className='text-sm text-gray-900'>{initialData.email ?? 'Not set'}</p>
+              <label className='text-sm font-medium text-gray-500'>
+                {PROFILE_CONSTANTS.EMAIL_LABEL}
+              </label>
+              <p className='text-sm text-gray-900'>
+                {initialData.email ?? PROFILE_CONSTANTS.EMAIL_NOT_SET}
+              </p>
             </div>
             <div>
-              <label className='text-sm font-medium text-gray-500'>Role</label>
+              <label className='text-sm font-medium text-gray-500'>
+                {PROFILE_CONSTANTS.ROLE_LABEL}
+              </label>
               <p className='text-sm text-gray-900 capitalize'>{initialData.role}</p>
             </div>
           </div>
 
           <div>
-            <label className='text-sm font-medium text-gray-500'>Member Since</label>
+            <label className='text-sm font-medium text-gray-500'>
+              {PROFILE_CONSTANTS.MEMBER_SINCE_LABEL}
+            </label>
             <p className='text-sm text-gray-900'>
               {new Date(initialData.created_at).toLocaleDateString()}
             </p>
@@ -167,7 +178,7 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
 
         <Button type='submit' disabled={isLoading}>
           {isLoading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-          プロフィールを更新
+          {PROFILE_CONSTANTS.SUBMIT_BUTTON_TEXT}
         </Button>
       </form>
     </Form>

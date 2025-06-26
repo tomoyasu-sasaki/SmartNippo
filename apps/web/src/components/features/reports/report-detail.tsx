@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
 import { useAuth } from '@clerk/nextjs';
 import { api } from 'convex/_generated/api';
-import type { Doc, Id } from 'convex/_generated/dataModel';
+import type { Doc } from 'convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -41,9 +41,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-interface ReportDetailProps {
-  reportId: Id<'reports'>;
-}
+import { REPORTS_CONSTANTS } from '@/constants/reports';
+import type { ReportDetailProps } from '@/types';
 
 function ReportDetailInner({ reportId }: ReportDetailProps) {
   const router = useRouter();
@@ -68,7 +67,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       <div className='flex items-center justify-center h-full'>
         <div className='text-center'>
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto' />
-          <p className='mt-2 text-gray-600'>読み込み中...</p>
+          <p className='mt-2 text-gray-600'>{REPORTS_CONSTANTS.LOADING_MESSAGE}</p>
         </div>
       </div>
     );
@@ -81,7 +80,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
 
     try {
       setIsSubmittingComment(true);
-      const toastId = toast.loading('コメントを送信しています...');
+      const toastId = toast.loading(REPORTS_CONSTANTS.COMMENT_SUBMITTING);
 
       await addComment({
         reportId,
@@ -89,13 +88,13 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       });
 
       setNewComment('');
-      toast.success('コメントを送信しました', {
+      toast.success(REPORTS_CONSTANTS.COMMENT_SUBMIT_SUCCESS, {
         id: toastId,
       });
     } catch (error) {
       console.error('Failed to add comment:', error);
-      toast.error('コメントの送信に失敗しました', {
-        description: '問題が続く場合は、管理者にお問い合わせください。',
+      toast.error(REPORTS_CONSTANTS.COMMENT_SUBMIT_ERROR, {
+        description: REPORTS_CONSTANTS.GENERIC_ERROR_DESC,
       });
     } finally {
       setIsSubmittingComment(false);
@@ -105,21 +104,21 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
   const handleApprove = async () => {
     try {
       setIsSubmittingAction(true);
-      const toastId = toast.loading('日報を承認しています...');
+      const toastId = toast.loading(REPORTS_CONSTANTS.APPROVE_SUBMITTING);
 
       await approveReport({ reportId });
 
-      toast.success('日報を承認しました', {
+      toast.success(REPORTS_CONSTANTS.APPROVE_SUCCESS, {
         id: toastId,
-        description: '作成者に通知されました。',
+        description: REPORTS_CONSTANTS.APPROVE_SUCCESS_DESC,
       });
     } catch (error) {
       console.error('Failed to approve report:', error);
-      toast.error('日報の承認に失敗しました', {
+      toast.error(REPORTS_CONSTANTS.APPROVE_ERROR, {
         description:
           error instanceof Error && error.message.includes('permission')
-            ? 'この操作を実行する権限がありません。'
-            : '問題が続く場合は、管理者にお問い合わせください。',
+            ? REPORTS_CONSTANTS.PERMISSION_ERROR_DESC
+            : REPORTS_CONSTANTS.GENERIC_ERROR_DESC,
       });
     } finally {
       setIsSubmittingAction(false);
@@ -129,21 +128,21 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
   const handleReject = async (reason: string) => {
     try {
       setIsSubmittingAction(true);
-      const toastId = toast.loading('日報を却下しています...');
+      const toastId = toast.loading(REPORTS_CONSTANTS.REJECT_SUBMITTING);
 
       await rejectReport({ reportId, reason });
 
-      toast.success('日報を却下しました', {
+      toast.success(REPORTS_CONSTANTS.REJECT_SUCCESS, {
         id: toastId,
-        description: '作成者に理由が通知されました。',
+        description: REPORTS_CONSTANTS.REJECT_SUCCESS_DESC,
       });
     } catch (error) {
       console.error('Failed to reject report:', error);
-      toast.error('日報の却下に失敗しました', {
+      toast.error(REPORTS_CONSTANTS.REJECT_ERROR, {
         description:
           error instanceof Error && error.message.includes('permission')
-            ? 'この操作を実行する権限がありません。'
-            : '問題が続く場合は、管理者にお問い合わせください。',
+            ? REPORTS_CONSTANTS.PERMISSION_ERROR_DESC
+            : REPORTS_CONSTANTS.GENERIC_ERROR_DESC,
       });
     } finally {
       setIsSubmittingAction(false);
@@ -153,22 +152,22 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
   const handleDelete = async () => {
     try {
       setIsSubmittingAction(true);
-      const toastId = toast.loading('日報を削除しています...');
+      const toastId = toast.loading(REPORTS_CONSTANTS.DELETE_SUBMITTING);
 
       await deleteReport({ reportId });
 
-      toast.success('日報を削除しました', {
+      toast.success(REPORTS_CONSTANTS.DELETE_SUCCESS, {
         id: toastId,
       });
 
       router.push('/reports');
     } catch (error) {
       console.error('Failed to delete report:', error);
-      toast.error('日報の削除に失敗しました', {
+      toast.error(REPORTS_CONSTANTS.DELETE_ERROR, {
         description:
           error instanceof Error && error.message.includes('permission')
-            ? 'この操作を実行する権限がありません。'
-            : '問題が続く場合は、管理者にお問い合わせください。',
+            ? REPORTS_CONSTANTS.PERMISSION_ERROR_DESC
+            : REPORTS_CONSTANTS.GENERIC_ERROR_DESC,
       });
     } finally {
       setIsSubmittingAction(false);
@@ -178,7 +177,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
   const handleSubmit = async () => {
     try {
       setIsSubmittingAction(true);
-      const toastId = toast.loading('日報を提出しています...');
+      const toastId = toast.loading(REPORTS_CONSTANTS.SUBMIT_SUBMITTING);
 
       await updateReport({
         reportId,
@@ -186,23 +185,23 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
         status: 'submitted',
       });
 
-      toast.success('日報を提出しました', {
+      toast.success(REPORTS_CONSTANTS.SUBMIT_SUCCESS, {
         id: toastId,
-        description: '承認者に通知されました。',
+        description: REPORTS_CONSTANTS.SUBMIT_SUCCESS_DESC,
       });
     } catch (error) {
       console.error('Failed to submit report:', error);
 
-      let errorMessage = '日報の提出に失敗しました';
+      let errorMessage = '';
+      errorMessage = REPORTS_CONSTANTS.SUBMIT_ERROR;
       if (error instanceof Error) {
         if (error.message.includes('conflict') || error.message.includes('concurrency')) {
-          errorMessage =
-            '他のユーザーが同時に編集したため、提出に失敗しました。ページを更新してください。';
+          errorMessage = REPORTS_CONSTANTS.SUBMIT_CONFLICT_ERROR;
         }
       }
 
       toast.error(errorMessage, {
-        description: '問題が続く場合は、管理者にお問い合わせください。',
+        description: REPORTS_CONSTANTS.GENERIC_ERROR_DESC,
       });
     } finally {
       setIsSubmittingAction(false);
@@ -210,13 +209,13 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
-      draft: { variant: 'outline' as const, label: '下書き' },
-      submitted: { variant: 'secondary' as const, label: '提出済み' },
-      approved: { variant: 'default' as const, label: '承認済み' },
-      rejected: { variant: 'destructive' as const, label: '却下' },
+    const statusMap: Record<string, { variant: any; label: string }> = {
+      draft: REPORTS_CONSTANTS.STATUS.draft,
+      submitted: REPORTS_CONSTANTS.STATUS.submitted,
+      approved: REPORTS_CONSTANTS.STATUS.approved,
+      rejected: REPORTS_CONSTANTS.STATUS.rejected,
     };
-    return variants[status] ?? { variant: 'outline', label: status };
+    return statusMap[status] ?? { variant: 'outline', label: status };
   };
 
   const statusInfo = getStatusBadge(report.status);
@@ -228,10 +227,10 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
         <div className='flex items-center gap-4'>
           <Button variant='ghost' size='sm' onClick={() => router.back()}>
             <ArrowLeft className='h-4 w-4 mr-2' />
-            戻る
+            {REPORTS_CONSTANTS.BACK_BUTTON}
           </Button>
           <div>
-            <h1 className='text-3xl font-bold'>日報詳細</h1>
+            <h1 className='text-3xl font-bold'>{REPORTS_CONSTANTS.DETAIL_PAGE_TITLE}</h1>
             <p className='text-gray-600 mt-1'>
               {format(new Date(report.reportDate), 'yyyy年M月d日（E）', {
                 locale: ja,
@@ -246,12 +245,12 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
               <Link href={`/reports/${reportId}/edit`}>
                 <Button variant='outline' size='sm'>
                   <Edit className='h-4 w-4 mr-2' />
-                  編集
+                  {REPORTS_CONSTANTS.EDIT_BUTTON}
                 </Button>
               </Link>
               <Button size='sm' onClick={handleSubmit} disabled={isSubmittingAction}>
                 <Send className='h-4 w-4 mr-2' />
-                提出
+                {REPORTS_CONSTANTS.SUBMIT_BUTTON}
               </Button>
             </>
           )}
@@ -265,11 +264,13 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
           <div className='flex items-center gap-4 text-sm text-gray-500'>
             <div className='flex items-center gap-1'>
               <User className='h-4 w-4' />
-              作成者: {report.author?.name ?? 'Unknown'}
+              {REPORTS_CONSTANTS.AUTHOR_PREFIX}:{' '}
+              {report.author?.name ?? REPORTS_CONSTANTS.UNKNOWN_AUTHOR}
             </div>
             <div className='flex items-center gap-1'>
               <Clock className='h-4 w-4' />
-              作成日時: {format(new Date(report.created_at), 'yyyy/MM/dd HH:mm')}
+              {REPORTS_CONSTANTS.CREATED_AT_PREFIX}:{' '}
+              {format(new Date(report.created_at), 'yyyy/MM/dd HH:mm')}
             </div>
           </div>
         </CardHeader>
@@ -282,9 +283,12 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       {report.tasks.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>タスク</CardTitle>
+            <CardTitle>{REPORTS_CONSTANTS.TASKS_CARD_TITLE}</CardTitle>
             <CardDescription>
-              {report.stats.completedTasks} / {report.stats.totalTasks} 完了
+              {REPORTS_CONSTANTS.TASKS_COMPLETED_STATUS(
+                report.stats.completedTasks,
+                report.stats.totalTasks
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -306,11 +310,13 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                   </span>
                   {task.estimatedHours && (
                     <span className='ml-auto text-sm text-gray-500'>
-                      予定: {task.estimatedHours}h
+                      {REPORTS_CONSTANTS.TASK_ESTIMATED_HOURS}: {task.estimatedHours}h
                     </span>
                   )}
                   {task.actualHours && (
-                    <span className='text-sm text-gray-500'>実績: {task.actualHours}h</span>
+                    <span className='text-sm text-gray-500'>
+                      {REPORTS_CONSTANTS.TASK_ACTUAL_HOURS}: {task.actualHours}h
+                    </span>
                   )}
                 </div>
               ))}
@@ -321,12 +327,12 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
 
       {/* AI要約 */}
       <div className='mt-6'>
-        <h3 className='text-lg font-semibold mb-2'>AI Summary</h3>
+        <h3 className='text-lg font-semibold mb-2'>{REPORTS_CONSTANTS.AI_SUMMARY_TITLE}</h3>
         <Card>
           <CardContent className='p-4'>
             <ErrorBoundaryProvider>
               <p className='text-gray-700 whitespace-pre-wrap'>
-                {report.summary ?? 'AI summary is not available yet.'}
+                {report.summary ?? REPORTS_CONSTANTS.AI_SUMMARY_NOT_AVAILABLE}
               </p>
             </ErrorBoundaryProvider>
           </CardContent>
@@ -337,7 +343,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       {report.approvals.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>承認履歴</CardTitle>
+            <CardTitle>{REPORTS_CONSTANTS.APPROVAL_HISTORY_CARD_TITLE}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className='space-y-3'>
@@ -348,7 +354,9 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                     <AvatarFallback>{approval.manager?.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className='text-sm font-medium'>{approval.manager?.name} が承認しました</p>
+                    <p className='text-sm font-medium'>
+                      {REPORTS_CONSTANTS.APPROVAL_ACTION_TEXT(approval.manager?.name)}
+                    </p>
                     <p className='text-xs text-gray-500'>
                       {format(new Date(approval.approved_at), 'yyyy/MM/dd HH:mm')}
                     </p>
@@ -363,8 +371,10 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       {/* コメント */}
       <Card>
         <CardHeader>
-          <CardTitle>コメント</CardTitle>
-          <CardDescription>{report.comments.length} 件のコメント</CardDescription>
+          <CardTitle>{REPORTS_CONSTANTS.COMMENTS_CARD_TITLE}</CardTitle>
+          <CardDescription>
+            {REPORTS_CONSTANTS.COMMENTS_COUNT(report.comments.length)}
+          </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
           {report.comments.map((comment: any) => (
@@ -384,13 +394,15 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
               </Avatar>
               <div className='flex-1'>
                 <div className='flex items-center gap-2'>
-                  <p className='text-sm font-medium'>{comment.author?.name ?? 'システム'}</p>
+                  <p className='text-sm font-medium'>
+                    {comment.author?.name ?? REPORTS_CONSTANTS.COMMENT_AUTHOR_SYSTEM}
+                  </p>
                   <p className='text-xs text-gray-500'>
                     {format(new Date(comment.created_at), 'yyyy/MM/dd HH:mm')}
                   </p>
                   {comment.type === 'system' && (
                     <Badge variant='outline' className='text-xs'>
-                      システム
+                      {REPORTS_CONSTANTS.COMMENT_AUTHOR_SYSTEM}
                     </Badge>
                   )}
                 </div>
@@ -403,7 +415,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
           <Separator />
           <div className='space-y-3'>
             <Textarea
-              placeholder='コメントを入力...'
+              placeholder={REPORTS_CONSTANTS.COMMENT_PLACEHOLDER}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               className='min-h-[80px]'
@@ -415,7 +427,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                 disabled={!newComment.trim() || isSubmittingComment}
               >
                 <MessageSquare className='h-4 w-4 mr-2' />
-                コメントを送信
+                {REPORTS_CONSTANTS.COMMENT_SUBMIT_BUTTON}
               </Button>
             </div>
           </div>
@@ -425,7 +437,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       {/* アクション */}
       <Card>
         <CardHeader>
-          <CardTitle>アクション</CardTitle>
+          <CardTitle>{REPORTS_CONSTANTS.ACTIONS_CARD_TITLE}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className='flex gap-3'>
@@ -433,23 +445,30 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
               <>
                 <Button variant='default' onClick={handleApprove} disabled={isSubmittingAction}>
                   <Check className='h-4 w-4 mr-2' />
-                  承認
+                  {REPORTS_CONSTANTS.ACTION_APPROVE_BUTTON}
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant='destructive' disabled={isSubmittingAction}>
                       <XIcon className='h-4 w-4 mr-2' />
-                      却下
+                      {REPORTS_CONSTANTS.ACTION_REJECT_BUTTON}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>日報を却下しますか？</AlertDialogTitle>
-                      <AlertDialogDescription>却下理由を入力してください</AlertDialogDescription>
+                      <AlertDialogTitle>{REPORTS_CONSTANTS.REJECT_DIALOG.TITLE}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {REPORTS_CONSTANTS.REJECT_DIALOG.DESCRIPTION}
+                      </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <Textarea placeholder='却下理由...' className='min-h-[100px]' />
+                    <Textarea
+                      placeholder={REPORTS_CONSTANTS.REJECT_DIALOG.PLACEHOLDER}
+                      className='min-h-[100px]'
+                    />
                     <AlertDialogFooter>
-                      <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                      <AlertDialogCancel>
+                        {REPORTS_CONSTANTS.REJECT_DIALOG.CANCEL_BUTTON}
+                      </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => {
                           const textarea = document.querySelector(
@@ -460,7 +479,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                           }
                         }}
                       >
-                        却下する
+                        {REPORTS_CONSTANTS.REJECT_DIALOG.CONFIRM_BUTTON}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -472,19 +491,23 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                 <AlertDialogTrigger asChild>
                   <Button variant='destructive' disabled={isSubmittingAction}>
                     <Trash2 className='h-4 w-4 mr-2' />
-                    削除
+                    {REPORTS_CONSTANTS.ACTION_DELETE_BUTTON}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>日報を削除しますか？</AlertDialogTitle>
+                    <AlertDialogTitle>{REPORTS_CONSTANTS.DELETE_DIALOG.TITLE}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      この操作は取り消せません。本当に削除しますか？
+                      {REPORTS_CONSTANTS.DELETE_DIALOG.DESCRIPTION}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>キャンセル</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>削除する</AlertDialogAction>
+                    <AlertDialogCancel>
+                      {REPORTS_CONSTANTS.DELETE_DIALOG.CANCEL_BUTTON}
+                    </AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>
+                      {REPORTS_CONSTANTS.DELETE_DIALOG.CONFIRM_BUTTON}
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

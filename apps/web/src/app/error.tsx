@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { COMMON_CONSTANTS } from '@/constants/common';
 import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect } from 'react';
@@ -25,8 +26,8 @@ export default function GlobalError({
           <div className='flex justify-center mb-4'>
             <AlertTriangle className='h-12 w-12 text-destructive' />
           </div>
-          <CardTitle className='text-2xl'>エラーが発生しました</CardTitle>
-          <CardDescription>申し訳ございません。予期しないエラーが発生しました。</CardDescription>
+          <CardTitle className='text-2xl'>{COMMON_CONSTANTS.ERROR_TITLE}</CardTitle>
+          <CardDescription>{COMMON_CONSTANTS.ERROR_DESCRIPTION}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className='space-y-4'>
@@ -36,17 +37,19 @@ export default function GlobalError({
               </div>
             )}
             {error.digest && (
-              <p className='text-xs text-muted-foreground text-center'>エラーID: {error.digest}</p>
+              <p className='text-xs text-muted-foreground text-center'>
+                {COMMON_CONSTANTS.ERROR_ID_PREFIX} {error.digest}
+              </p>
             )}
             <div className='flex gap-3'>
               <Button onClick={reset} className='flex-1' variant='outline'>
                 <RefreshCw className='h-4 w-4 mr-2' />
-                再試行
+                {COMMON_CONSTANTS.RETRY_BUTTON}
               </Button>
               <Link href='/' className='flex-1'>
                 <Button className='w-full'>
                   <Home className='h-4 w-4 mr-2' />
-                  ホームへ
+                  {COMMON_CONSTANTS.HOME_BUTTON}
                 </Button>
               </Link>
             </div>

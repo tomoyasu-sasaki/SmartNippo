@@ -162,3 +162,6 @@ eas.json
 
 # Turbo
 .turbo
+
+# Convex
+convex/_generated/

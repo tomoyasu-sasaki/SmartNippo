@@ -1,22 +1,10 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, ImageIcon } from 'lucide-react-native';
+import { Camera, User } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-interface AvatarPickerProps {
-  currentAvatarUrl?: string;
-  onImageSelected: (result: {
-    uri: string;
-    width: number;
-    height: number;
-    fileSize: number;
-    mimeType: string;
-    fileName?: string;
-  }) => void;
-  size?: number;
-  disabled?: boolean;
-}
+import { COMPONENT_CONSTANTS } from '../constants/components';
+import type { AvatarPickerProps, ImageResult } from '../types';
 
 export default function AvatarPicker({
   currentAvatarUrl,
@@ -66,7 +54,7 @@ export default function AvatarPicker({
       const response = await fetch(manipulatedImage.uri);
       const blob = await response.blob();
 
-      const result = {
+      const result: ImageResult = {
         uri: manipulatedImage.uri,
         width: manipulatedImage.width,
         height: manipulatedImage.height,
@@ -77,7 +65,10 @@ export default function AvatarPicker({
 
       onImageSelected(result);
     } catch {
-      Alert.alert('エラー', '画像の処理中にエラーが発生しました');
+      Alert.alert(
+        COMPONENT_CONSTANTS.AVATAR_PICKER.ALERTS.ERROR_TITLE,
+        COMPONENT_CONSTANTS.AVATAR_PICKER.ALERTS.ERROR_MESSAGE
+      );
     } finally {
       setProcessing(false);
     }
@@ -88,8 +79,8 @@ export default function AvatarPicker({
 
     if (libraryStatus !== 'granted') {
       Alert.alert(
-        '権限が必要です',
-        'フォトライブラリへのアクセス権限が必要です。設定で許可してください。'
+        COMPONENT_CONSTANTS.AVATAR_PICKER.ALERTS.PERMISSION_LIBRARY_TITLE,
+        COMPONENT_CONSTANTS.AVATAR_PICKER.ALERTS.PERMISSION_LIBRARY_MESSAGE
       );
       return;
     }
@@ -111,7 +102,10 @@ export default function AvatarPicker({
     const { cameraStatus } = await requestPermissions();
 
     if (cameraStatus !== 'granted') {
-      Alert.alert('権限が必要です', 'カメラへのアクセス権限が必要です。設定で許可してください。');
+      Alert.alert(
+        COMPONENT_CONSTANTS.AVATAR_PICKER.ALERTS.PERMISSION_CAMERA_TITLE,
+        COMPONENT_CONSTANTS.AVATAR_PICKER.ALERTS.PERMISSION_CAMERA_MESSAGE
+      );
       return;
     }
 
@@ -128,12 +122,15 @@ export default function AvatarPicker({
 
   const showImagePicker = () => {
     Alert.alert(
-      'アバター画像を選択',
-      '写真の選択方法を選んでください',
+      COMPONENT_CONSTANTS.AVATAR_PICKER.ALERTS.SELECT_TITLE,
+      COMPONENT_CONSTANTS.AVATAR_PICKER.ALERTS.SELECT_MESSAGE,
       [
-        { text: 'キャンセル', style: 'cancel' },
-        { text: 'フォトライブラリ', onPress: pickImageFromLibrary },
-        { text: 'カメラで撮影', onPress: takePhotoWithCamera },
+        { text: COMPONENT_CONSTANTS.AVATAR_PICKER.BUTTONS.CANCEL, style: 'cancel' },
+        {
+          text: COMPONENT_CONSTANTS.AVATAR_PICKER.BUTTONS.PHOTO_LIBRARY,
+          onPress: pickImageFromLibrary,
+        },
+        { text: COMPONENT_CONSTANTS.AVATAR_PICKER.BUTTONS.CAMERA, onPress: takePhotoWithCamera },
       ],
       { cancelable: true }
     );
@@ -153,20 +150,19 @@ export default function AvatarPicker({
           />
         ) : (
           <View style={[styles.placeholder, { width: size, height: size }]}>
-            <ImageIcon size={size * 0.4} color='#9CA3AF' />
+            <User size={size * 0.4} color='#9CA3AF' />
           </View>
         )}
-
-        {!disabled && (
-          <View style={styles.editBadge}>
-            <Camera size={16} color='white' />
-          </View>
-        )}
+        <View style={styles.iconContainer}>
+          <Camera size={16} color='white' />
+        </View>
       </TouchableOpacity>
 
       {processing && (
         <View style={styles.loadingOverlay}>
-          <Text style={styles.loadingText}>処理中...</Text>
+          <Text style={styles.loadingText}>
+            {COMPONENT_CONSTANTS.AVATAR_PICKER.PROCESSING_TEXT}
+          </Text>
         </View>
       )}
     </View>
@@ -226,6 +222,19 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: '500',
+  },
+  iconContainer: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: '#3B82F6',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
   },
 });
 

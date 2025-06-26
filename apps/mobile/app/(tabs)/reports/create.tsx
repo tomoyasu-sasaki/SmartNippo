@@ -20,45 +20,23 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView as SafeAreaViewContext } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import { REPORTS_CONSTANTS } from '../../../constants/reports';
 
 // ステップの定義
-const STEPS = ['基本情報', 'タスク', 'メタデータ'] as const;
+const { STEPS } = REPORTS_CONSTANTS;
 
-// タスクの型定義
-interface Task {
-  id: string;
-  title: string;
-  completed: boolean;
-  priority?: 'low' | 'medium' | 'high';
-  estimatedHours?: number;
-  actualHours?: number;
-  category?: string;
-}
-
-// フォームデータの型定義
-interface FormData {
-  reportDate: string;
-  title: string;
-  content: string;
-  tasks: Task[];
-  metadata: {
-    difficulty?: 'easy' | 'medium' | 'hard';
-    achievements: string[];
-    challenges: string[];
-    learnings: string[];
-    nextActionItems: string[];
-  };
-}
+// 共通型定義をインポート
+import type { ReportFormData, Task } from '../../../types';
 
 // 初期フォームデータ
-const initialFormData: FormData = {
+const initialFormData: ReportFormData = {
   reportDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD形式
   title: '',
   content: '',
@@ -72,18 +50,10 @@ const initialFormData: FormData = {
 };
 
 // 優先度の表示名
-const priorityLabels = {
-  low: '低',
-  medium: '中',
-  high: '高',
-} as const;
+const priorityLabels = REPORTS_CONSTANTS.PRIORITY_LABELS;
 
 // 難易度の表示名
-const difficultyLabels = {
-  easy: '簡単',
-  medium: '普通',
-  hard: '難しい',
-} as const;
+const difficultyLabels = REPORTS_CONSTANTS.DIFFICULTY_LABELS;
 
 // ステップインジケーター
 function StepIndicator({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
@@ -138,7 +108,7 @@ function TaskItem({
           className='flex-1 font-medium text-gray-900'
           value={task.title}
           onChangeText={(text) => onUpdate({ ...task, title: text })}
-          placeholder='タスク名'
+          placeholder={REPORTS_CONSTANTS.CREATE_SCREEN.PLACEHOLDERS.TASK_NAME}
           placeholderTextColor='#9CA3AF'
         />
         <Pressable onPress={onDelete} className='ml-2 p-1'>
@@ -154,7 +124,9 @@ function TaskItem({
           }`}
         >
           <Text className={`text-xs ${task.completed ? 'text-green-700' : 'text-gray-600'}`}>
-            {task.completed ? '完了' : '未完了'}
+            {task.completed
+              ? REPORTS_CONSTANTS.CREATE_SCREEN.TASK_MANAGEMENT.COMPLETED
+              : REPORTS_CONSTANTS.CREATE_SCREEN.TASK_MANAGEMENT.INCOMPLETE}
           </Text>
         </Pressable>
 
@@ -186,7 +158,7 @@ function TaskItem({
           onChangeText={(text) =>
             onUpdate({ ...task, estimatedHours: text ? parseFloat(text) : undefined })
           }
-          placeholder='予定時間'
+          placeholder={REPORTS_CONSTANTS.CREATE_SCREEN.PLACEHOLDERS.ESTIMATED_HOURS}
           keyboardType='numeric'
           placeholderTextColor='#9CA3AF'
         />
@@ -196,7 +168,7 @@ function TaskItem({
           onChangeText={(text) =>
             onUpdate({ ...task, actualHours: text ? parseFloat(text) : undefined })
           }
-          placeholder='実績時間'
+          placeholder={REPORTS_CONSTANTS.CREATE_SCREEN.PLACEHOLDERS.ACTUAL_HOURS}
           keyboardType='numeric'
           placeholderTextColor='#9CA3AF'
         />
@@ -204,7 +176,7 @@ function TaskItem({
           className='flex-1 rounded-md bg-white px-2 py-1 text-xs'
           value={task.category || ''}
           onChangeText={(text) => onUpdate({ ...task, category: text })}
-          placeholder='カテゴリ'
+          placeholder={REPORTS_CONSTANTS.CREATE_SCREEN.PLACEHOLDERS.CATEGORY}
           placeholderTextColor='#9CA3AF'
         />
       </View>
@@ -241,7 +213,7 @@ function MetadataInput({
           className='flex-1 rounded-l-lg bg-white px-3 py-2 text-gray-900'
           value={inputValue}
           onChangeText={setInputValue}
-          placeholder={`${label}を入力`}
+          placeholder={REPORTS_CONSTANTS.CREATE_SCREEN.PLACEHOLDERS.METADATA_INPUT(label)}
           placeholderTextColor='#9CA3AF'
           onSubmitEditing={handleAdd}
         />
@@ -269,8 +241,8 @@ function MetadataInput({
 
 export default function CreateReportScreen() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [formData, setFormData] = useState<ReportFormData>(initialFormData);
+  const [errors, setErrors] = useState<Partial<Record<keyof ReportFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
@@ -288,19 +260,19 @@ export default function CreateReportScreen() {
 
   // バリデーション
   const validateStep = (step: number): boolean => {
-    const newErrors: Partial<Record<keyof FormData, string>> = {};
+    const newErrors: Partial<Record<keyof ReportFormData, string>> = {};
 
     switch (step) {
       case 0: // 基本情報
         if (!formData.title.trim()) {
-          newErrors.title = 'タイトルは必須です';
+          newErrors.title = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.TITLE_REQUIRED;
         } else if (formData.title.length > 200) {
-          newErrors.title = 'タイトルは200文字以内で入力してください';
+          newErrors.title = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.TITLE_TOO_LONG;
         }
         if (!formData.content.trim()) {
-          newErrors.content = '内容は必須です';
+          newErrors.content = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_REQUIRED;
         } else if (formData.content.length > 10000) {
-          newErrors.content = '内容は10000文字以内で入力してください';
+          newErrors.content = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_TOO_LONG;
         }
         break;
       case 1: // タスク
@@ -339,9 +311,11 @@ export default function CreateReportScreen() {
 
     // オフライン時の処理
     if (isConnected === false) {
-      Alert.alert('オフラインです', 'インターネット接続を確認してから再度お試しください。', [
-        { text: 'OK' },
-      ]);
+      Alert.alert(
+        REPORTS_CONSTANTS.CREATE_SCREEN.ALERTS.OFFLINE_TITLE,
+        REPORTS_CONSTANTS.CREATE_SCREEN.ALERTS.OFFLINE_MESSAGE,
+        [{ text: 'OK' }]
+      );
       return;
     }
 
@@ -350,8 +324,8 @@ export default function CreateReportScreen() {
     // 楽観的更新: 即座に成功のフィードバックを表示
     Toast.show({
       type: 'info',
-      text1: '日報を作成中...',
-      text2: '少々お待ちください',
+      text1: REPORTS_CONSTANTS.CREATE_SCREEN.TOAST_MESSAGES.CREATING,
+      text2: REPORTS_CONSTANTS.CREATE_SCREEN.TOAST_MESSAGES.CREATING_SUBTITLE,
       position: 'top',
     });
 
@@ -367,8 +341,8 @@ export default function CreateReportScreen() {
       // 成功時のトースト通知
       Toast.show({
         type: 'success',
-        text1: '日報を作成しました',
-        text2: 'リストページに戻ります',
+        text1: REPORTS_CONSTANTS.CREATE_SCREEN.TOAST_MESSAGES.SUCCESS,
+        text2: REPORTS_CONSTANTS.CREATE_SCREEN.TOAST_MESSAGES.SUCCESS_SUBTITLE,
         position: 'top',
         visibilityTime: 2000,
       });
@@ -384,8 +358,8 @@ export default function CreateReportScreen() {
       if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
         Toast.show({
           type: 'error',
-          text1: 'ネットワークエラー',
-          text2: 'インターネット接続を確認してください',
+          text1: REPORTS_CONSTANTS.CREATE_SCREEN.TOAST_MESSAGES.NETWORK_ERROR,
+          text2: REPORTS_CONSTANTS.CREATE_SCREEN.TOAST_MESSAGES.NETWORK_ERROR_SUBTITLE,
           position: 'top',
           visibilityTime: 4000,
         });
@@ -399,29 +373,29 @@ export default function CreateReportScreen() {
       ) {
         // 競合解決ダイアログを表示
         Alert.alert(
-          'データ競合が発生しました',
-          `${errorMessage}\n\n現在の入力内容を保持して再試行しますか？`,
+          REPORTS_CONSTANTS.CREATE_SCREEN.ALERTS.CONFLICT_TITLE,
+          REPORTS_CONSTANTS.CREATE_SCREEN.ALERTS.CONFLICT_MESSAGE(errorMessage),
           [
             {
-              text: '破棄',
+              text: REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.DISCARD,
               style: 'destructive',
               onPress: () => {
                 Toast.show({
                   type: 'info',
-                  text1: '入力内容を破棄しました',
-                  text2: 'リストページに戻ります',
+                  text1: REPORTS_CONSTANTS.CREATE_SCREEN.TOAST_MESSAGES.DISCARD_INFO,
+                  text2: REPORTS_CONSTANTS.CREATE_SCREEN.TOAST_MESSAGES.DISCARD_INFO_SUBTITLE,
                   position: 'top',
                 });
                 setTimeout(() => router.back(), 1000);
               },
             },
             {
-              text: '再試行',
+              text: REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.RETRY,
               onPress: () => {
                 Toast.show({
                   type: 'info',
-                  text1: '再試行します',
-                  text2: '最新のデータを確認してください',
+                  text1: REPORTS_CONSTANTS.CREATE_SCREEN.TOAST_MESSAGES.RETRY_INFO,
+                  text2: REPORTS_CONSTANTS.CREATE_SCREEN.TOAST_MESSAGES.RETRY_INFO_SUBTITLE,
                   position: 'top',
                 });
                 // 再試行の場合は、ユーザーが手動で再度送信する
@@ -433,7 +407,7 @@ export default function CreateReportScreen() {
         // 通常のエラー時のトースト通知
         Toast.show({
           type: 'error',
-          text1: '日報の作成に失敗しました',
+          text1: REPORTS_CONSTANTS.CREATE_SCREEN.TOAST_MESSAGES.FAILED,
           text2: errorMessage,
           position: 'top',
           visibilityTime: 4000,
@@ -474,7 +448,9 @@ export default function CreateReportScreen() {
         return (
           <View className='space-y-4'>
             <View>
-              <Text className='mb-2 font-medium text-gray-700'>日付</Text>
+              <Text className='mb-2 font-medium text-gray-700'>
+                {REPORTS_CONSTANTS.CREATE_SCREEN.FORM_LABELS.DATE}
+              </Text>
               <View className='flex-row items-center rounded-lg bg-white px-3 py-3'>
                 <Calendar size={20} color='#6B7280' />
                 <Text className='ml-2 text-gray-900'>{formData.reportDate}</Text>
@@ -483,13 +459,16 @@ export default function CreateReportScreen() {
 
             <View>
               <Text className='mb-2 font-medium text-gray-700'>
-                タイトル <Text className='text-red-500'>*</Text>
+                {REPORTS_CONSTANTS.CREATE_SCREEN.FORM_LABELS.TITLE}
+                <Text className='text-red-500'>
+                  {REPORTS_CONSTANTS.CREATE_SCREEN.FORM_LABELS.REQUIRED_MARKER}
+                </Text>
               </Text>
               <TextInput
                 className='rounded-lg bg-white px-3 py-3 text-gray-900'
                 value={formData.title}
                 onChangeText={(text) => setFormData({ ...formData, title: text })}
-                placeholder='今日の作業内容を簡潔に'
+                placeholder={REPORTS_CONSTANTS.CREATE_SCREEN.PLACEHOLDERS.TITLE}
                 placeholderTextColor='#9CA3AF'
               />
               {errors.title && (
@@ -502,13 +481,16 @@ export default function CreateReportScreen() {
 
             <View>
               <Text className='mb-2 font-medium text-gray-700'>
-                内容 <Text className='text-red-500'>*</Text>
+                {REPORTS_CONSTANTS.CREATE_SCREEN.FORM_LABELS.CONTENT}
+                <Text className='text-red-500'>
+                  {REPORTS_CONSTANTS.CREATE_SCREEN.FORM_LABELS.REQUIRED_MARKER}
+                </Text>
               </Text>
               <TextInput
                 className='rounded-lg bg-white px-3 py-3 text-gray-900'
                 value={formData.content}
                 onChangeText={(text) => setFormData({ ...formData, content: text })}
-                placeholder='今日の作業内容を詳しく記入してください'
+                placeholder={REPORTS_CONSTANTS.CREATE_SCREEN.PLACEHOLDERS.CONTENT}
                 placeholderTextColor='#9CA3AF'
                 multiline
                 numberOfLines={6}
@@ -531,20 +513,24 @@ export default function CreateReportScreen() {
         return (
           <View>
             <View className='mb-4 flex-row items-center justify-between'>
-              <Text className='font-medium text-gray-700'>タスク管理</Text>
+              <Text className='font-medium text-gray-700'>
+                {REPORTS_CONSTANTS.CREATE_SCREEN.TASK_MANAGEMENT.TITLE}
+              </Text>
               <Pressable
                 onPress={addTask}
                 className='flex-row items-center rounded-lg bg-blue-500 px-3 py-2 active:bg-blue-600'
               >
                 <Plus size={16} color='white' />
-                <Text className='ml-1 text-sm font-medium text-white'>タスク追加</Text>
+                <Text className='ml-1 text-sm font-medium text-white'>
+                  {REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.ADD_TASK}
+                </Text>
               </Pressable>
             </View>
 
             {formData.tasks.length === 0 ? (
               <View className='rounded-lg bg-gray-50 p-8'>
                 <Text className='text-center text-gray-600'>
-                  タスクを追加して、今日の作業を記録しましょう
+                  {REPORTS_CONSTANTS.CREATE_SCREEN.TASK_MANAGEMENT.EMPTY_STATE}
                 </Text>
               </View>
             ) : (
@@ -566,7 +552,9 @@ export default function CreateReportScreen() {
         return (
           <ScrollView className='max-h-96'>
             <View className='mb-4'>
-              <Text className='mb-2 font-medium text-gray-700'>難易度</Text>
+              <Text className='mb-2 font-medium text-gray-700'>
+                {REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.DIFFICULTY}
+              </Text>
               <View className='flex-row space-x-2'>
                 {(['easy', 'medium', 'hard'] as const).map((difficulty) => (
                   <Pressable
@@ -594,7 +582,7 @@ export default function CreateReportScreen() {
             </View>
 
             <MetadataInput
-              label='成果・達成事項'
+              label={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.ACHIEVEMENTS}
               items={formData.metadata.achievements}
               onAdd={(item) =>
                 setFormData({
@@ -617,7 +605,7 @@ export default function CreateReportScreen() {
             />
 
             <MetadataInput
-              label='課題・困った点'
+              label={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.CHALLENGES}
               items={formData.metadata.challenges}
               onAdd={(item) =>
                 setFormData({
@@ -640,7 +628,7 @@ export default function CreateReportScreen() {
             />
 
             <MetadataInput
-              label='学んだこと'
+              label={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.LEARNINGS}
               items={formData.metadata.learnings}
               onAdd={(item) =>
                 setFormData({
@@ -663,7 +651,7 @@ export default function CreateReportScreen() {
             />
 
             <MetadataInput
-              label='次のアクション'
+              label={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.NEXT_ACTIONS}
               items={formData.metadata.nextActionItems}
               onAdd={(item) =>
                 setFormData({
@@ -695,7 +683,7 @@ export default function CreateReportScreen() {
   };
 
   return (
-    <SafeAreaView className='flex-1 bg-gray-50'>
+    <SafeAreaViewContext className='flex-1 bg-gray-50'>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className='flex-1'
@@ -711,12 +699,16 @@ export default function CreateReportScreen() {
               {isConnected === false ? (
                 <View className='flex-row items-center'>
                   <WifiOff size={16} color='#EF4444' />
-                  <Text className='ml-1 text-xs text-red-600'>オフライン</Text>
+                  <Text className='ml-1 text-xs text-red-600'>
+                    {REPORTS_CONSTANTS.CREATE_SCREEN.NETWORK_STATUS.OFFLINE}
+                  </Text>
                 </View>
               ) : isConnected === true ? (
                 <View className='flex-row items-center'>
                   <Wifi size={16} color='#10B981' />
-                  <Text className='ml-1 text-xs text-green-600'>オンライン</Text>
+                  <Text className='ml-1 text-xs text-green-600'>
+                    {REPORTS_CONSTANTS.CREATE_SCREEN.NETWORK_STATUS.ONLINE}
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -742,7 +734,9 @@ export default function CreateReportScreen() {
                 className='flex-1 flex-row items-center justify-center rounded-lg bg-gray-200 py-3 active:bg-gray-300'
               >
                 <ChevronLeft size={20} color='#374151' />
-                <Text className='ml-1 font-semibold text-gray-700'>戻る</Text>
+                <Text className='ml-1 font-semibold text-gray-700'>
+                  {REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.PREVIOUS}
+                </Text>
               </Pressable>
             )}
 
@@ -751,7 +745,9 @@ export default function CreateReportScreen() {
                 onPress={handleNext}
                 className='flex-1 flex-row items-center justify-center rounded-lg bg-blue-500 py-3 active:bg-blue-600'
               >
-                <Text className='mr-1 font-semibold text-white'>次へ</Text>
+                <Text className='mr-1 font-semibold text-white'>
+                  {REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.NEXT}
+                </Text>
                 <ChevronRight size={20} color='white' />
               </Pressable>
             ) : (
@@ -766,13 +762,17 @@ export default function CreateReportScreen() {
               >
                 {isSubmitting && <ActivityIndicator size='small' color='white' className='mr-2' />}
                 <Text className='text-center font-semibold text-white'>
-                  {isConnected === false ? 'オフライン' : isSubmitting ? '作成中...' : '日報を作成'}
+                  {isConnected === false
+                    ? REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.OFFLINE_DISABLED
+                    : isSubmitting
+                      ? REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.CREATING
+                      : REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.CREATE}
                 </Text>
               </Pressable>
             )}
           </View>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaViewContext>
   );
 }

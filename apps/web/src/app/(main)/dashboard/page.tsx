@@ -1,14 +1,15 @@
 import { DashboardContent } from '@/components/features/dashboard/dashboard-content';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DASHBOARD_CONSTANTS } from '@/constants/dashboard';
 import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 export const metadata: Metadata = {
-  title: 'ダッシュボード | SmartNippo',
-  description: '日報管理システムのダッシュボード',
+  title: DASHBOARD_CONSTANTS.META_TITLE,
+  description: DASHBOARD_CONSTANTS.META_DESCRIPTION,
 };
 
 // ダッシュボードのスケルトンローダー

@@ -21,6 +21,7 @@ import {
 } from '@smartnippo/lib';
 
 import { ProfileForm } from '@/components/features/profile/profile-form';
+import { PROFILE_CONSTANTS } from '@/constants/profile';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { api } from 'convex/_generated/api';
 import type { Doc } from 'convex/_generated/dataModel';
@@ -56,7 +57,7 @@ export default function ProfilePage() {
         .then(() => {})
         .catch((error) => {
           console.error('Failed to create user profile:', error);
-          toast.error('プロフィールの作成に失敗しました。ページを再読み込みしてください。');
+          toast.error(PROFILE_CONSTANTS.CREATE_PROFILE_ERROR);
         });
     }
   }, [isLoading, isAuthenticated, userProfile, router, storeUser]);
@@ -68,7 +69,7 @@ export default function ProfilePage() {
         <div className='flex items-center justify-center h-64'>
           <div className='text-center'>
             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4'></div>
-            <p className='text-muted-foreground'>Loading...</p>
+            <p className='text-muted-foreground'>{PROFILE_CONSTANTS.LOADING}</p>
           </div>
         </div>
       </div>
@@ -80,8 +81,8 @@ export default function ProfilePage() {
     return (
       <div className='container mx-auto max-w-4xl py-8 px-4'>
         <div className='text-center'>
-          <h1 className='text-2xl font-bold mb-4'>Authentication Required</h1>
-          <p className='text-muted-foreground'>Please log in to access your profile.</p>
+          <h1 className='text-2xl font-bold mb-4'>{PROFILE_CONSTANTS.AUTH_REQUIRED_TITLE}</h1>
+          <p className='text-muted-foreground'>{PROFILE_CONSTANTS.AUTH_REQUIRED_DESCRIPTION}</p>
         </div>
       </div>
     );
@@ -94,7 +95,7 @@ export default function ProfilePage() {
         <div className='flex items-center justify-center h-64'>
           <div className='text-center'>
             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4'></div>
-            <p className='text-muted-foreground'>Setting up your profile...</p>
+            <p className='text-muted-foreground'>{PROFILE_CONSTANTS.SETUP_PROFILE}</p>
           </div>
         </div>
       </div>
@@ -106,10 +107,10 @@ export default function ProfilePage() {
     return (
       <div className='container mx-auto max-w-4xl py-8 px-4'>
         <div className='text-center'>
-          <h1 className='text-2xl font-bold mb-4 text-red-600'>Profile Error</h1>
-          <p className='text-muted-foreground'>
-            Unable to load your profile. Please try refreshing the page.
-          </p>
+          <h1 className='text-2xl font-bold mb-4 text-red-600'>
+            {PROFILE_CONSTANTS.PROFILE_ERROR_TITLE}
+          </h1>
+          <p className='text-muted-foreground'>{PROFILE_CONSTANTS.PROFILE_ERROR_DESCRIPTION}</p>
         </div>
       </div>
     );
@@ -118,17 +119,15 @@ export default function ProfilePage() {
   return (
     <div className='container mx-auto max-w-4xl py-8 px-4'>
       <div className='mb-8'>
-        <h1 className='text-3xl font-bold'>Profile Settings</h1>
-        <p className='text-muted-foreground mt-2'>
-          Manage your profile information and preferences
-        </p>
+        <h1 className='text-3xl font-bold'>{PROFILE_CONSTANTS.PAGE_TITLE}</h1>
+        <p className='text-muted-foreground mt-2'>{PROFILE_CONSTANTS.PAGE_DESCRIPTION}</p>
       </div>
 
       <div className='grid gap-6'>
         <Card>
           <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
-            <CardDescription>Update your profile details</CardDescription>
+            <CardTitle>{PROFILE_CONSTANTS.PERSONAL_INFO_CARD_TITLE}</CardTitle>
+            <CardDescription>{PROFILE_CONSTANTS.PERSONAL_INFO_CARD_DESCRIPTION}</CardDescription>
           </CardHeader>
           <CardContent>
             <ProfileForm initialData={userProfile} />
@@ -137,8 +136,8 @@ export default function ProfilePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Social Links</CardTitle>
-            <CardDescription>Connect your social media profiles</CardDescription>
+            <CardTitle>{PROFILE_CONSTANTS.SOCIAL_LINKS_CARD_TITLE}</CardTitle>
+            <CardDescription>{PROFILE_CONSTANTS.SOCIAL_LINKS_CARD_DESCRIPTION}</CardDescription>
           </CardHeader>
           <CardContent>
             <SocialLinksSection userProfile={userProfile} />
@@ -147,8 +146,8 @@ export default function ProfilePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Privacy Settings</CardTitle>
-            <CardDescription>Control who can see your information</CardDescription>
+            <CardTitle>{PROFILE_CONSTANTS.PRIVACY_SETTINGS_CARD_TITLE}</CardTitle>
+            <CardDescription>{PROFILE_CONSTANTS.PRIVACY_SETTINGS_CARD_DESCRIPTION}</CardDescription>
           </CardHeader>
           <CardContent>
             <PrivacySettingsSection userProfile={userProfile} />
@@ -157,8 +156,8 @@ export default function ProfilePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Export Profile</CardTitle>
-            <CardDescription>Download your profile data</CardDescription>
+            <CardTitle>{PROFILE_CONSTANTS.EXPORT_PROFILE_CARD_TITLE}</CardTitle>
+            <CardDescription>{PROFILE_CONSTANTS.EXPORT_PROFILE_CARD_DESCRIPTION}</CardDescription>
           </CardHeader>
           <CardContent>
             <ProfileExportSection userProfile={userProfile} />
@@ -167,20 +166,26 @@ export default function ProfilePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Account Details</CardTitle>
+            <CardTitle>{PROFILE_CONSTANTS.ACCOUNT_DETAILS_CARD_TITLE}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className='space-y-3'>
               <div>
-                <Label className='text-sm font-medium text-muted-foreground'>Email</Label>
-                <p className='text-sm'>{userProfile.email ?? 'Not set'}</p>
+                <Label className='text-sm font-medium text-muted-foreground'>
+                  {PROFILE_CONSTANTS.EMAIL_LABEL}
+                </Label>
+                <p className='text-sm'>{userProfile.email ?? PROFILE_CONSTANTS.EMAIL_NOT_SET}</p>
               </div>
               <div>
-                <Label className='text-sm font-medium text-muted-foreground'>Role</Label>
+                <Label className='text-sm font-medium text-muted-foreground'>
+                  {PROFILE_CONSTANTS.ROLE_LABEL}
+                </Label>
                 <p className='text-sm capitalize'>{userProfile.role}</p>
               </div>
               <div>
-                <Label className='text-sm font-medium text-muted-foreground'>Member Since</Label>
+                <Label className='text-sm font-medium text-muted-foreground'>
+                  {PROFILE_CONSTANTS.MEMBER_SINCE_LABEL}
+                </Label>
                 <p className='text-sm'>{new Date(userProfile.created_at).toLocaleDateString()}</p>
               </div>
             </div>
@@ -200,7 +205,7 @@ function SocialLinksSection({ userProfile }: { userProfile: UserProfile }) {
   const handleAddLink = (platform: string, url: string) => {
     const validation = validateSocialUrl(platform as SocialPlatform, url);
     if (!validation.isValid) {
-      toast.error(validation.error ?? '無効なURLです');
+      toast.error(validation.error ?? PROFILE_CONSTANTS.INVALID_URL_ERROR);
       return;
     }
 
@@ -219,10 +224,10 @@ function SocialLinksSection({ userProfile }: { userProfile: UserProfile }) {
         socialLinks,
         _version: userProfile.updated_at,
       });
-      toast.success('ソーシャルリンクを更新しました');
+      toast.success(PROFILE_CONSTANTS.UPDATE_SOCIAL_LINKS_SUCCESS);
       setIsEditing(false);
     } catch {
-      toast.error('更新に失敗しました');
+      toast.error(PROFILE_CONSTANTS.UPDATE_ERROR);
     }
   };
 
@@ -244,18 +249,18 @@ function SocialLinksSection({ userProfile }: { userProfile: UserProfile }) {
 
       {isEditing && (
         <div className='space-y-2'>
-          <Label>Add Social Link</Label>
+          <Label>{PROFILE_CONSTANTS.ADD_SOCIAL_LINK_LABEL}</Label>
           <div className='flex space-x-2'>
             <Select
               onValueChange={(platform) => {
-                const url = prompt(`Enter your ${platform} URL:`);
+                const url = prompt(PROFILE_CONSTANTS.PROMPT_URL(platform));
                 if (url) {
                   handleAddLink(platform, url);
                 }
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder='Select platform' />
+                <SelectValue placeholder={PROFILE_CONSTANTS.SELECT_PLATFORM_PLACEHOLDER} />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(SOCIAL_PLATFORMS).map(([key, { name }]) => (
@@ -273,12 +278,12 @@ function SocialLinksSection({ userProfile }: { userProfile: UserProfile }) {
         {isEditing ? (
           <>
             <Button variant='outline' onClick={() => setIsEditing(false)}>
-              Cancel
+              {PROFILE_CONSTANTS.CANCEL_BUTTON}
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave}>{PROFILE_CONSTANTS.SAVE_BUTTON}</Button>
           </>
         ) : (
-          <Button onClick={() => setIsEditing(true)}>Edit</Button>
+          <Button onClick={() => setIsEditing(true)}>{PROFILE_CONSTANTS.EDIT_BUTTON}</Button>
         )}
       </div>
     </div>
@@ -300,17 +305,17 @@ function PrivacySettingsSection({ userProfile }: { userProfile: UserProfile }) {
         privacySettings,
         _version: userProfile.updated_at,
       });
-      toast.success('プライバシー設定を更新しました');
+      toast.success(PROFILE_CONSTANTS.UPDATE_PRIVACY_SUCCESS);
     } catch {
-      toast.error('更新に失敗しました');
+      toast.error(PROFILE_CONSTANTS.UPDATE_ERROR);
     }
   };
 
   const privacyOptions = [
-    { key: 'profile', label: 'プロフィール全体' },
-    { key: 'email', label: 'メールアドレス' },
-    { key: 'socialLinks', label: 'ソーシャルリンク' },
-    { key: 'reports', label: '日報' },
+    { key: 'profile', label: PROFILE_CONSTANTS.PRIVACY_OPTION_PROFILE },
+    { key: 'email', label: PROFILE_CONSTANTS.PRIVACY_OPTION_EMAIL },
+    { key: 'socialLinks', label: PROFILE_CONSTANTS.PRIVACY_OPTION_SOCIAL_LINKS },
+    { key: 'reports', label: PROFILE_CONSTANTS.PRIVACY_OPTION_REPORTS },
   ];
 
   return (
@@ -340,7 +345,7 @@ function PrivacySettingsSection({ userProfile }: { userProfile: UserProfile }) {
       ))}
 
       <div className='flex justify-end'>
-        <Button onClick={handleSave}>Save Settings</Button>
+        <Button onClick={handleSave}>{PROFILE_CONSTANTS.SAVE_SETTINGS_BUTTON}</Button>
       </div>
     </div>
   );
@@ -390,17 +395,15 @@ function ProfileExportSection({ userProfile }: { userProfile: UserProfile }) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('プロフィールをエクスポートしました');
+    toast.success(PROFILE_CONSTANTS.EXPORT_SUCCESS);
   };
 
   return (
     <div className='space-y-4'>
-      <p className='text-sm text-muted-foreground'>
-        プロフィールデータをJSON形式でダウンロードできます。
-      </p>
+      <p className='text-sm text-muted-foreground'>{PROFILE_CONSTANTS.EXPORT_DESCRIPTION}</p>
       <Button onClick={handleExport} className='w-full'>
         <Download className='mr-2 h-4 w-4' />
-        Export Profile
+        {PROFILE_CONSTANTS.EXPORT_BUTTON}
       </Button>
     </div>
   );

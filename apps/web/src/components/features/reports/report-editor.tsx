@@ -27,9 +27,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
+import type { ReportEditorProps } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { api } from 'convex/_generated/api';
-import type { Id } from 'convex/_generated/dataModel';
 import { useConvex, useMutation, useQuery } from 'convex/react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -39,6 +39,8 @@ import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
+
+import { REPORTS_CONSTANTS } from '@/constants/reports';
 
 // Form validation schema
 const reportFormSchema = z.object({
@@ -69,11 +71,7 @@ const reportFormSchema = z.object({
 
 type ReportFormValues = z.infer<typeof reportFormSchema>;
 
-export interface ReportEditorProps {
-  reportId?: Id<'reports'>;
-  initialData?: Partial<ReportFormValues>;
-  expectedUpdatedAt?: number;
-}
+// ReportEditorPropsは@/typesからインポート済み
 
 export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: ReportEditorProps) {
   const router = useRouter();
@@ -110,7 +108,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
       // 強制的に上書き保存
       try {
         setIsSubmitting(true);
-        const toastId = toast.loading('日報を上書き保存しています...');
+        const toastId = toast.loading(REPORTS_CONSTANTS.FORCE_SAVING_TOAST);
 
         await updateReport({
           reportId: reportId!,
@@ -122,16 +120,16 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
           status: submitTypeRef.current === 'submit' ? 'submitted' : 'draft',
         });
 
-        toast.success('日報を上書き保存しました', {
+        toast.success(REPORTS_CONSTANTS.FORCE_SAVE_SUCCESS_TOAST, {
           id: toastId,
-          description: '最新の内容で更新されました。',
+          description: REPORTS_CONSTANTS.FORCE_SAVE_SUCCESS_DESC_TOAST,
         });
 
         router.push('/reports');
         router.refresh();
       } catch (error) {
         console.error('Failed to force update:', error);
-        toast.error('上書き保存に失敗しました');
+        toast.error(REPORTS_CONSTANTS.FORCE_SAVE_ERROR_TOAST);
       } finally {
         setIsSubmitting(false);
       }
@@ -151,10 +149,10 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
       // 楽観的更新のためのトースト表示
       const toastId = toast.loading(
         reportId
-          ? '日報を更新しています...'
+          ? REPORTS_CONSTANTS.UPDATING_REPORT
           : submitType === 'submit'
-            ? '日報を提出しています...'
-            : '日報を保存しています...'
+            ? REPORTS_CONSTANTS.SUBMITTING_REPORT
+            : REPORTS_CONSTANTS.SAVING_REPORT
       );
 
       const reportDataForCreate = {
@@ -183,10 +181,12 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
           status: submitType === 'submit' ? 'submitted' : 'draft',
         });
 
-        toast.success('日報を更新しました', {
+        toast.success(REPORTS_CONSTANTS.UPDATE_SUCCESS, {
           id: toastId,
           description:
-            submitType === 'submit' ? '日報が提出されました。' : '下書きとして保存されました。',
+            submitType === 'submit'
+              ? REPORTS_CONSTANTS.UPDATE_SUCCESS_DESC_SUBMITTED
+              : REPORTS_CONSTANTS.UPDATE_SUCCESS_DESC_DRAFT,
         });
       } else {
         // Create new report
@@ -207,11 +207,18 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
           }
         }
 
-        toast.success(submitType === 'submit' ? '日報を提出しました' : '日報を作成しました', {
-          id: toastId,
-          description:
-            submitType === 'submit' ? '承認者に通知されました。' : '下書きとして保存されました。',
-        });
+        toast.success(
+          submitType === 'submit'
+            ? REPORTS_CONSTANTS.CREATE_SUCCESS_SUBMITTED
+            : REPORTS_CONSTANTS.CREATE_SUCCESS_DRAFT,
+          {
+            id: toastId,
+            description:
+              submitType === 'submit'
+                ? REPORTS_CONSTANTS.CREATE_SUCCESS_DESC_SUBMITTED
+                : REPORTS_CONSTANTS.CREATE_SUCCESS_DESC_DRAFT,
+          }
+        );
       }
 
       router.push('/reports');
@@ -220,7 +227,8 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
       console.error('Failed to save report:', error);
 
       // エラーメッセージの判定
-      let errorMessage = '日報の保存に失敗しました';
+      let errorMessage = '';
+      errorMessage = REPORTS_CONSTANTS.SAVE_ERROR;
       if (error instanceof Error) {
         if (error.message.includes('conflict') || error.message.includes('concurrency')) {
           // データ競合が発生した場合
@@ -228,14 +236,14 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
           setConflictDialogOpen(true);
           return; // トーストは表示しない
         } else if (error.message.includes('permission')) {
-          errorMessage = 'この操作を実行する権限がありません。';
+          errorMessage = REPORTS_CONSTANTS.PERMISSION_ERROR_DESC;
         } else if (error.message.includes('network')) {
-          errorMessage = 'ネットワークエラーが発生しました。接続を確認してください。';
+          errorMessage = REPORTS_CONSTANTS.NETWORK_ERROR;
         }
       }
 
       toast.error(errorMessage, {
-        description: '問題が続く場合は、管理者にお問い合わせください。',
+        description: REPORTS_CONSTANTS.GENERIC_ERROR_DESC,
         duration: 5000,
       });
     } finally {
@@ -274,9 +282,13 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
               戻る
             </Button>
             <div>
-              <h1 className='text-3xl font-bold'>{reportId ? '日報編集' : '日報作成'}</h1>
+              <h1 className='text-3xl font-bold'>
+                {reportId ? REPORTS_CONSTANTS.EDIT_PAGE_TITLE : REPORTS_CONSTANTS.CREATE_PAGE_TITLE}
+              </h1>
               <p className='text-gray-600 mt-1'>
-                {reportId ? '日報を編集します' : '新しい日報を作成します'}
+                {reportId
+                  ? REPORTS_CONSTANTS.EDIT_PAGE_DESCRIPTION
+                  : REPORTS_CONSTANTS.CREATE_PAGE_DESCRIPTION}
               </p>
             </div>
           </div>
@@ -287,8 +299,8 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
           <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
             <Card>
               <CardHeader>
-                <CardTitle>基本情報</CardTitle>
-                <CardDescription>日報の基本情報を入力してください</CardDescription>
+                <CardTitle>{REPORTS_CONSTANTS.BASIC_INFO_CARD_TITLE}</CardTitle>
+                <CardDescription>{REPORTS_CONSTANTS.BASIC_INFO_CARD_DESCRIPTION}</CardDescription>
               </CardHeader>
               <CardContent className='space-y-4'>
                 <FormField
@@ -296,7 +308,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                   name='reportDate'
                   render={({ field }) => (
                     <FormItem className='flex flex-col'>
-                      <FormLabel>日付</FormLabel>
+                      <FormLabel>{REPORTS_CONSTANTS.FORM_FIELD_DATE_LABEL}</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -310,7 +322,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                               {field.value ? (
                                 format(field.value, 'yyyy年M月d日（E）', { locale: ja })
                               ) : (
-                                <span>日付を選択</span>
+                                <span>{REPORTS_CONSTANTS.FORM_FIELD_DATE_PLACEHOLDER}</span>
                               )}
                               <CalendarIcon className='ml-auto h-4 w-4 opacity-50' />
                             </Button>
@@ -326,7 +338,9 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                           />
                         </PopoverContent>
                       </Popover>
-                      <FormDescription>日報を作成する日付を選択してください</FormDescription>
+                      <FormDescription>
+                        {REPORTS_CONSTANTS.FORM_FIELD_DATE_DESCRIPTION}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -337,12 +351,15 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                   name='title'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>タイトル</FormLabel>
+                      <FormLabel>{REPORTS_CONSTANTS.FORM_FIELD_TITLE_LABEL}</FormLabel>
                       <FormControl>
-                        <Input placeholder='本日の作業内容' {...field} />
+                        <Input
+                          placeholder={REPORTS_CONSTANTS.FORM_FIELD_TITLE_PLACEHOLDER}
+                          {...field}
+                        />
                       </FormControl>
                       <FormDescription>
-                        日報のタイトルを入力してください（200文字以内）
+                        {REPORTS_CONSTANTS.FORM_FIELD_TITLE_DESCRIPTION}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -354,16 +371,16 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                   name='content'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>内容</FormLabel>
+                      <FormLabel>{REPORTS_CONSTANTS.FORM_FIELD_CONTENT_LABEL}</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder='本日の作業内容を詳しく記載してください...'
+                          placeholder={REPORTS_CONSTANTS.FORM_FIELD_CONTENT_PLACEHOLDER}
                           className='min-h-[200px]'
                           {...field}
                         />
                       </FormControl>
                       <FormDescription>
-                        作業内容、成果、課題などを記載してください（10000文字以内）
+                        {REPORTS_CONSTANTS.FORM_FIELD_CONTENT_DESCRIPTION}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -377,12 +394,14 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
               <CardHeader>
                 <div className='flex items-center justify-between'>
                   <div>
-                    <CardTitle>タスク</CardTitle>
-                    <CardDescription>本日のタスクを記録します（任意）</CardDescription>
+                    <CardTitle>{REPORTS_CONSTANTS.TASKS_EDITOR_CARD_TITLE}</CardTitle>
+                    <CardDescription>
+                      {REPORTS_CONSTANTS.TASKS_EDITOR_CARD_DESCRIPTION}
+                    </CardDescription>
                   </div>
                   <Button type='button' variant='outline' size='sm' onClick={addTask}>
                     <Plus className='h-4 w-4 mr-2' />
-                    タスクを追加
+                    {REPORTS_CONSTANTS.ADD_TASK_BUTTON}
                   </Button>
                 </div>
               </CardHeader>
@@ -395,7 +414,10 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                       render={({ field }) => (
                         <FormItem className='flex-1'>
                           <FormControl>
-                            <Input placeholder='タスク名' {...field} />
+                            <Input
+                              placeholder={REPORTS_CONSTANTS.TASK_NAME_PLACEHOLDER}
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -412,7 +434,9 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                   </div>
                 ))}
                 {(!form.watch('tasks') || form.watch('tasks')!.length === 0) && (
-                  <p className='text-sm text-gray-500 text-center py-4'>タスクがありません</p>
+                  <p className='text-sm text-gray-500 text-center py-4'>
+                    {REPORTS_CONSTANTS.NO_TASKS_MESSAGE}
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -425,7 +449,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                 onClick={() => router.back()}
                 disabled={isSubmitting}
               >
-                キャンセル
+                {REPORTS_CONSTANTS.CANCEL_BUTTON}
               </Button>
               <Button
                 type='submit'
@@ -436,7 +460,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                 loading={isSubmitting && submitTypeRef.current === 'draft'}
               >
                 <Save className='h-4 w-4 mr-2' />
-                下書き保存
+                {REPORTS_CONSTANTS.SAVE_DRAFT_BUTTON}
               </Button>
               <Button
                 type='submit'
@@ -446,7 +470,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                 loading={isSubmitting && submitTypeRef.current === 'submit'}
               >
                 <Send className='h-4 w-4 mr-2' />
-                提出
+                {REPORTS_CONSTANTS.SUBMIT_BUTTON}
               </Button>
             </div>
           </form>
@@ -456,26 +480,25 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
         <AlertDialog open={conflictDialogOpen} onOpenChange={setConflictDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>データの競合が検出されました</AlertDialogTitle>
+              <AlertDialogTitle>{REPORTS_CONSTANTS.CONFLICT_DIALOG_TITLE}</AlertDialogTitle>
               <AlertDialogDescription>
-                他のユーザーが同じ日報を編集したため、データの競合が発生しました。
-                どのように処理しますか？
+                {REPORTS_CONSTANTS.CONFLICT_DIALOG_DESCRIPTION}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className='py-4'>
               <p className='text-sm text-muted-foreground'>
-                • 「上書き保存」を選択すると、あなたの変更で他のユーザーの変更を上書きします。
+                {REPORTS_CONSTANTS.CONFLICT_DIALOG_FORCE_SAVE_INFO}
               </p>
               <p className='text-sm text-muted-foreground'>
-                • 「破棄」を選択すると、あなたの変更を破棄して最新の内容を表示します。
+                {REPORTS_CONSTANTS.CONFLICT_DIALOG_DISCARD_INFO}
               </p>
             </div>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => handleConflictResolution(false)}>
-                変更を破棄
+                {REPORTS_CONSTANTS.CONFLICT_DIALOG_DISCARD_BUTTON}
               </AlertDialogCancel>
               <AlertDialogAction onClick={() => handleConflictResolution(true)}>
-                上書き保存
+                {REPORTS_CONSTANTS.CONFLICT_DIALOG_FORCE_SAVE_BUTTON}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

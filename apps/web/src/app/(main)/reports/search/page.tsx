@@ -16,6 +16,7 @@ import {
   CommandList,
   CommandLoading,
 } from '@/components/ui/command';
+import { REPORTS_CONSTANTS } from '@/constants/reports';
 import { useDebounce } from '@/hooks/use-debounce';
 
 // NOTE: A debounce hook is assumed to exist at '@/hooks/use-debounce'
@@ -69,7 +70,7 @@ function ReportSearchContent() {
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput
-        placeholder='日報のタイトルや内容で検索...'
+        placeholder={REPORTS_CONSTANTS.SEARCH_PLACEHOLDER_MODAL}
         value={query}
         onValueChange={setQuery}
       />
@@ -77,15 +78,15 @@ function ReportSearchContent() {
         <CommandEmpty
           className={searchResults === undefined || searchResults.length > 0 ? 'hidden' : ''}
         >
-          検索結果がありません。
+          {REPORTS_CONSTANTS.SEARCH_NO_RESULTS}
         </CommandEmpty>
         {searchResults === undefined && debouncedQuery && (
           <CommandLoading>
-            <div className='py-6 text-center text-sm'>検索中...</div>
+            <div className='py-6 text-center text-sm'>{REPORTS_CONSTANTS.SEARCHING}</div>
           </CommandLoading>
         )}
         {searchResults && searchResults.length > 0 && (
-          <CommandGroup heading='検索結果'>
+          <CommandGroup heading={REPORTS_CONSTANTS.SEARCH_RESULTS_HEADING}>
             {searchResults.map((report) => (
               <CommandItem
                 key={report._id}
@@ -116,7 +117,7 @@ function ReportSearchContent() {
 
 export default function ReportSearchPage() {
   return (
-    <Suspense fallback={<div>Loading search...</div>}>
+    <Suspense fallback={<div>{REPORTS_CONSTANTS.SEARCH_LOADING}</div>}>
       <ReportSearchContent />
     </Suspense>
   );

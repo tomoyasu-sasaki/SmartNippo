@@ -37,7 +37,10 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-type ReportStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
+import { REPORTS_CONSTANTS } from '@/constants/reports';
+
+import type { ReportStatus } from '@/types';
+
 type SortBy = 'reportDate' | 'created_at' | 'updated_at' | 'submittedAt';
 type SortOrder = 'asc' | 'desc';
 
@@ -116,7 +119,7 @@ function ReportsContentInner() {
       <div className='flex items-center justify-center h-full'>
         <div className='text-center'>
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto' />
-          <p className='mt-2 text-gray-600'>読み込み中...</p>
+          <p className='mt-2 text-gray-600'>{REPORTS_CONSTANTS.LOADING_MESSAGE}</p>
         </div>
       </div>
     );
@@ -133,13 +136,7 @@ function ReportsContentInner() {
   };
 
   const getStatusBadge = (status: ReportStatus) => {
-    const variants: Record<ReportStatus, any> = {
-      draft: { variant: 'outline' as const, label: '下書き' },
-      submitted: { variant: 'secondary' as const, label: '提出済み' },
-      approved: { variant: 'default' as const, label: '承認済み' },
-      rejected: { variant: 'destructive' as const, label: '却下' },
-    };
-    return variants[status];
+    return REPORTS_CONSTANTS.STATUS[status];
   };
 
   return (
@@ -147,13 +144,13 @@ function ReportsContentInner() {
       {/* ヘッダー */}
       <div className='flex justify-between items-center'>
         <div>
-          <h1 className='text-3xl font-bold'>日報一覧</h1>
-          <p className='text-gray-600 mt-1'>日報の作成・管理</p>
+          <h1 className='text-3xl font-bold'>{REPORTS_CONSTANTS.PAGE_TITLE}</h1>
+          <p className='text-gray-600 mt-1'>{REPORTS_CONSTANTS.PAGE_DESCRIPTION}</p>
         </div>
         <Link href='/reports/new'>
           <Button>
             <Plus className='mr-2 h-4 w-4' />
-            新規作成
+            {REPORTS_CONSTANTS.CREATE_NEW_BUTTON}
           </Button>
         </Link>
       </div>
@@ -161,7 +158,7 @@ function ReportsContentInner() {
       {/* フィルター */}
       <Card>
         <CardHeader>
-          <CardTitle className='text-lg'>フィルター</CardTitle>
+          <CardTitle className='text-lg'>{REPORTS_CONSTANTS.FILTER_CARD_TITLE}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className='grid gap-4 md:grid-cols-3'>
@@ -171,21 +168,23 @@ function ReportsContentInner() {
               onClick={() => router.push('/reports/search')}
             >
               <Search className='mr-2 h-4 w-4' />
-              タイトルや内容で検索... (⌘K)
+              {REPORTS_CONSTANTS.SEARCH_PLACEHOLDER}
             </Button>
             <Select
               value={queryStates.status ?? 'all'}
               onValueChange={(value) => setQueryStates((prev) => ({ ...prev, status: value }))}
             >
               <SelectTrigger>
-                <SelectValue placeholder='ステータスで絞り込み' />
+                <SelectValue placeholder={REPORTS_CONSTANTS.STATUS_FILTER_PLACEHOLDER} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='all'>すべて</SelectItem>
-                <SelectItem value='draft'>下書き</SelectItem>
-                <SelectItem value='submitted'>提出済み</SelectItem>
-                <SelectItem value='approved'>承認済み</SelectItem>
-                <SelectItem value='rejected'>却下</SelectItem>
+                <SelectItem value='all'>{REPORTS_CONSTANTS.STATUS_ALL}</SelectItem>
+                <SelectItem value='draft'>{REPORTS_CONSTANTS.STATUS.draft.label}</SelectItem>
+                <SelectItem value='submitted'>
+                  {REPORTS_CONSTANTS.STATUS.submitted.label}
+                </SelectItem>
+                <SelectItem value='approved'>{REPORTS_CONSTANTS.STATUS.approved.label}</SelectItem>
+                <SelectItem value='rejected'>{REPORTS_CONSTANTS.STATUS.rejected.label}</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -201,7 +200,7 @@ function ReportsContentInner() {
               }
             >
               <Filter className='mr-2 h-4 w-4' />
-              フィルターをリセット
+              {REPORTS_CONSTANTS.RESET_FILTER_BUTTON}
             </Button>
           </div>
         </CardContent>
@@ -215,20 +214,22 @@ function ReportsContentInner() {
               <TableRow>
                 <TableHead className='cursor-pointer' onClick={() => handleSort('reportDate')}>
                   <div className='flex items-center gap-1'>
-                    日付
+                    {REPORTS_CONSTANTS.TABLE_HEADER.DATE}
                     <ArrowUpDown className='h-4 w-4' />
                   </div>
                 </TableHead>
-                <TableHead>タイトル</TableHead>
-                <TableHead>作成者</TableHead>
-                <TableHead>ステータス</TableHead>
+                <TableHead>{REPORTS_CONSTANTS.TABLE_HEADER.TITLE}</TableHead>
+                <TableHead>{REPORTS_CONSTANTS.TABLE_HEADER.AUTHOR}</TableHead>
+                <TableHead>{REPORTS_CONSTANTS.TABLE_HEADER.STATUS}</TableHead>
                 <TableHead className='cursor-pointer' onClick={() => handleSort('created_at')}>
                   <div className='flex items-center gap-1'>
-                    作成日時
+                    {REPORTS_CONSTANTS.TABLE_HEADER.CREATED_AT}
                     <ArrowUpDown className='h-4 w-4' />
                   </div>
                 </TableHead>
-                <TableHead className='text-right'>操作</TableHead>
+                <TableHead className='text-right'>
+                  {REPORTS_CONSTANTS.TABLE_HEADER.ACTIONS}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -237,7 +238,7 @@ function ReportsContentInner() {
                   <TableCell colSpan={6} className='text-center py-8'>
                     <div className='flex flex-col items-center gap-2'>
                       <FileText className='h-8 w-8 text-gray-400' />
-                      <p className='text-gray-500'>日報が見つかりません</p>
+                      <p className='text-gray-500'>{REPORTS_CONSTANTS.NO_REPORTS_MESSAGE}</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -262,7 +263,9 @@ function ReportsContentInner() {
                           {report.title}
                         </Link>
                       </TableCell>
-                      <TableCell>{report.author?.name ?? 'Unknown'}</TableCell>
+                      <TableCell>
+                        {report.author?.name ?? REPORTS_CONSTANTS.UNKNOWN_AUTHOR}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                       </TableCell>
@@ -273,13 +276,13 @@ function ReportsContentInner() {
                         <div className='flex justify-end gap-2'>
                           <Link href={`/reports/${report._id}`}>
                             <Button variant='ghost' size='sm'>
-                              詳細
+                              {REPORTS_CONSTANTS.ACTION_BUTTON_DETAILS}
                             </Button>
                           </Link>
                           {report.status === 'draft' && (
                             <Link href={`/reports/${report._id}/edit`}>
                               <Button variant='ghost' size='sm'>
-                                編集
+                                {REPORTS_CONSTANTS.ACTION_BUTTON_EDIT}
                               </Button>
                             </Link>
                           )}
@@ -296,7 +299,7 @@ function ReportsContentInner() {
           {reports.reports.length > 0 && (
             <div className='flex items-center justify-between px-6 py-4 border-t'>
               <p className='text-sm text-gray-600'>
-                全 {reports.totalCount} 件中 {reports.reports.length} 件を表示
+                {REPORTS_CONSTANTS.PAGINATION_SUMMARY(reports.totalCount, reports.reports.length)}
               </p>
               <div className='flex gap-2'>
                 <Button
@@ -311,7 +314,7 @@ function ReportsContentInner() {
                   disabled={queryStates.page === '1'}
                 >
                   <ChevronLeft className='h-4 w-4' />
-                  前へ
+                  {REPORTS_CONSTANTS.PAGINATION_PREVIOUS}
                 </Button>
                 <Button
                   variant='outline'
@@ -324,7 +327,7 @@ function ReportsContentInner() {
                   }
                   disabled={!reports.hasMore}
                 >
-                  次へ
+                  {REPORTS_CONSTANTS.PAGINATION_NEXT}
                   <ChevronRight className='h-4 w-4' />
                 </Button>
               </div>

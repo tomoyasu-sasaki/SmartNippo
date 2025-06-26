@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { LAYOUT_CONSTANTS } from '@/constants/layout';
 
 export function Header() {
   return (
@@ -19,39 +20,39 @@ export function Header() {
       <nav className='hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6'>
         <a href='#' className='flex items-center gap-2 text-lg font-semibold md:text-base'>
           <Package2 className='h-6 w-6' />
-          <span className='sr-only'>SmartNippo</span>
+          <span className='sr-only'>{LAYOUT_CONSTANTS.APP_NAME}</span>
         </a>
         <a href='#' className='text-foreground transition-colors hover:text-foreground'>
-          ダッシュボード
+          {LAYOUT_CONSTANTS.NAV_LINKS.DASHBOARD}
         </a>
         <a href='#' className='text-muted-foreground transition-colors hover:text-foreground'>
-          日報一覧
+          {LAYOUT_CONSTANTS.NAV_LINKS.REPORTS}
         </a>
         <a href='#' className='text-muted-foreground transition-colors hover:text-foreground'>
-          設定
+          {LAYOUT_CONSTANTS.NAV_LINKS.SETTINGS}
         </a>
       </nav>
       <Sheet>
         <SheetTrigger asChild>
           <Button variant='outline' size='icon' className='shrink-0 md:hidden'>
             <Menu className='h-5 w-5' />
-            <span className='sr-only'>Toggle navigation menu</span>
+            <span className='sr-only'>{LAYOUT_CONSTANTS.TOGGLE_NAVIGATION_MENU_SR}</span>
           </Button>
         </SheetTrigger>
         <SheetContent side='left'>
           <nav className='grid gap-6 text-lg font-medium'>
             <a href='#' className='flex items-center gap-2 text-lg font-semibold'>
               <Package2 className='h-6 w-6' />
-              <span className='sr-only'>SmartNippo</span>
+              <span className='sr-only'>{LAYOUT_CONSTANTS.APP_NAME}</span>
             </a>
             <a href='#' className='hover:text-foreground'>
-              ダッシュボード
+              {LAYOUT_CONSTANTS.NAV_LINKS.DASHBOARD}
             </a>
             <a href='#' className='text-muted-foreground hover:text-foreground'>
-              日報一覧
+              {LAYOUT_CONSTANTS.NAV_LINKS.REPORTS}
             </a>
             <a href='#' className='text-muted-foreground hover:text-foreground'>
-              設定
+              {LAYOUT_CONSTANTS.NAV_LINKS.SETTINGS}
             </a>
           </nav>
         </SheetContent>
@@ -62,16 +63,16 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant='secondary' size='icon' className='rounded-full'>
               <CircleUser className='h-5 w-5' />
-              <span className='sr-only'>Toggle user menu</span>
+              <span className='sr-only'>{LAYOUT_CONSTANTS.TOGGLE_USER_MENU_SR}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end'>
-            <DropdownMenuLabel>マイアカウント</DropdownMenuLabel>
+            <DropdownMenuLabel>{LAYOUT_CONSTANTS.USER_MENU.MY_ACCOUNT}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>プロフィール</DropdownMenuItem>
-            <DropdownMenuItem>設定</DropdownMenuItem>
+            <DropdownMenuItem>{LAYOUT_CONSTANTS.USER_MENU.PROFILE}</DropdownMenuItem>
+            <DropdownMenuItem>{LAYOUT_CONSTANTS.USER_MENU.SETTINGS}</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>ログアウト</DropdownMenuItem>
+            <DropdownMenuItem>{LAYOUT_CONSTANTS.USER_MENU.LOGOUT}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

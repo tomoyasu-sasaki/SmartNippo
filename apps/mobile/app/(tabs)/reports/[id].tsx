@@ -1,6 +1,9 @@
+import { useAuth } from '@clerk/clerk-expo';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
+import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
 import { useLocalSearchParams } from 'expo-router';
 import {
   AlertCircle,
@@ -27,14 +30,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { REPORTS_CONSTANTS } from '../../../constants/reports';
 
 // ステータスを日本語に変換
-const statusLabels = {
-  draft: '下書き',
-  submitted: '提出済み',
-  approved: '承認済み',
-  rejected: '却下',
-} as const;
+const statusLabels = REPORTS_CONSTANTS.STATUS_LABELS;
 
 // ステータスに応じた色とアイコンを返す
 const getStatusStyle = (status: string) => {
@@ -56,18 +55,10 @@ const getStatusStyle = (status: string) => {
 };
 
 // 優先度の表示名
-const priorityLabels = {
-  low: '低',
-  medium: '中',
-  high: '高',
-} as const;
+const priorityLabels = REPORTS_CONSTANTS.PRIORITY_LABELS;
 
 // 難易度の表示名
-const difficultyLabels = {
-  easy: '簡単',
-  medium: '普通',
-  hard: '難しい',
-} as const;
+const difficultyLabels = REPORTS_CONSTANTS.DIFFICULTY_LABELS;
 
 // コメントコンポーネント
 function CommentItem({ comment }: { comment: any }) {
@@ -88,15 +79,12 @@ function CommentItem({ comment }: { comment: any }) {
         <View className='flex-1'>
           <View className='mb-1 flex-row items-center'>
             <Text className='text-sm font-medium text-gray-900'>
-              {isSystemComment ? 'システム' : comment.author?.name || '不明'}
+              {isSystemComment
+                ? REPORTS_CONSTANTS.DETAIL_SCREEN.COMMENTS.SYSTEM_AUTHOR
+                : comment.author?.name || REPORTS_CONSTANTS.DETAIL_SCREEN.COMMENTS.UNKNOWN_AUTHOR}
             </Text>
             <Text className='ml-2 text-xs text-gray-500'>
-              {new Date(comment.created_at).toLocaleDateString('ja-JP', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
+              {format(new Date(comment.created_at), 'M月d日 HH:mm', { locale: ja })}
             </Text>
           </View>
           <Text className='text-sm text-gray-700'>{comment.content}</Text>
@@ -163,13 +151,17 @@ function MetadataSection({ title, items }: { title: string; items: string[] }) {
 
 export default function ReportDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { userId } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
-  // Convexクエリでデータ取得
+  // id を Id<'reports'> 型に変換
+  const reportId = id as Id<'reports'>;
+
   const report = useQuery(api.index.getReportDetail, {
-    reportId: id as Id<'reports'>,
+    reportId,
   });
 
   // Convex mutations
@@ -178,62 +170,67 @@ export default function ReportDetailScreen() {
   const rejectReport = useMutation(api.index.rejectReport);
   const updateReport = useMutation(api.index.updateReport);
 
-  // コメント送信
-  const handleSendComment = async () => {
-    if (!commentText.trim()) {
+  const handleAddComment = async () => {
+    if (!commentText.trim() || !report) {
       return;
     }
 
-    setIsSubmittingComment(true);
     try {
       await addComment({
-        reportId: id as Id<'reports'>,
+        reportId: report._id,
         content: commentText.trim(),
       });
       setCommentText('');
+      Alert.alert('成功', 'コメントを追加しました');
     } catch (error) {
-      Alert.alert('エラー', 'コメントの送信に失敗しました');
-    } finally {
-      setIsSubmittingComment(false);
+      console.error('コメント追加エラー:', error);
+      Alert.alert('エラー', REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.COMMENT_ERROR);
     }
   };
 
   // 承認処理
   const handleApprove = async () => {
-    Alert.alert('確認', 'この日報を承認しますか？', [
-      { text: 'キャンセル', style: 'cancel' },
-      {
-        text: '承認',
-        onPress: async () => {
-          setIsSubmittingAction(true);
-          try {
-            await approveReport({
-              reportId: id as Id<'reports'>,
-              comment: '承認しました',
-            });
-            Alert.alert('成功', '日報を承認しました');
-          } catch (error) {
-            Alert.alert('エラー', `承認に失敗しました: ${(error as Error).message}`);
-          } finally {
-            setIsSubmittingAction(false);
-          }
+    Alert.alert(
+      REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.APPROVE_TITLE,
+      REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.APPROVE_MESSAGE,
+      [
+        { text: REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.CANCEL, style: 'cancel' },
+        {
+          text: REPORTS_CONSTANTS.DETAIL_SCREEN.ACTIONS.APPROVE,
+          onPress: async () => {
+            setIsSubmittingAction(true);
+            try {
+              await approveReport({
+                reportId: id as Id<'reports'>,
+                comment: '承認しました',
+              });
+              Alert.alert('成功', REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.APPROVE_SUCCESS);
+            } catch (error) {
+              Alert.alert(
+                'エラー',
+                REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.APPROVE_ERROR((error as Error).message)
+              );
+            } finally {
+              setIsSubmittingAction(false);
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   // 却下処理
   const handleReject = async () => {
     Alert.prompt(
-      '確認',
-      'この日報を却下しますか？理由を入力してください。',
+      REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.REJECT_TITLE,
+      REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.REJECT_MESSAGE,
       [
-        { text: 'キャンセル', style: 'cancel' },
+        { text: REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.CANCEL, style: 'cancel' },
         {
-          text: '却下',
+          text: REPORTS_CONSTANTS.DETAIL_SCREEN.ACTIONS.REJECT,
           onPress: async (reason) => {
             if (!reason?.trim()) {
-              Alert.alert('エラー', '却下理由を入力してください');
+              Alert.alert('エラー', REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.REJECT_REASON_ERROR);
               return;
             }
             setIsSubmittingAction(true);
@@ -242,9 +239,12 @@ export default function ReportDetailScreen() {
                 reportId: id as Id<'reports'>,
                 reason: reason.trim(),
               });
-              Alert.alert('成功', '日報を却下しました');
+              Alert.alert('成功', REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.REJECT_SUCCESS);
             } catch (error) {
-              Alert.alert('エラー', `却下に失敗しました: ${(error as Error).message}`);
+              Alert.alert(
+                'エラー',
+                REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.REJECT_ERROR((error as Error).message)
+              );
             } finally {
               setIsSubmittingAction(false);
             }
@@ -257,27 +257,34 @@ export default function ReportDetailScreen() {
 
   // 提出処理
   const handleSubmit = async () => {
-    Alert.alert('確認', 'この日報を提出しますか？', [
-      { text: 'キャンセル', style: 'cancel' },
-      {
-        text: '提出',
-        onPress: async () => {
-          setIsSubmittingAction(true);
-          try {
-            await updateReport({
-              reportId: id as Id<'reports'>,
-              expectedUpdatedAt: report.updated_at,
-              status: 'submitted',
-            });
-            Alert.alert('成功', '日報を提出しました');
-          } catch (error) {
-            Alert.alert('エラー', `提出に失敗しました: ${(error as Error).message}`);
-          } finally {
-            setIsSubmittingAction(false);
-          }
+    Alert.alert(
+      REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.SUBMIT_TITLE,
+      REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.SUBMIT_MESSAGE,
+      [
+        { text: REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.CANCEL, style: 'cancel' },
+        {
+          text: REPORTS_CONSTANTS.DETAIL_SCREEN.ACTIONS.SUBMIT,
+          onPress: async () => {
+            setIsSubmittingAction(true);
+            try {
+              await updateReport({
+                reportId: id as Id<'reports'>,
+                expectedUpdatedAt: report.updated_at,
+                status: 'submitted',
+              });
+              Alert.alert('成功', REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.SUBMIT_SUCCESS);
+            } catch (error) {
+              Alert.alert(
+                'エラー',
+                REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.SUBMIT_ERROR((error as Error).message)
+              );
+            } finally {
+              setIsSubmittingAction(false);
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   // シェア機能
@@ -310,7 +317,7 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
     return (
       <View className='flex-1 items-center justify-center bg-gray-50'>
         <ActivityIndicator size='large' color='#3B82F6' />
-        <Text className='mt-2 text-gray-600'>読み込み中...</Text>
+        <Text className='mt-2 text-gray-600'>{REPORTS_CONSTANTS.DETAIL_SCREEN.LOADING_TEXT}</Text>
       </View>
     );
   }
@@ -364,7 +371,9 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
 
           {/* 本文 */}
           <View className='mt-2 bg-white p-4'>
-            <Text className='mb-2 text-lg font-semibold text-gray-900'>内容</Text>
+            <Text className='mb-2 text-lg font-semibold text-gray-900'>
+              {REPORTS_CONSTANTS.DETAIL_SCREEN.SECTIONS.CONTENT}
+            </Text>
             <Text className='text-gray-700'>{report.content}</Text>
           </View>
 
@@ -372,9 +381,14 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
           {report.tasks.length > 0 && (
             <View className='mt-2 bg-white p-4'>
               <View className='mb-3 flex-row items-center justify-between'>
-                <Text className='text-lg font-semibold text-gray-900'>タスク</Text>
+                <Text className='text-lg font-semibold text-gray-900'>
+                  {REPORTS_CONSTANTS.DETAIL_SCREEN.SECTIONS.TASKS}
+                </Text>
                 <Text className='text-sm text-gray-500'>
-                  {report.stats.completedTasks}/{report.stats.totalTasks} 完了
+                  {REPORTS_CONSTANTS.DETAIL_SCREEN.STATISTICS.COMPLETED_TASKS(
+                    report.stats.completedTasks,
+                    report.stats.totalTasks
+                  )}
                 </Text>
               </View>
               {report.tasks.map((task: any, index: number) => (
@@ -388,7 +402,9 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
             <View className='mt-2 bg-white p-4'>
               {report.metadata.difficulty && (
                 <View className='mb-4'>
-                  <Text className='mb-2 font-medium text-gray-700'>難易度</Text>
+                  <Text className='mb-2 font-medium text-gray-700'>
+                    {REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.DIFFICULTY}
+                  </Text>
                   <View className='rounded-lg bg-gray-50 px-3 py-2'>
                     <Text className='text-sm text-gray-700'>
                       {difficultyLabels[report.metadata.difficulty]}
@@ -396,11 +412,20 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
                   </View>
                 </View>
               )}
-              <MetadataSection title='成果・達成事項' items={report.metadata.achievements || []} />
-              <MetadataSection title='課題・困った点' items={report.metadata.challenges || []} />
-              <MetadataSection title='学んだこと' items={report.metadata.learnings || []} />
               <MetadataSection
-                title='次のアクション'
+                title={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.ACHIEVEMENTS}
+                items={report.metadata.achievements || []}
+              />
+              <MetadataSection
+                title={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.CHALLENGES}
+                items={report.metadata.challenges || []}
+              />
+              <MetadataSection
+                title={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.LEARNINGS}
+                items={report.metadata.learnings || []}
+              />
+              <MetadataSection
+                title={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.NEXT_ACTIONS}
                 items={report.metadata.nextActionItems || []}
               />
             </View>
@@ -409,11 +434,15 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
           {/* 統計情報 */}
           {report.stats && (
             <View className='mt-2 bg-white p-4'>
-              <Text className='mb-3 text-lg font-semibold text-gray-900'>統計</Text>
+              <Text className='mb-3 text-lg font-semibold text-gray-900'>
+                {REPORTS_CONSTANTS.DETAIL_SCREEN.SECTIONS.STATISTICS}
+              </Text>
               <View className='flex-row flex-wrap'>
                 {report.stats.totalEstimatedHours > 0 && (
                   <View className='mr-4 mb-2'>
-                    <Text className='text-xs text-gray-500'>予定時間</Text>
+                    <Text className='text-xs text-gray-500'>
+                      {REPORTS_CONSTANTS.DETAIL_SCREEN.STATISTICS.ESTIMATED_HOURS}
+                    </Text>
                     <Text className='text-base font-medium text-gray-900'>
                       {report.stats.totalEstimatedHours}h
                     </Text>
@@ -421,14 +450,18 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
                 )}
                 {report.stats.totalActualHours > 0 && (
                   <View className='mr-4 mb-2'>
-                    <Text className='text-xs text-gray-500'>実績時間</Text>
+                    <Text className='text-xs text-gray-500'>
+                      {REPORTS_CONSTANTS.DETAIL_SCREEN.STATISTICS.ACTUAL_HOURS}
+                    </Text>
                     <Text className='text-base font-medium text-gray-900'>
                       {report.stats.totalActualHours}h
                     </Text>
                   </View>
                 )}
                 <View className='mr-4 mb-2'>
-                  <Text className='text-xs text-gray-500'>コメント数</Text>
+                  <Text className='text-xs text-gray-500'>
+                    {REPORTS_CONSTANTS.DETAIL_SCREEN.STATISTICS.COMMENT_COUNT}
+                  </Text>
                   <Text className='text-base font-medium text-gray-900'>
                     {report.stats.commentCount}
                   </Text>
@@ -440,12 +473,16 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
           {/* 承認情報 */}
           {report.approvals && report.approvals.length > 0 && (
             <View className='mt-2 bg-white p-4'>
-              <Text className='mb-3 text-lg font-semibold text-gray-900'>承認履歴</Text>
+              <Text className='mb-3 text-lg font-semibold text-gray-900'>
+                {REPORTS_CONSTANTS.DETAIL_SCREEN.SECTIONS.APPROVAL_HISTORY}
+              </Text>
               {report.approvals.map((approval: any) => (
                 <View key={approval._id} className='mb-2 flex-row items-center'>
                   <CheckCircle size={16} color='#16A34A' />
                   <Text className='ml-2 text-sm text-gray-700'>
-                    {approval.manager.name}が承認
+                    {REPORTS_CONSTANTS.DETAIL_SCREEN.APPROVAL_HISTORY.APPROVED_BY(
+                      approval.manager.name
+                    )}
                     <Text className='text-gray-500'>
                       {' '}
                       (
@@ -468,7 +505,9 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
               <View className='flex-row items-start'>
                 <AlertCircle size={20} color='#DC2626' />
                 <View className='ml-2 flex-1'>
-                  <Text className='mb-1 font-medium text-red-900'>却下理由</Text>
+                  <Text className='mb-1 font-medium text-red-900'>
+                    {REPORTS_CONSTANTS.DETAIL_SCREEN.REJECTION.TITLE}
+                  </Text>
                   <Text className='text-sm text-red-700'>{report.rejectionReason}</Text>
                   {report.rejectedAt && (
                     <Text className='mt-1 text-xs text-red-600'>
@@ -490,10 +529,14 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
           <View className='mt-2 bg-white p-4'>
             <View className='mb-3 flex-row items-center'>
               <MessageSquare size={20} color='#374151' />
-              <Text className='ml-2 text-lg font-semibold text-gray-900'>コメント</Text>
+              <Text className='ml-2 text-lg font-semibold text-gray-900'>
+                {REPORTS_CONSTANTS.DETAIL_SCREEN.SECTIONS.COMMENTS}
+              </Text>
             </View>
             {report.comments.length === 0 ? (
-              <Text className='text-center text-gray-500'>コメントはありません</Text>
+              <Text className='text-center text-gray-500'>
+                {REPORTS_CONSTANTS.DETAIL_SCREEN.COMMENTS.EMPTY_STATE}
+              </Text>
             ) : (
               report.comments.map((comment: any) => (
                 <CommentItem key={comment._id} comment={comment} />
@@ -512,7 +555,9 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
                 }`}
               >
                 <Text className='text-center font-semibold text-white'>
-                  {isSubmittingAction ? '処理中...' : '提出する'}
+                  {isSubmittingAction
+                    ? REPORTS_CONSTANTS.DETAIL_SCREEN.ACTIONS.PROCESSING
+                    : REPORTS_CONSTANTS.DETAIL_SCREEN.ACTIONS.SUBMIT}
                 </Text>
               </Pressable>
             </View>
@@ -529,7 +574,9 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
                   }`}
                 >
                   <Text className='text-center font-semibold text-white'>
-                    {isSubmittingAction ? '処理中...' : '承認'}
+                    {isSubmittingAction
+                      ? REPORTS_CONSTANTS.DETAIL_SCREEN.ACTIONS.PROCESSING
+                      : REPORTS_CONSTANTS.DETAIL_SCREEN.ACTIONS.APPROVE}
                   </Text>
                 </Pressable>
                 <Pressable
@@ -540,7 +587,9 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
                   }`}
                 >
                   <Text className='text-center font-semibold text-white'>
-                    {isSubmittingAction ? '処理中...' : '却下'}
+                    {isSubmittingAction
+                      ? REPORTS_CONSTANTS.DETAIL_SCREEN.ACTIONS.PROCESSING
+                      : REPORTS_CONSTANTS.DETAIL_SCREEN.ACTIONS.REJECT}
                   </Text>
                 </Pressable>
               </View>
@@ -555,13 +604,13 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
               className='mr-2 flex-1 rounded-lg bg-gray-100 px-3 py-2 text-gray-900'
               value={commentText}
               onChangeText={setCommentText}
-              placeholder='コメントを入力...'
+              placeholder={REPORTS_CONSTANTS.DETAIL_SCREEN.COMMENTS.PLACEHOLDER}
               placeholderTextColor='#9CA3AF'
               multiline
               maxLength={2000}
             />
             <Pressable
-              onPress={handleSendComment}
+              onPress={handleAddComment}
               disabled={!commentText.trim() || isSubmittingComment}
               className={`rounded-lg p-2 ${
                 !commentText.trim() || isSubmittingComment

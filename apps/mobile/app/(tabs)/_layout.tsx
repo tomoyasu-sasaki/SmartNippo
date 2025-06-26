@@ -2,6 +2,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { Redirect, Tabs } from 'expo-router';
 import { FileText, Home, User } from 'lucide-react-native';
 import { ActivityIndicator, View } from 'react-native';
+import { LAYOUT_CONSTANTS } from '../../constants/layout';
 
 export default function TabLayout() {
   const { user, isLoaded } = useUser();
@@ -42,21 +43,21 @@ export default function TabLayout() {
       <Tabs.Screen
         name='index'
         options={{
-          title: 'ホーム',
+          title: LAYOUT_CONSTANTS.TAB_TITLES.HOME,
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name='reports'
         options={{
-          title: '日報',
+          title: LAYOUT_CONSTANTS.TAB_TITLES.REPORTS,
           tabBarIcon: ({ color, size }) => <FileText size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name='profile'
         options={{
-          title: 'プロフィール',
+          title: LAYOUT_CONSTANTS.TAB_TITLES.PROFILE,
           tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
         }}
       />

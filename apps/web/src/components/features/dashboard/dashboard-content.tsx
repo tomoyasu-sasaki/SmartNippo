@@ -24,6 +24,9 @@ import {
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
+import { DASHBOARD_CONSTANTS } from '@/constants/dashboard';
+import { REPORTS_CONSTANTS } from '@/constants/reports';
+
 const ReportsChart = dynamic(
   () => import('@/components/ui/reports-chart').then((mod) => mod.ReportsChart),
   {
@@ -72,7 +75,7 @@ function DashboardContentInner() {
       <div className='flex items-center justify-center h-full'>
         <div className='text-center'>
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto' />
-          <p className='mt-2 text-gray-600'>読み込み中...</p>
+          <p className='mt-2 text-gray-600'>{DASHBOARD_CONSTANTS.LOADING_MESSAGE}</p>
         </div>
       </div>
     );
@@ -98,7 +101,7 @@ function DashboardContentInner() {
       {/* ヘッダー */}
       <div className='flex justify-between items-center'>
         <div>
-          <h1 className='text-3xl font-bold'>ダッシュボード</h1>
+          <h1 className='text-3xl font-bold'>{DASHBOARD_CONSTANTS.PAGE_TITLE}</h1>
           <p className='text-gray-600 mt-1'>
             {format(new Date(), 'yyyy年M月d日（E）', { locale: ja })}
           </p>
@@ -106,7 +109,7 @@ function DashboardContentInner() {
         <Link href='/reports/new'>
           <Button>
             <FileText className='mr-2 h-4 w-4' />
-            日報を作成
+            {DASHBOARD_CONSTANTS.CREATE_REPORT_BUTTON}
           </Button>
         </Link>
       </div>
@@ -115,47 +118,63 @@ function DashboardContentInner() {
       <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>今月の日報</CardTitle>
+            <CardTitle className='text-sm font-medium'>
+              {DASHBOARD_CONSTANTS.STATS_CARD.THIS_MONTH_REPORTS_TITLE}
+            </CardTitle>
             <FileText className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{stats.total}</div>
-            <p className='text-xs text-muted-foreground'>作成済み</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>承認済み</CardTitle>
-            <CheckCircle className='h-4 w-4 text-green-600' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>{stats.approved}</div>
             <p className='text-xs text-muted-foreground'>
-              承認率 {stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0}%
+              {DASHBOARD_CONSTANTS.STATS_CARD.THIS_MONTH_REPORTS_DESC}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>提出待ち</CardTitle>
-            <Clock className='h-4 w-4 text-yellow-600' />
+            <CardTitle className='text-sm font-medium'>
+              {DASHBOARD_CONSTANTS.STATS_CARD.APPROVED_TITLE}
+            </CardTitle>
+            <CheckCircle className='h-4 w-4 text-green-600' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{stats.draft}</div>
-            <p className='text-xs text-muted-foreground'>下書き</p>
+            <div className='text-2xl font-bold'>{stats.approved}</div>
+            <p className='text-xs text-muted-foreground'>
+              {DASHBOARD_CONSTANTS.STATS_CARD.APPROVAL_RATE(
+                stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0
+              )}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>承認待ち</CardTitle>
+            <CardTitle className='text-sm font-medium'>
+              {DASHBOARD_CONSTANTS.STATS_CARD.PENDING_SUBMISSION_TITLE}
+            </CardTitle>
+            <Clock className='h-4 w-4 text-yellow-600' />
+          </CardHeader>
+          <CardContent>
+            <div className='text-2xl font-bold'>{stats.draft}</div>
+            <p className='text-xs text-muted-foreground'>
+              {DASHBOARD_CONSTANTS.STATS_CARD.PENDING_SUBMISSION_DESC}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>
+              {DASHBOARD_CONSTANTS.STATS_CARD.PENDING_APPROVAL_TITLE}
+            </CardTitle>
             <AlertCircle className='h-4 w-4 text-blue-600' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{teamStats.pendingApproval}</div>
-            <p className='text-xs text-muted-foreground'>チーム全体</p>
+            <p className='text-xs text-muted-foreground'>
+              {DASHBOARD_CONSTANTS.STATS_CARD.PENDING_APPROVAL_DESC}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -163,13 +182,15 @@ function DashboardContentInner() {
       {/* 最近の日報 */}
       <Card>
         <CardHeader>
-          <CardTitle>最近の日報</CardTitle>
-          <CardDescription>過去7日間の日報</CardDescription>
+          <CardTitle>{DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.TITLE}</CardTitle>
+          <CardDescription>{DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.DESCRIPTION}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className='space-y-4'>
             {recentReports.reports.length === 0 ? (
-              <p className='text-center text-gray-500 py-8'>最近の日報はありません</p>
+              <p className='text-center text-gray-500 py-8'>
+                {DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.NO_REPORTS}
+              </p>
             ) : (
               recentReports.reports.map((report) => (
                 <div
@@ -185,19 +206,16 @@ function DashboardContentInner() {
                       </h3>
                       <Badge
                         variant={
-                          report.status === 'approved'
-                            ? 'default'
-                            : report.status === 'submitted'
-                              ? 'secondary'
-                              : report.status === 'rejected'
-                                ? 'destructive'
-                                : 'outline'
+                          REPORTS_CONSTANTS.STATUS[
+                            report.status as keyof typeof REPORTS_CONSTANTS.STATUS
+                          ].variant
                         }
                       >
-                        {report.status === 'draft' && '下書き'}
-                        {report.status === 'submitted' && '提出済み'}
-                        {report.status === 'approved' && '承認済み'}
-                        {report.status === 'rejected' && '却下'}
+                        {
+                          REPORTS_CONSTANTS.STATUS[
+                            report.status as keyof typeof REPORTS_CONSTANTS.STATUS
+                          ].label
+                        }
                       </Badge>
                     </div>
                     <div className='flex items-center gap-4 mt-1 text-sm text-gray-500'>
@@ -205,12 +223,15 @@ function DashboardContentInner() {
                         <Calendar className='h-3 w-3' />
                         {format(new Date(report.reportDate), 'M月d日（E）', { locale: ja })}
                       </span>
-                      <span>作成者: {report.author?.name ?? 'Unknown'}</span>
+                      <span>
+                        {DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.AUTHOR_PREFIX}
+                        {report.author?.name ?? REPORTS_CONSTANTS.UNKNOWN_AUTHOR}
+                      </span>
                     </div>
                   </div>
                   <Link href={`/reports/${report._id}`}>
                     <Button variant='ghost' size='sm'>
-                      詳細を見る
+                      {DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.VIEW_DETAILS_BUTTON}
                     </Button>
                   </Link>
                 </div>
@@ -220,7 +241,9 @@ function DashboardContentInner() {
           {recentReports.reports.length > 0 && (
             <div className='mt-4 text-center'>
               <Link href='/reports'>
-                <Button variant='outline'>すべての日報を見る</Button>
+                <Button variant='outline'>
+                  {DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.VIEW_ALL_REPORTS_BUTTON}
+                </Button>
               </Link>
             </div>
           )}
@@ -233,13 +256,15 @@ function DashboardContentInner() {
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
               <TrendingUp className='h-5 w-5' />
-              今月の活動
+              {DASHBOARD_CONSTANTS.QUICK_ACTIONS.MONTHLY_ACTIVITY_TITLE}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className='space-y-2'>
               <div className='flex justify-between'>
-                <span className='text-sm'>提出率</span>
+                <span className='text-sm'>
+                  {DASHBOARD_CONSTANTS.QUICK_ACTIONS.SUBMISSION_RATE_LABEL}
+                </span>
                 <span className='font-medium'>
                   {stats.total > 0
                     ? Math.round(((stats.submitted + stats.approved) / stats.total) * 100)
@@ -248,7 +273,9 @@ function DashboardContentInner() {
                 </span>
               </div>
               <div className='flex justify-between'>
-                <span className='text-sm'>承認率</span>
+                <span className='text-sm'>
+                  {DASHBOARD_CONSTANTS.QUICK_ACTIONS.APPROVAL_RATE_LABEL}
+                </span>
                 <span className='font-medium'>
                   {stats.submitted + stats.approved > 0
                     ? Math.round((stats.approved / (stats.submitted + stats.approved)) * 100)
@@ -264,17 +291,21 @@ function DashboardContentInner() {
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
               <Users className='h-5 w-5' />
-              チーム状況
+              {DASHBOARD_CONSTANTS.QUICK_ACTIONS.TEAM_STATUS_TITLE}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className='space-y-2'>
               <div className='flex justify-between'>
-                <span className='text-sm'>チーム全体の日報</span>
+                <span className='text-sm'>
+                  {DASHBOARD_CONSTANTS.QUICK_ACTIONS.TEAM_TOTAL_REPORTS_LABEL}
+                </span>
                 <span className='font-medium'>{teamStats.total}</span>
               </div>
               <div className='flex justify-between'>
-                <span className='text-sm'>承認待ち</span>
+                <span className='text-sm'>
+                  {DASHBOARD_CONSTANTS.QUICK_ACTIONS.TEAM_PENDING_APPROVAL_LABEL}
+                </span>
                 <span className='font-medium'>{teamStats.pendingApproval}</span>
               </div>
             </div>
@@ -285,7 +316,7 @@ function DashboardContentInner() {
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
               <BarChart3 className='h-5 w-5' />
-              活動の推移 (過去30日)
+              {DASHBOARD_CONSTANTS.QUICK_ACTIONS.ACTIVITY_TREND_TITLE}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -295,7 +326,7 @@ function DashboardContentInner() {
               </ErrorBoundaryProvider>
             ) : (
               <p className='text-sm text-gray-600 text-center py-10'>
-                チャートを表示するのに十分なデータがありません。
+                {DASHBOARD_CONSTANTS.QUICK_ACTIONS.CHART_NO_DATA}
               </p>
             )}
           </CardContent>

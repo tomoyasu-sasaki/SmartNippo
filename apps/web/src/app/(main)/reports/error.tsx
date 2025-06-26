@@ -2,6 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { COMMON_CONSTANTS } from '@/constants/common';
+import { REPORTS_CONSTANTS } from '@/constants/reports';
 import { ArrowLeft, FileX, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -22,15 +24,15 @@ export default function ReportsError({
 
   const getErrorMessage = () => {
     if (error.message.includes('permission')) {
-      return '日報へのアクセス権限がありません。';
+      return REPORTS_CONSTANTS.REPORTS_ERROR_PERMISSION;
     }
     if (error.message.includes('not found')) {
-      return '指定された日報が見つかりません。';
+      return REPORTS_CONSTANTS.REPORTS_ERROR_NOT_FOUND;
     }
     if (error.message.includes('network')) {
-      return 'ネットワークエラーが発生しました。接続を確認してください。';
+      return REPORTS_CONSTANTS.REPORTS_ERROR_NETWORK;
     }
-    return '日報の読み込み中にエラーが発生しました。';
+    return REPORTS_CONSTANTS.REPORTS_ERROR_GENERAL;
   };
 
   return (
@@ -40,14 +42,16 @@ export default function ReportsError({
           <div className='flex justify-center mb-4'>
             <FileX className='h-12 w-12 text-muted-foreground' />
           </div>
-          <CardTitle className='text-2xl'>日報エラー</CardTitle>
+          <CardTitle className='text-2xl'>{REPORTS_CONSTANTS.REPORTS_ERROR_TITLE}</CardTitle>
           <CardDescription>{getErrorMessage()}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className='space-y-4'>
             {process.env.NODE_ENV === 'development' && error.message && (
               <details className='text-sm'>
-                <summary className='cursor-pointer text-muted-foreground'>エラーの詳細</summary>
+                <summary className='cursor-pointer text-muted-foreground'>
+                  {REPORTS_CONSTANTS.REPORTS_ERROR_DETAILS_SUMMARY}
+                </summary>
                 <pre className='mt-2 p-2 bg-muted rounded text-xs overflow-auto'>
                   {error.message}
                 </pre>
@@ -56,11 +60,11 @@ export default function ReportsError({
             <div className='flex gap-3'>
               <Button onClick={() => router.back()} variant='outline' className='flex-1'>
                 <ArrowLeft className='h-4 w-4 mr-2' />
-                戻る
+                {REPORTS_CONSTANTS.BACK_BUTTON}
               </Button>
               <Button onClick={reset} className='flex-1'>
                 <RefreshCw className='h-4 w-4 mr-2' />
-                再試行
+                {COMMON_CONSTANTS.RETRY_BUTTON}
               </Button>
             </div>
           </div>

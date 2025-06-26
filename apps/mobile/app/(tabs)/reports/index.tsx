@@ -1,5 +1,7 @@
 import { api } from 'convex/_generated/api';
 import { useQuery } from 'convex/react';
+import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
 import { router } from 'expo-router';
 import { Calendar, Clock, FileText, Plus } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
@@ -14,101 +16,87 @@ import {
   View,
 } from 'react-native';
 import { ReportListSkeleton } from '../../../components/AvatarPicker';
-
-// 日報のステータスを日本語に変換
-const statusLabels = {
-  draft: '下書き',
-  submitted: '提出済み',
-  approved: '承認済み',
-  rejected: '却下',
-} as const;
+import { REPORTS_CONSTANTS } from '../../../constants/reports';
+import type { Report, UserProfile } from '../../../types';
 
 // ステータスに応じた色を返す
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'draft':
-      return 'bg-gray-100 text-gray-600';
+      return 'bg-gray-100 text-gray-800';
     case 'submitted':
-      return 'bg-blue-100 text-blue-600';
+      return 'bg-blue-100 text-blue-800';
     case 'approved':
-      return 'bg-green-100 text-green-600';
+      return 'bg-green-100 text-green-800';
     case 'rejected':
-      return 'bg-red-100 text-red-600';
+      return 'bg-red-100 text-red-800';
     default:
-      return 'bg-gray-100 text-gray-600';
+      return 'bg-gray-100 text-gray-800';
   }
 };
 
 // 日報カードコンポーネント (メモ化)
-const ReportCard = React.memo(({ report }: { report: any }) => {
-  const handlePress = useCallback(() => {
-    router.push(`/(tabs)/reports/${report._id}`);
-  }, [report._id]);
+const ReportCard = React.memo(
+  ({ report }: { report: Report & { author?: Pick<UserProfile, 'name'> } }) => {
+    const handlePress = useCallback(() => {
+      router.push(`/(tabs)/reports/${report._id}`);
+    }, [report._id]);
 
-  return (
-    <Pressable
-      onPress={handlePress}
-      className='mb-4 rounded-lg bg-white p-4 shadow-sm active:opacity-80'
-    >
-      {/* ヘッダー部分 */}
-      <View className='mb-2 flex-row items-center justify-between'>
-        <View className='flex-row items-center'>
-          <Calendar size={16} color='#6B7280' />
-          <Text className='ml-1 text-sm text-gray-600'>{report.reportDate}</Text>
+    const completedTasks = report.tasks.filter((task) => task.completed).length;
+    const statusLabel = REPORTS_CONSTANTS.STATUS_LABELS[report.status] || report.status;
+    const statusColor = getStatusColor(report.status);
+
+    return (
+      <Pressable onPress={handlePress} className='mb-3 rounded-lg bg-white p-4 shadow-sm'>
+        {/* ヘッダー */}
+        <View className='mb-2 flex-row items-center justify-between'>
+          <View className='flex-row items-center'>
+            <Calendar size={16} color='#6B7280' />
+            <Text className='ml-1 text-sm text-gray-600'>{report.reportDate}</Text>
+          </View>
+          <View className={`rounded-full px-3 py-1 ${statusColor}`}>
+            <Text className='text-xs font-medium'>{statusLabel}</Text>
+          </View>
         </View>
-        <View className={`rounded-full px-3 py-1 ${getStatusColor(report.status)}`}>
-          <Text className='text-xs font-medium'>
-            {statusLabels[report.status as keyof typeof statusLabels]}
-          </Text>
-        </View>
-      </View>
 
-      {/* タイトル */}
-      <Text numberOfLines={2} className='mb-2 text-base font-semibold text-gray-900'>
-        {report.title}
-      </Text>
+        {/* タイトル */}
+        <Text className='mb-2 text-base font-semibold text-gray-900' numberOfLines={2}>
+          {report.title}
+        </Text>
 
-      {/* 内容プレビュー */}
-      <Text numberOfLines={3} className='mb-3 text-sm text-gray-600'>
-        {report.content}
-      </Text>
+        {/* 本文プレビュー */}
+        <Text className='mb-3 text-sm text-gray-600' numberOfLines={3}>
+          {report.content}
+        </Text>
 
-      {/* フッター部分 */}
-      <View className='flex-row items-center justify-between'>
-        <View className='flex-row items-center'>
+        {/* フッター */}
+        <View className='flex-row items-center justify-between'>
           <View className='flex-row items-center'>
             <Clock size={14} color='#6B7280' />
             <Text className='ml-1 text-xs text-gray-500'>
-              {new Date(report.created_at).toLocaleDateString('ja-JP', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
+              {format(new Date(report.created_at), 'M月d日 HH:mm', { locale: ja })}
             </Text>
           </View>
-        </View>
-
-        {/* タスク数表示 */}
-        {report.tasks && report.tasks.length > 0 && (
           <View className='flex-row items-center'>
             <FileText size={14} color='#6B7280' />
             <Text className='ml-1 text-xs text-gray-500'>
-              タスク: {report.tasks.filter((t: any) => t.completed).length}/{report.tasks.length}
+              {REPORTS_CONSTANTS.LIST_SCREEN.TASK_SUMMARY}
+              {completedTasks}/{report.tasks.length}
             </Text>
           </View>
-        )}
-      </View>
-
-      {/* 作成者情報 */}
-      {report.author && (
-        <View className='mt-2 border-t border-gray-100 pt-2'>
-          <Text className='text-xs text-gray-500'>作成者: {report.author.name}</Text>
+          {report.author?.name && (
+            <Text className='text-xs text-gray-500'>
+              {REPORTS_CONSTANTS.LIST_SCREEN.AUTHOR_LABEL}
+              {report.author.name}
+            </Text>
+          )}
         </View>
-      )}
-    </Pressable>
-  );
-});
+      </Pressable>
+    );
+  }
+);
+
+ReportCard.displayName = 'ReportCard';
 
 // フィルターチップコンポーネント (メモ化)
 const FilterChip = React.memo(
@@ -165,9 +153,12 @@ export default function ReportsScreen() {
   };
 
   // FlatListのアイテムを描画する関数 (メモ化)
-  const renderItem = useCallback(({ item }: { item: any }) => {
-    return <ReportCard report={item} />;
-  }, []);
+  const renderItem = useCallback(
+    ({ item }: { item: Report & { author?: Pick<UserProfile, 'name'> } }) => {
+      return <ReportCard report={item} />;
+    },
+    []
+  );
 
   // フィルターチップのプレスハンドラ (メモ化)
   const handleFilterPress = useCallback((status: string | null) => {
@@ -211,18 +202,22 @@ export default function ReportsScreen() {
   const renderEmptyComponent = () => (
     <View className='flex-1 items-center justify-center px-8 py-16'>
       <FileText size={64} color='#D1D5DB' />
-      <Text className='mt-4 text-center text-lg font-semibold text-gray-600'>日報がありません</Text>
+      <Text className='mt-4 text-center text-lg font-semibold text-gray-600'>
+        {REPORTS_CONSTANTS.LIST_SCREEN.EMPTY_STATE.NO_REPORTS}
+      </Text>
       <Text className='mt-2 text-center text-sm text-gray-500'>
         {selectedStatus
-          ? `${statusLabels[selectedStatus as keyof typeof statusLabels]}の日報はありません`
-          : '新しい日報を作成してください'}
+          ? REPORTS_CONSTANTS.LIST_SCREEN.EMPTY_STATE.NO_FILTERED_REPORTS(selectedStatus)
+          : REPORTS_CONSTANTS.LIST_SCREEN.EMPTY_STATE.CREATE_SUGGESTION}
       </Text>
       {!selectedStatus && (
         <Pressable
           onPress={handleCreateNew}
           className='mt-6 rounded-lg bg-blue-500 px-6 py-3 active:bg-blue-600'
         >
-          <Text className='font-semibold text-white'>日報を作成</Text>
+          <Text className='font-semibold text-white'>
+            {REPORTS_CONSTANTS.LIST_SCREEN.EMPTY_STATE.CREATE_BUTTON}
+          </Text>
         </Pressable>
       )}
     </View>
@@ -234,27 +229,27 @@ export default function ReportsScreen() {
       <View className='bg-white px-4 py-3 shadow-sm'>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <FilterChip
-            label='すべて'
+            label={REPORTS_CONSTANTS.LIST_SCREEN.FILTER_LABELS.ALL}
             selected={!selectedStatus}
             onPress={() => handleFilterPress(null)}
           />
           <FilterChip
-            label='下書き'
+            label={REPORTS_CONSTANTS.LIST_SCREEN.FILTER_LABELS.DRAFT}
             selected={selectedStatus === 'draft'}
             onPress={() => handleFilterPress('draft')}
           />
           <FilterChip
-            label='提出済み'
+            label={REPORTS_CONSTANTS.LIST_SCREEN.FILTER_LABELS.SUBMITTED}
             selected={selectedStatus === 'submitted'}
             onPress={() => handleFilterPress('submitted')}
           />
           <FilterChip
-            label='承認済み'
+            label={REPORTS_CONSTANTS.LIST_SCREEN.FILTER_LABELS.APPROVED}
             selected={selectedStatus === 'approved'}
             onPress={() => handleFilterPress('approved')}
           />
           <FilterChip
-            label='却下'
+            label={REPORTS_CONSTANTS.LIST_SCREEN.FILTER_LABELS.REJECTED}
             selected={selectedStatus === 'rejected'}
             onPress={() => handleFilterPress('rejected')}
           />
