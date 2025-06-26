@@ -43,7 +43,7 @@ interface ProfileFormProps {
 
 export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const updateProfile = useMutation(api.users.updateProfile);
+  const updateProfile = useMutation(api.index.updateProfile);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),

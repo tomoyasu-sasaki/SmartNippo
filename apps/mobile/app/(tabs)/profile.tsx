@@ -39,10 +39,10 @@ export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Convexからユーザープロフィールを取得
-  const userProfile = useQuery(api.users.current);
-  const updateProfile = useMutation(api.users.updateProfile);
-  const generateUploadUrl = useMutation(api.uploads.generateAvatarUploadUrl);
-  const saveAvatarToProfile = useMutation(api.uploads.saveAvatarToProfile);
+  const userProfile = useQuery(api.index.current);
+  const updateProfile = useMutation(api.index.updateProfile);
+  const generateUploadUrl = useMutation(api.index.generateAvatarUploadUrl);
+  const saveAvatarToProfile = useMutation(api.index.saveAvatarToProfile);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),

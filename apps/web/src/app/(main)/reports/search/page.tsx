@@ -1,7 +1,6 @@
 'use client';
 
 import { api } from 'convex/_generated/api';
-import type { Doc } from 'convex/_generated/dataModel';
 import { useQuery } from 'convex/react';
 import { File } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -49,10 +48,7 @@ function ReportSearchContent() {
   const debouncedQuery = useDebounce(query, 300);
   const [isPending, startTransition] = useTransition();
 
-  const searchResults = useQuery(
-    api.reports.searchReports,
-    debouncedQuery ? { searchQuery: debouncedQuery } : 'skip'
-  );
+  const searchResults = useQuery(api.index.searchReports, query ? { searchQuery: query } : 'skip');
 
   // Effect to handle closing the dialog
   useEffect(() => {
@@ -87,7 +83,7 @@ function ReportSearchContent() {
         )}
         {searchResults && searchResults.length > 0 && (
           <CommandGroup heading='検索結果'>
-            {searchResults.map((report: Doc<'reports'>) => (
+            {searchResults.map((report) => (
               <CommandItem
                 key={report._id}
                 value={`${report.title} ${report.author?.name} ${report.reportDate}`}

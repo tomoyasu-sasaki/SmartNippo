@@ -168,15 +168,15 @@ export default function ReportDetailScreen() {
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
   // Convexクエリでデータ取得
-  const report = useQuery(api.reports.getReportDetail, {
+  const report = useQuery(api.index.getReportDetail, {
     reportId: id as Id<'reports'>,
   });
 
   // Convex mutations
-  const addComment = useMutation(api.reports.addComment);
-  const approveReport = useMutation(api.reports.approveReport);
-  const rejectReport = useMutation(api.reports.rejectReport);
-  const updateReport = useMutation(api.reports.updateReport);
+  const addComment = useMutation(api.index.addComment);
+  const approveReport = useMutation(api.index.approveReport);
+  const rejectReport = useMutation(api.index.rejectReport);
+  const updateReport = useMutation(api.index.updateReport);
 
   // コメント送信
   const handleSendComment = async () => {

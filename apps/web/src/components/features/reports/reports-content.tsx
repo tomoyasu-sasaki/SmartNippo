@@ -108,7 +108,7 @@ function ReportsContentInner() {
   };
 
   // Fetch reports with filters
-  const reports = useQuery(api.reports.listReports, queryParams) as QueryResult | undefined;
+  const reports = useQuery(api.index.listReports, queryParams) as QueryResult | undefined;
 
   // Loading state
   if (!reports) {

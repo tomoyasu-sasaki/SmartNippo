@@ -274,7 +274,7 @@ export default function CreateReportScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
-  const createReport = useMutation(api.reports.createReport);
+  const createReport = useMutation(api.index.createReport);
 
   // ネットワーク状態の監視
   useEffect(() => {

@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 
 export function AuthSync() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const storeUser = useMutation(api.users.store);
+  const storeUser = useMutation(api.index.store);
 
   useEffect(() => {
     // Clerkの認証状態が読み込まれ、ユーザーがサインインしている場合

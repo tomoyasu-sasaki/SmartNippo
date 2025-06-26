@@ -4,15 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
 import { useQuery } from 'convex/react';
-import dynamic from 'next/dynamic';
-
-const ReportEditor = dynamic(
-  () => import('@/components/features/reports/report-editor').then((mod) => mod.ReportEditor),
-  {
-    ssr: false,
-    loading: () => <ReportEditorSkeleton />,
-  }
-);
+import { ReportEditor } from './report-editor';
 
 interface ReportEditorWrapperProps {
   params: { id: Id<'reports'> };
@@ -43,8 +35,8 @@ function ReportEditorSkeleton() {
   );
 }
 
-export default function ReportEditorWrapper({ params }: ReportEditorWrapperProps) {
-  const reportData = useQuery(api.reports.getReportForEdit, { reportId: params.id });
+export function ReportEditorWrapper({ params }: ReportEditorWrapperProps) {
+  const reportData = useQuery(api.index.getReportForEdit, { reportId: params.id });
 
   if (reportData === undefined) {
     return <ReportEditorSkeleton />;
@@ -65,3 +57,5 @@ export default function ReportEditorWrapper({ params }: ReportEditorWrapperProps
     />
   );
 }
+
+export default ReportEditorWrapper;

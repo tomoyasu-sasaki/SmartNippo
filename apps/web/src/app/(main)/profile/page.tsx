@@ -21,6 +21,7 @@ import {
 } from '@smartnippo/lib';
 
 import { ProfileForm } from '@/components/features/profile/profile-form';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { api } from 'convex/_generated/api';
 import type { Doc } from 'convex/_generated/dataModel';
 import { useConvexAuth, useMutation, useQuery } from 'convex/react';
@@ -34,10 +35,13 @@ type UserProfile = Doc<'userProfiles'>;
 export default function ProfilePage() {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const router = useRouter();
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { user } = useUser();
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Fetch user profile from Convex
-  const userProfile = useQuery(api.users.current);
-  const storeUser = useMutation(api.users.store);
+  const userProfile = useQuery(api.index.current);
+  const storeUser = useMutation(api.index.store);
 
   // Handle authentication state
   useEffect(() => {
@@ -191,7 +195,7 @@ export default function ProfilePage() {
 function SocialLinksSection({ userProfile }: { userProfile: UserProfile }) {
   const [socialLinks, setSocialLinks] = useState(userProfile.socialLinks ?? {});
   const [isEditing, setIsEditing] = useState(false);
-  const updateProfile = useMutation(api.users.updateProfile);
+  const updateProfile = useMutation(api.index.updateProfile);
 
   const handleAddLink = (platform: string, url: string) => {
     const validation = validateSocialUrl(platform as SocialPlatform, url);
@@ -284,7 +288,7 @@ function SocialLinksSection({ userProfile }: { userProfile: UserProfile }) {
 // プライバシー設定セクション
 function PrivacySettingsSection({ userProfile }: { userProfile: UserProfile }) {
   const [privacySettings, setPrivacySettings] = useState(userProfile.privacySettings ?? {});
-  const updateProfile = useMutation(api.users.updateProfile);
+  const updateProfile = useMutation(api.index.updateProfile);
 
   const handlePrivacyChange = (key: string, value: PrivacyLevel) => {
     setPrivacySettings({ ...privacySettings, [key]: value });

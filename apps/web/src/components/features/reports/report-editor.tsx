@@ -69,13 +69,13 @@ const reportFormSchema = z.object({
 
 type ReportFormValues = z.infer<typeof reportFormSchema>;
 
-interface ReportEditorProps {
+export interface ReportEditorProps {
   reportId?: Id<'reports'>;
   initialData?: Partial<ReportFormValues>;
   expectedUpdatedAt?: number;
 }
 
-function ReportEditorInner({ reportId, initialData, expectedUpdatedAt }: ReportEditorProps) {
+export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: ReportEditorProps) {
   const router = useRouter();
   const convex = useConvex();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,11 +83,11 @@ function ReportEditorInner({ reportId, initialData, expectedUpdatedAt }: ReportE
   const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<ReportFormValues | null>(null);
 
-  const createReport = useMutation(api.reports.createReport);
-  const updateReport = useMutation(api.reports.updateReport);
+  const createReport = useMutation(api.index.createReport);
+  const updateReport = useMutation(api.index.updateReport);
 
   // 最新のレポートデータを取得（競合解決用）
-  const latestReport = useQuery(api.reports.getReportDetail, reportId ? { reportId } : 'skip');
+  const latestReport = useQuery(api.index.getReportDetail, reportId ? { reportId } : 'skip');
 
   const form = useForm<ReportFormValues>({
     resolver: zodResolver(reportFormSchema),
@@ -194,7 +194,7 @@ function ReportEditorInner({ reportId, initialData, expectedUpdatedAt }: ReportE
         if (submitType === 'submit' && newReportId) {
           // If submitting, update the status
           // Note: a more robust way would be to get the new `_ts` from the createReport result
-          const newReport = await convex.query(api.reports.getReportDetail, {
+          const newReport = await convex.query(api.index.getReportDetail, {
             reportId: newReportId,
           });
           if (newReport) {
@@ -263,7 +263,7 @@ function ReportEditorInner({ reportId, initialData, expectedUpdatedAt }: ReportE
   };
 
   return (
-    <>
+    <ErrorBoundaryProvider>
       <div className='space-y-6'>
         {/* ヘッダー */}
         <div className='flex items-center justify-between'>
@@ -429,67 +429,49 @@ function ReportEditorInner({ reportId, initialData, expectedUpdatedAt }: ReportE
               <Button
                 type='submit'
                 variant='outline'
-                loading={isSubmitting && submitType === 'draft'}
                 disabled={isSubmitting}
                 onClick={() => setSubmitType('draft')}
               >
-                {!isSubmitting && <Save className='h-4 w-4 mr-2' />}
+                <Save className='h-4 w-4 mr-2' />
                 下書き保存
               </Button>
-              <Button
-                type='submit'
-                loading={isSubmitting && submitType === 'submit'}
-                disabled={isSubmitting}
-                onClick={() => setSubmitType('submit')}
-              >
-                {!isSubmitting && <Send className='h-4 w-4 mr-2' />}
+              <Button type='submit' disabled={isSubmitting} onClick={() => setSubmitType('submit')}>
+                <Send className='h-4 w-4 mr-2' />
                 提出
               </Button>
             </div>
           </form>
         </Form>
+
+        {/* データ競合解決ダイアログ */}
+        <AlertDialog open={conflictDialogOpen} onOpenChange={setConflictDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>データの競合が検出されました</AlertDialogTitle>
+              <AlertDialogDescription>
+                他のユーザーが同じ日報を編集したため、データの競合が発生しました。
+                どのように処理しますか？
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className='py-4'>
+              <p className='text-sm text-muted-foreground'>
+                • 「上書き保存」を選択すると、あなたの変更で他のユーザーの変更を上書きします。
+              </p>
+              <p className='text-sm text-muted-foreground'>
+                • 「破棄」を選択すると、あなたの変更を破棄して最新の内容を表示します。
+              </p>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => handleConflictResolution(false)}>
+                変更を破棄
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={() => handleConflictResolution(true)}>
+                上書き保存
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      {/* データ競合解決ダイアログ */}
-      <AlertDialog open={conflictDialogOpen} onOpenChange={setConflictDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>データの競合が検出されました</AlertDialogTitle>
-            <AlertDialogDescription>
-              他のユーザーが同じ日報を編集したため、データの競合が発生しました。
-              どのように処理しますか？
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className='py-4'>
-            <p className='text-sm text-muted-foreground'>
-              • 「上書き保存」を選択すると、あなたの変更で他のユーザーの変更を上書きします。
-            </p>
-            <p className='text-sm text-muted-foreground'>
-              • 「破棄」を選択すると、あなたの変更を破棄して最新の内容を表示します。
-            </p>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => handleConflictResolution(false)}>
-              変更を破棄
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleConflictResolution(true)}>
-              上書き保存
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
-}
-
-export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: ReportEditorProps) {
-  return (
-    <ErrorBoundaryProvider>
-      <ReportEditorInner
-        reportId={reportId!}
-        initialData={initialData!}
-        expectedUpdatedAt={expectedUpdatedAt!}
-      />
     </ErrorBoundaryProvider>
   );
 }

@@ -6,8 +6,8 @@ import { Alert, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ReportsScreen() {
   const { user, isLoaded } = useUser();
-  const storeUser = useMutation(api.users.store);
-  const currentUser = useQuery(api.users.current);
+  const storeUser = useMutation(api.index.store);
+  const currentUser = useQuery(api.index.current);
 
   // ユーザー情報を同期
   useEffect(() => {

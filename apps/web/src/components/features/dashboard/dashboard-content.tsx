@@ -43,12 +43,12 @@ function DashboardContentInner() {
   const startDate = format(startOfMonth(new Date()), 'yyyy-MM-dd');
   const endDate = format(endOfMonth(new Date()), 'yyyy-MM-dd');
 
-  const myReports = useQuery(api.reports.getMyReports, {
+  const myReports = useQuery(api.index.getMyReports, {
     startDate,
     endDate,
   });
 
-  const allReports = useQuery(api.reports.listReports, {
+  const allReports = useQuery(api.index.listReports, {
     startDate,
     endDate,
     limit: 100,
@@ -56,7 +56,7 @@ function DashboardContentInner() {
 
   // 最近の日報を取得（過去7日間）
   const recentStartDate = format(subDays(new Date(), 7), 'yyyy-MM-dd');
-  const recentReports = useQuery(api.reports.listReports, {
+  const recentReports = useQuery(api.index.listReports, {
     startDate: recentStartDate,
     endDate: format(new Date(), 'yyyy-MM-dd'),
     limit: 5,
@@ -64,7 +64,7 @@ function DashboardContentInner() {
     sortOrder: 'desc',
   });
 
-  const chartData = useQuery(api.reports.getDashboardStats);
+  const chartData = useQuery(api.index.getDashboardStats);
 
   // ローディング状態
   if (!myReports || !allReports || !recentReports || chartData === undefined) {
@@ -171,7 +171,7 @@ function DashboardContentInner() {
             {recentReports.reports.length === 0 ? (
               <p className='text-center text-gray-500 py-8'>最近の日報はありません</p>
             ) : (
-              recentReports.reports.map((report: Doc<'reports'>) => (
+              recentReports.reports.map((report) => (
                 <div
                   key={report._id}
                   className='flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50'

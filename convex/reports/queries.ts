@@ -377,14 +377,8 @@ export const getReportDetail = query({
     const stats = {
       totalTasks: report.tasks.length,
       completedTasks: report.tasks.filter((t: { completed: boolean }) => t.completed).length,
-      totalEstimatedHours: report.tasks.reduce(
-        (sum: number, t: { estimatedHours?: number }) => sum + (t.estimatedHours ?? 0),
-        0
-      ),
-      totalActualHours: report.tasks.reduce(
-        (sum: number, t: { actualHours?: number }) => sum + (t.actualHours ?? 0),
-        0
-      ),
+      totalEstimatedHours: report.tasks.reduce((sum, t) => sum + (t.estimatedHours ?? 0), 0),
+      totalActualHours: report.tasks.reduce((sum, t) => sum + (t.actualHours ?? 0), 0),
       commentCount: commentsWithAuthors.length,
       attachmentCount: report.attachments.length,
     };

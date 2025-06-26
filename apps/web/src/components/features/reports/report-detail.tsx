@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
+import { useAuth } from '@clerk/nextjs';
 import { api } from 'convex/_generated/api';
 import type { Doc, Id } from 'convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
@@ -46,19 +47,21 @@ interface ReportDetailProps {
 
 function ReportDetailInner({ reportId }: ReportDetailProps) {
   const router = useRouter();
+  const { userId, has } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Fetch report detail
-  const report = useQuery(api.reports.getReportDetail, { reportId });
+  const report = useQuery(api.index.getReportDetail, { reportId });
 
   // Mutations
-  const addComment = useMutation(api.reports.addComment);
-  const approveReport = useMutation(api.reports.approveReport);
-  const rejectReport = useMutation(api.reports.rejectReport);
-  const deleteReport = useMutation(api.reports.deleteReport);
-  const updateReport = useMutation(api.reports.updateReport);
+  const addComment = useMutation(api.index.addComment);
+  const approveReport = useMutation(api.index.approveReport);
+  const rejectReport = useMutation(api.index.rejectReport);
+  const deleteReport = useMutation(api.index.deleteReport);
+  const updateReport = useMutation(api.index.updateReport);
 
   if (!report) {
     return (

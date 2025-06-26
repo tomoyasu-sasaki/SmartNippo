@@ -134,7 +134,7 @@ export default function ReportsScreen() {
   const [cursor, setCursor] = useState<string | null>(null);
 
   // Convexクエリでデータ取得
-  const queryResult = useQuery(api.reports.listReports, {
+  const queryResult = useQuery(api.index.listReports, {
     limit: 20,
     cursor: cursor ?? undefined,
     status: (selectedStatus ?? undefined) as any,

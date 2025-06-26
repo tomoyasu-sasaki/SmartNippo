@@ -35,8 +35,8 @@ export function AvatarUpload({
   const [error, setError] = useState<string | null>(null);
 
   // Convex mutations
-  const generateUploadUrl = useMutation(api.uploads.generateAvatarUploadUrl);
-  const saveAvatarToProfile = useMutation(api.uploads.saveAvatarToProfile);
+  const generateUploadUrl = useMutation(api.index.generateAvatarUploadUrl);
+  const saveAvatarToProfile = useMutation(api.index.saveAvatarToProfile);
 
   const uploadToConvex = useCallback(
     async (file: File) => {
