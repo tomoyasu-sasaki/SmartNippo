@@ -89,7 +89,7 @@ export const addComment = mutation({
         reportTitle: report.title,
         content: args.content,
       },
-      user.orgId!
+      user.orgId
     );
 
     return commentId;

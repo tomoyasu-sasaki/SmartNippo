@@ -46,7 +46,6 @@ export const getReportForEdit = query({
     const report = await ctx.db.get(args.reportId);
 
     if (!report || report.isDeleted) {
-      console.error(`Attempt to fetch deleted or non-existent report for edit: ${args.reportId}`);
       return null;
     }
 
@@ -131,10 +130,15 @@ export const listReports = query({
     sortOrder: v.optional(v.union(v.literal('asc'), v.literal('desc'))),
   },
   handler: async (ctx, args) => {
-    // 読取権限チェック
     const user = await requireAuthentication(ctx);
+    // 組織未所属のユーザーはまだレポートがない想定
     if (!user.orgId) {
-      throw new Error('組織に所属していません');
+      return {
+        reports: [],
+        hasMore: false,
+        nextCursor: null,
+        totalCount: 0,
+      };
     }
 
     const {
@@ -149,15 +153,16 @@ export const listReports = query({
     } = args;
 
     let query;
+    const { orgId } = user;
 
     // 最適化されたクエリパス
     if (status && sortBy === 'reportDate') {
       query = ctx.db
         .query('reports')
-        .withIndex('by_org_status_date', (q) => q.eq('orgId', user.orgId!).eq('status', status));
+        .withIndex('by_org_status_date', (q) => q.eq('orgId', orgId).eq('status', status));
     } else {
       // フォールバック/汎用クエリパス
-      query = ctx.db.query('reports').withIndex('by_org', (q) => q.eq('orgId', user.orgId!));
+      query = ctx.db.query('reports').withIndex('by_org', (q) => q.eq('orgId', orgId));
     }
 
     if (authorId) {
@@ -514,7 +519,7 @@ export const searchReports = query({
     // 読取権限チェック
     const user = await requireAuthentication(ctx);
     if (!user.orgId) {
-      throw new Error('組織に所属していません');
+      return [];
     }
     const { orgId } = user;
 

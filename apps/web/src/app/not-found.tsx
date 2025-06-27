@@ -12,9 +12,9 @@ export default function NotFound() {
           <div className='flex justify-center mb-4'>
             <div className='relative'>
               <FileSearch className='h-16 w-16 text-muted-foreground' />
-              <span className='absolute -top-2 -right-2 text-4xl font-bold text-muted-foreground'>
+              {/* <span className='absolute -top-2 -right-2 text-4xl font-bold text-muted-foreground'>
                 404
-              </span>
+              </span> */}
             </div>
           </div>
           <CardTitle className='text-2xl'>{COMMON_CONSTANTS.NOT_FOUND_TITLE}</CardTitle>

@@ -40,10 +40,17 @@ export async function getAuthenticatedUser(
     return null;
   }
 
-  const user = await ctx.db
+  // 1. tokenIdentifier で検索 (通常ログインフロー)
+  let user = await ctx.db
     .query('userProfiles')
     .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
     .unique();
+
+  // 2. 見つからない場合は clerkId でフォールバック検索 (Webhook で作成されたユーザー向け)
+  user ??= await ctx.db
+    .query('userProfiles')
+    .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
+    .unique(); // tokenIdentifier が未登録ならメモリ上で利用するだけ
 
   return user;
 }

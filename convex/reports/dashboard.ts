@@ -49,19 +49,32 @@ interface DashboardStatsData {
  * @since 1.0.0
  */
 export const getDashboardStats = query({
+  args: {},
   handler: async (ctx): Promise<DashboardStatsData[]> => {
     const user = await requireAuthentication(ctx);
     if (!user.orgId) {
-      throw new Error('組織に所属していません');
+      // 組織がまだない場合は空の統計データを返す
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      const filledResult: DashboardStatsData[] = [];
+      const currentDate = new Date(thirtyDaysAgo);
+      while (currentDate <= today) {
+        const [dateStr] = currentDate.toISOString().split('T');
+        filledResult.push({ date: dateStr, submitted: 0, approved: 0 });
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      return filledResult;
     }
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const thirtyDaysAgoTimestamp = thirtyDaysAgo.getTime();
+    const { orgId } = user;
 
     const reports = await ctx.db
       .query('reports')
-      .withIndex('by_org_created_status', (q) => q.eq('orgId', user.orgId!))
+      .withIndex('by_org_created_status', (q) => q.eq('orgId', orgId))
       .filter((q) => q.gt(q.field('created_at'), thirtyDaysAgoTimestamp))
       .filter((q) => q.eq(q.field('isDeleted'), false))
       .order('asc')
@@ -75,7 +88,7 @@ export const getDashboardStats = query({
       if (!statsByDate.has(dateStr)) {
         statsByDate.set(dateStr, { submitted: 0, approved: 0 });
       }
-      const stats = statsByDate.get(dateStr)!;
+      const stats = statsByDate.get(dateStr) ?? { submitted: 0, approved: 0 };
       if (report.status === 'submitted' || report.status === 'approved') {
         stats.submitted++;
       }
@@ -99,7 +112,7 @@ export const getDashboardStats = query({
     const today = new Date();
 
     while (currentDate <= today) {
-      const dateStr = currentDate.toISOString().split('T')[0];
+      const [dateStr] = currentDate.toISOString().split('T');
       const existing = result.find((r) => r.date === dateStr);
       filledResult.push(
         existing ?? {

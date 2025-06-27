@@ -8,7 +8,7 @@ import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
 import { useAuth } from '@clerk/nextjs';
 import { api } from 'convex/_generated/api';
 import type { Doc } from 'convex/_generated/dataModel';
-import { useQuery } from 'convex/react';
+import { useConvexAuth, useQuery } from 'convex/react';
 import { endOfMonth, format, startOfMonth, subDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import {
@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 import { DASHBOARD_CONSTANTS } from '@/constants/dashboard';
 import { REPORTS_CONSTANTS } from '@/constants/reports';
@@ -41,6 +43,15 @@ const ReportsChart = dynamic(
 
 function DashboardContentInner() {
   const { userId } = useAuth();
+  const { isLoading: isAuthLoading } = useConvexAuth();
+  const router = useRouter();
+
+  // クライアント側でセッションが無効になった場合、/login へリダイレクト
+  useEffect(() => {
+    if (!isAuthLoading && !userId) {
+      router.replace('/login');
+    }
+  }, [isAuthLoading, userId, router]);
 
   // 今月の日報データを取得
   const startDate = format(startOfMonth(new Date()), 'yyyy-MM-dd');
@@ -70,13 +81,28 @@ function DashboardContentInner() {
   const chartData = useQuery(api.index.getDashboardStats);
 
   // ローディング状態
-  if (!myReports || !allReports || !recentReports || chartData === undefined) {
+  if (
+    isAuthLoading ||
+    myReports === undefined ||
+    allReports === undefined ||
+    recentReports === undefined ||
+    chartData === undefined
+  ) {
     return (
       <div className='flex items-center justify-center h-full'>
         <div className='text-center'>
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto' />
           <p className='mt-2 text-gray-600'>{DASHBOARD_CONSTANTS.LOADING_MESSAGE}</p>
         </div>
+      </div>
+    );
+  }
+
+  // null チェック (isAuthLoading 後は null になりうる)
+  if (!myReports || !allReports || !recentReports) {
+    return (
+      <div className='flex items-center justify-center h-full'>
+        <p className='text-red-500'>データの読み込み中にエラーが発生しました。</p>
       </div>
     );
   }

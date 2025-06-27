@@ -1,4 +1,5 @@
 import { v } from 'convex/values';
+import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { mutation, query } from '../_generated/server';
 
@@ -23,7 +24,13 @@ export const getHealthCheck = query({
 export const listOrgs = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query('orgs').collect();
+    const orgs = await ctx.db.query('orgs').collect();
+    return orgs.map((org) => ({
+      id: org._id,
+      clerkId: org.clerkId,
+      name: org.name,
+      plan: org.plan,
+    }));
   },
 });
 
@@ -32,16 +39,19 @@ export const listOrgs = query({
  */
 export const createTestOrg = mutation({
   args: {
+    clerkId: v.string(),
     name: v.string(),
     plan: v.optional(v.union(v.literal('free'), v.literal('pro'), v.literal('enterprise'))),
   },
   handler: async (ctx, args) => {
     const orgData: {
+      clerkId: string;
       name: string;
       plan: 'free' | 'pro' | 'enterprise';
       created_at: number;
       updated_at: number;
     } = {
+      clerkId: args.clerkId,
       name: args.name,
       plan: args.plan ?? 'free',
       created_at: Date.now(),
@@ -57,6 +67,7 @@ export const createTestOrg = mutation({
  */
 export const createTestUser = mutation({
   args: {
+    clerkId: v.string(),
     name: v.string(),
     email: v.string(),
     role: v.union(v.literal('viewer'), v.literal('user'), v.literal('manager'), v.literal('admin')),
@@ -65,6 +76,7 @@ export const createTestUser = mutation({
   },
   handler: async (ctx, args) => {
     const userData: {
+      clerkId: string;
       name: string;
       email: string;
       role: 'viewer' | 'user' | 'manager' | 'admin';
@@ -73,6 +85,7 @@ export const createTestUser = mutation({
       created_at: number;
       updated_at: number;
     } = {
+      clerkId: args.clerkId,
       name: args.name,
       email: args.email,
       role: args.role,
@@ -143,5 +156,186 @@ export const testMutation = mutation({
   args: {},
   handler: async () => {
     return { message: 'Test mutation executed successfully', timestamp: Date.now() };
+  },
+});
+
+export const testAuth = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    return {
+      identity,
+      hasIdentity: !!identity,
+    };
+  },
+});
+
+// ユーザー一覧を取得するクエリ
+export const listUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    const users = await ctx.db.query('userProfiles').collect();
+    return users.map((user) => ({
+      id: user._id,
+      clerkId: user.clerkId,
+      name: user.name,
+      email: user.email,
+      orgId: user.orgId,
+      role: user.role,
+    }));
+  },
+});
+
+// 重複ユーザーをクリーンアップするmutation
+export const cleanupDuplicateUsers = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const users = await ctx.db.query('userProfiles').collect();
+
+    // ClerkIDでグループ化
+    const userGroups = new Map<string, typeof users>();
+
+    for (const user of users) {
+      const { clerkId } = user;
+      if (!userGroups.has(clerkId)) {
+        userGroups.set(clerkId, []);
+      }
+      userGroups.get(clerkId)!.push(user);
+    }
+
+    const cleanupResults = [];
+
+    // 重複があるユーザーを処理
+    for (const [clerkId, duplicateUsers] of userGroups.entries()) {
+      if (duplicateUsers.length > 1) {
+        console.log(`Found ${duplicateUsers.length} duplicates for clerkId: ${clerkId}`);
+
+        // orgIdを持つユーザーを優先、次にroleが高いユーザーを優先
+        const sortedUsers = duplicateUsers.sort((a, b) => {
+          // orgIdを持つユーザーを優先
+          if (a.orgId && !b.orgId) {
+            return -1;
+          }
+          if (!a.orgId && b.orgId) {
+            return 1;
+          }
+
+          // roleの優先順位: admin > manager > user > viewer
+          const roleOrder = { admin: 4, manager: 3, user: 2, viewer: 1 };
+          const aOrder = roleOrder[a.role] || 0;
+          const bOrder = roleOrder[b.role] || 0;
+
+          return bOrder - aOrder;
+        });
+
+        const keepUser = sortedUsers[0];
+        const deleteUsers = sortedUsers.slice(1);
+
+        cleanupResults.push({
+          clerkId,
+          kept: {
+            id: keepUser._id,
+            name: keepUser.name,
+            role: keepUser.role,
+            orgId: keepUser.orgId,
+          },
+          deleted: deleteUsers.map((u) => ({
+            id: u._id,
+            name: u.name,
+            role: u.role,
+            orgId: u.orgId,
+          })),
+        });
+
+        // 重複ユーザーを削除
+        for (const user of deleteUsers) {
+          await ctx.db.delete(user._id);
+          console.log(`Deleted duplicate user: ${user._id} (${user.name})`);
+        }
+      }
+    }
+
+    return {
+      message: `Cleanup completed. Processed ${cleanupResults.length} duplicate groups.`,
+      results: cleanupResults,
+    };
+  },
+});
+
+/**
+ * 重複ユーザーをクリーンアップ
+ */
+export const cleanupDuplicates = mutation({
+  args: {},
+  handler: async (ctx): Promise<any> => {
+    return await ctx.runMutation(internal.users.mutations.cleanupDuplicateUsers, {});
+  },
+});
+
+/**
+ * audit_logsテーブルの内容を確認
+ */
+export const listAuditLogs = query({
+  args: {},
+  handler: async (ctx) => {
+    const logs = await ctx.db.query('audit_logs').order('desc').take(20);
+    return logs.map((log) => ({
+      id: log._id,
+      action: log.action,
+      actor_id: log.actor_id,
+      created_at: new Date(log.created_at).toISOString(),
+      payload: log.payload,
+    }));
+  },
+});
+
+/**
+ * 特定のユーザーを組織に手動で紐付け
+ */
+export const linkUserToOrg = mutation({
+  args: {
+    clerkUserId: v.string(),
+    clerkOrgId: v.string(),
+    role: v.string(),
+  },
+  handler: async (ctx, { clerkUserId, clerkOrgId, role }): Promise<any> => {
+    const user = await ctx.db
+      .query('userProfiles')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', clerkUserId))
+      .unique();
+
+    const org = await ctx.db
+      .query('orgs')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', clerkOrgId))
+      .unique();
+
+    if (!user) {
+      throw new Error(`User not found: ${clerkUserId}`);
+    }
+
+    if (!org) {
+      throw new Error(`Organization not found: ${clerkOrgId}`);
+    }
+
+    // Map Clerk role to application role
+    const newRole = role === 'org:admin' ? 'admin' : 'user';
+
+    await ctx.db.patch(user._id, {
+      orgId: org._id,
+      role: newRole,
+      updated_at: Date.now(),
+    });
+
+    return {
+      message: `Successfully linked user ${clerkUserId} to organization ${clerkOrgId} with role ${newRole}`,
+      user: {
+        id: user._id,
+        clerkId: user.clerkId,
+        name: user.name,
+        email: user.email,
+        orgId: org._id,
+        role: newRole,
+      },
+    };
   },
 });

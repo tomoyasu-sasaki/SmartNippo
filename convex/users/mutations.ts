@@ -8,25 +8,19 @@
  */
 
 import { v } from 'convex/values';
-import { mutation } from '../_generated/server';
+import type { UserRole } from '../../apps/web/src/types/convex';
+import { internalMutation, mutation } from '../_generated/server';
 import { getAuthenticatedUser } from '../auth/auth';
 
 /**
- * ユーザー情報の初期保存
+ * ユーザー情報の初期保存 (クライアントからの呼び出し)
  *
  * @description 認証プロバイダー（Clerk）からのユーザー情報を基に、
- * 新規ユーザーの場合は組織を自動作成してユーザープロファイルを作成し、
- * 既存ユーザーの場合は組織情報のマイグレーションを実行します。
+ * 新規ユーザーの場合はユーザープロファイルを作成します。
  *
  * @mutation
  * @returns {Promise<Id<'userProfiles'>>} 作成または更新されたユーザーのID
  * @throws {Error} 認証情報が無効な場合
- * @example
- * ```typescript
- * // 新規ユーザー登録時に自動実行
- * const userId = await store();
- * console.log('User created with ID:', userId);
- * ```
  * @since 1.0.0
  */
 export const store = mutation({
@@ -40,44 +34,25 @@ export const store = mutation({
     // ユーザーが既に存在するかチェック
     const user = await ctx.db
       .query('userProfiles')
-      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
       .unique();
 
-    // 既存ユーザーの処理
     if (user !== null) {
-      // orgIdがない場合は、新しい組織を作成して割り当てる（データ移行用）
-      if (!user.orgId) {
-        const orgId = await ctx.db.insert('orgs', {
-          name: `${identity.name ?? 'New'}'s Organization`,
-          plan: 'free',
-          created_at: Date.now(),
-          updated_at: Date.now(),
-        });
+      // tokenIdentifier が未登録の場合は追加でパッチ
+      if (!user.tokenIdentifier) {
         await ctx.db.patch(user._id, {
-          orgId,
-          role: 'admin', // 最初のユーザーはadmin
+          tokenIdentifier: identity.tokenIdentifier,
           updated_at: Date.now(),
         });
-        return user._id;
       }
       return user._id;
     }
 
-    // 新規ユーザーの処理
-    // 新しい組織を作成
-    const orgId = await ctx.db.insert('orgs', {
-      name: `${identity.name ?? 'New User'}'s Organization`,
-      plan: 'free',
-      created_at: Date.now(),
-      updated_at: Date.now(),
-    });
-
-    // 新規ユーザーをadminとして作成
     const newUserData: any = {
+      clerkId: identity.subject,
       name: identity.name ?? 'New User',
       tokenIdentifier: identity.tokenIdentifier,
-      role: 'admin',
-      orgId,
+      role: 'viewer', // デフォルトロール
       created_at: Date.now(),
       updated_at: Date.now(),
     };
@@ -90,6 +65,255 @@ export const store = mutation({
     }
 
     return await ctx.db.insert('userProfiles', newUserData);
+  },
+});
+
+/**
+ * [INTERNAL] Clerk Webhook経由でユーザーを作成・更新 (user.created, user.updated)
+ * @description この関数がWebhook起因のユーザー作成を担う唯一の関数です。
+ * 冪等性キーを使用して重複処理を防止します。
+ */
+export const upsertUserWithIdempotency = internalMutation({
+  args: {
+    clerkUser: v.any(),
+    idempotencyKey: v.string(),
+    eventType: v.string(),
+  },
+  handler: async (ctx, { clerkUser, idempotencyKey, eventType }) => {
+    const { id: clerkId, first_name, last_name, image_url, email_addresses } = clerkUser;
+
+    // 1. 冪等性チェック
+    const existingProcessing = await ctx.db
+      .query('audit_logs')
+      .filter((q) =>
+        q.and(
+          q.eq(q.field('action'), 'webhook_processing'),
+          q.eq(q.field('payload.idempotencyKey'), idempotencyKey)
+        )
+      )
+      .first();
+
+    if (existingProcessing) {
+      console.log(`[${eventType}] Webhook ${idempotencyKey} already processed, skipping.`);
+      return;
+    }
+
+    // 2. 処理開始を記録
+    await ctx.db.insert('audit_logs', {
+      action: 'webhook_processing',
+      payload: { idempotencyKey, eventType, clerkUserId: clerkId },
+      created_at: Date.now(),
+    });
+
+    // 3. ユーザーを検索
+    const userRecord = await ctx.db
+      .query('userProfiles')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', clerkId))
+      .unique();
+
+    const name = [first_name, last_name].filter(Boolean).join(' ') || 'New User';
+    const email = email_addresses[0]?.email_address;
+
+    if (userRecord === null) {
+      // 4. ユーザーが存在しない場合、新規作成
+      console.log(`[${eventType}] Creating new user: ${clerkId}`);
+      await ctx.db.insert('userProfiles', {
+        clerkId,
+        name,
+        email,
+        avatarUrl: image_url,
+        role: 'viewer',
+        created_at: Date.now(),
+        updated_at: Date.now(),
+      });
+    } else {
+      // 5. ユーザーが存在する場合、情報を更新
+      // 組織情報(orgId, role)は別のWebhookで更新されるため、ここでは更新しない
+      console.log(`[${eventType}] Updating existing user: ${clerkId}`);
+      await ctx.db.patch(userRecord._id, {
+        name,
+        email,
+        avatarUrl: image_url,
+        updated_at: Date.now(),
+      });
+    }
+  },
+});
+
+/**
+ * [INTERNAL] Clerk Webhook経由でユーザーの組織情報とロールを更新 (organizationMembership.created)
+ * @description この関数はユーザーの組織情報更新のみを担当し、ユーザー作成は行いません。
+ * ユーザーが見つからない場合はエラーをスローし、Clerkの再試行機能に委ねます。
+ */
+export const updateUserOrgAndRoleWithIdempotency = internalMutation({
+  args: {
+    clerkUserId: v.string(),
+    clerkOrgId: v.string(),
+    role: v.string(), // e.g., 'org:admin', 'org:member'
+    idempotencyKey: v.string(),
+    eventType: v.string(),
+  },
+  handler: async (ctx, { clerkUserId, clerkOrgId, role, idempotencyKey, eventType }) => {
+    // 1. 冪等性チェック
+    const existingProcessing = await ctx.db
+      .query('audit_logs')
+      .filter((q) =>
+        q.and(
+          q.eq(q.field('action'), 'webhook_processing'),
+          q.eq(q.field('payload.idempotencyKey'), idempotencyKey)
+        )
+      )
+      .first();
+
+    if (existingProcessing) {
+      console.log(`[${eventType}] Webhook ${idempotencyKey} already processed, skipping.`);
+      return;
+    }
+
+    // 2. 処理開始を記録
+    await ctx.db.insert('audit_logs', {
+      action: 'webhook_processing',
+      payload: { idempotencyKey, eventType, clerkUserId, clerkOrgId },
+      created_at: Date.now(),
+    });
+
+    // 3. ユーザーを検索
+    const userRecord = await ctx.db
+      .query('userProfiles')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', clerkUserId))
+      .unique();
+
+    if (userRecord === null) {
+      // 4. ユーザーが見つからない場合、エラーをスローして再試行を促す
+      // `user.created`が先に処理されるのを待つ
+      throw new Error(
+        `[${eventType}] User ${clerkUserId} not found. Waiting for user.created webhook. Retrying...`
+      );
+    }
+
+    // 5. 組織を検索
+    const org = await ctx.db
+      .query('orgs')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', clerkOrgId))
+      .unique();
+
+    if (!org) {
+      // 組織が見つからない場合は、エラーログを残して終了
+      console.error(`[${eventType}] Organization ${clerkOrgId} not found for user ${clerkUserId}.`);
+      return;
+    }
+
+    // 6. Clerkのロールをアプリのロールにマッピング
+    const newRole: UserRole = role.includes('admin') ? 'admin' : 'user';
+
+    // 7. ユーザーの組織情報とロールを更新
+    console.log(
+      `[${eventType}] Linking user ${clerkUserId} to org ${clerkOrgId} with role ${newRole}`
+    );
+    await ctx.db.patch(userRecord._id, {
+      orgId: org._id,
+      role: newRole,
+      updated_at: Date.now(),
+    });
+  },
+});
+
+/**
+ * [INTERNAL] Clerk Webhook経由でユーザーを削除 (user.deleted)
+ */
+export const deleteUser = internalMutation({
+  args: { id: v.string() },
+  handler: async (ctx, { id }) => {
+    const userRecord = await ctx.db
+      .query('userProfiles')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', id))
+      .unique();
+
+    if (userRecord !== null) {
+      await ctx.db.delete(userRecord._id);
+      console.log(`[user.deleted] Deleted user: ${id}`);
+    }
+  },
+});
+
+/**
+ * [INTERNAL] Clerk Webhook経由で招待承認イベントを処理 (organizationInvitation.accepted)
+ * @description ユーザーと組織の紐付けを確実に行います。
+ * 基本的にはorganizationMembership.createdで処理されますが、念のためのフォールバックです。
+ */
+export const ensureUserOrgLinkage = internalMutation({
+  args: {
+    organizationId: v.string(),
+    emailAddress: v.string(),
+    role: v.string(),
+    idempotencyKey: v.string(),
+  },
+  handler: async (ctx, { organizationId, emailAddress, role, idempotencyKey }) => {
+    const eventType = 'organizationInvitation.accepted';
+
+    // 1. 冪等性チェック
+    const existingProcessing = await ctx.db
+      .query('audit_logs')
+      .filter((q) =>
+        q.and(
+          q.eq(q.field('action'), 'webhook_processing'),
+          q.eq(q.field('payload.idempotencyKey'), idempotencyKey)
+        )
+      )
+      .first();
+
+    if (existingProcessing) {
+      console.log(`[${eventType}] Webhook ${idempotencyKey} already processed, skipping.`);
+      return;
+    }
+
+    // 2. 処理開始を記録
+    await ctx.db.insert('audit_logs', {
+      action: 'webhook_processing',
+      payload: { idempotencyKey, eventType, emailAddress, organizationId },
+      created_at: Date.now(),
+    });
+
+    // 3. ユーザーをメールアドレスで検索
+    const user = await ctx.db
+      .query('userProfiles')
+      .filter((q) => q.eq(q.field('email'), emailAddress))
+      .first();
+
+    if (!user) {
+      console.warn(
+        `[${eventType}] User not found by email: ${emailAddress}. Relying on other webhooks.`
+      );
+      return;
+    }
+
+    // 4. 組織を検索
+    const org = await ctx.db
+      .query('orgs')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', organizationId))
+      .unique();
+
+    if (!org) {
+      console.warn(`[${eventType}] Organization not found: ${organizationId}.`);
+      return;
+    }
+
+    // 5. ユーザーが既に紐付いているか確認し、まだなら更新
+    if (user.orgId !== org._id) {
+      const newRole: UserRole = role.includes('admin') ? 'admin' : 'user';
+      await ctx.db.patch(user._id, {
+        orgId: org._id,
+        role: newRole,
+        updated_at: Date.now(),
+      });
+      console.log(
+        `[${eventType}] Linked user ${user.clerkId} to organization ${organizationId} with role ${newRole}`
+      );
+    } else {
+      console.log(
+        `[${eventType}] User ${emailAddress} already linked to organization ${organizationId}`
+      );
+    }
   },
 });
 
@@ -354,5 +578,90 @@ export const deleteProfile = mutation({
     }
 
     return { success: true };
+  },
+});
+
+/**
+ * [INTERNAL] 重複ユーザーの一括クリーンアップ
+ * @description 同じclerkIdを持つ重複ユーザーを検出し、適切に統合します。
+ */
+export const cleanupDuplicateUsers = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    console.log('Starting comprehensive duplicate user cleanup...');
+
+    // Get all users grouped by clerkId
+    const allUsers = await ctx.db.query('userProfiles').collect();
+    const usersByClerkId = new Map<string, typeof allUsers>();
+
+    for (const user of allUsers) {
+      if (!user.clerkId) {
+        continue;
+      }
+
+      if (!usersByClerkId.has(user.clerkId)) {
+        usersByClerkId.set(user.clerkId, []);
+      }
+      usersByClerkId.get(user.clerkId)!.push(user);
+    }
+
+    let totalDuplicatesFound = 0;
+    let totalDuplicatesDeleted = 0;
+
+    for (const [clerkId, users] of usersByClerkId) {
+      if (users.length > 1) {
+        totalDuplicatesFound += users.length - 1;
+        console.log(`Found ${users.length} duplicate users for clerkId: ${clerkId}`);
+
+        // Sort users by priority: orgId first, then role hierarchy
+        const sortedUsers = users.sort((a, b) => {
+          if (a.orgId && !b.orgId) {
+            return -1;
+          }
+          if (!a.orgId && b.orgId) {
+            return 1;
+          }
+          const roleOrder: Record<UserRole, number> = { admin: 4, manager: 3, user: 2, viewer: 1 };
+          return (roleOrder[b.role] || 0) - (roleOrder[a.role] || 0);
+        });
+
+        const keepUser = sortedUsers[0];
+        const deleteUsers = sortedUsers.slice(1);
+
+        console.log(
+          `Keeping user: ${keepUser._id} (${keepUser.name}) with role: ${keepUser.role}, orgId: ${keepUser.orgId}`
+        );
+
+        for (const duplicateUser of deleteUsers) {
+          await ctx.db.delete(duplicateUser._id);
+          totalDuplicatesDeleted++;
+          console.log(`Deleted duplicate user: ${duplicateUser._id} (${duplicateUser.name})`);
+        }
+
+        // Record the cleanup action
+        if (keepUser.orgId) {
+          await ctx.db.insert('audit_logs', {
+            action: 'cleanup_duplicates',
+            payload: {
+              clerkId,
+              keptUserId: keepUser._id,
+              deletedCount: deleteUsers.length,
+              deletedUserIds: deleteUsers.map((u) => u._id),
+            },
+            created_at: Date.now(),
+            org_id: keepUser.orgId,
+          });
+        }
+      }
+    }
+
+    console.log(
+      `Cleanup completed. Found ${totalDuplicatesFound} duplicates, deleted ${totalDuplicatesDeleted} users.`
+    );
+    return {
+      duplicatesFound: totalDuplicatesFound,
+      duplicatesDeleted: totalDuplicatesDeleted,
+      usersProcessed: allUsers.length,
+    };
   },
 });
