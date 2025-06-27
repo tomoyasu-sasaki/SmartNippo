@@ -17,32 +17,58 @@ import {
 } from 'react-native';
 import { z } from 'zod';
 import AvatarPicker from '../../components/AvatarPicker';
+import { PROFILE_CONSTANTS } from '../../constants/profile';
 
 import { PRIVACY_LEVELS, SOCIAL_PLATFORMS } from '@smartnippo/lib';
 import { api } from 'convex/_generated/api';
 import { Image as ExpoImage } from 'expo-image';
 
+import type { UserProfile } from '../../types';
+
 // Zodスキーマをこのファイル内で直接定義
 const profileFormSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
+  name: z
+    .string()
+    .min(1, PROFILE_CONSTANTS.VALIDATION_ERRORS.NAME_REQUIRED)
+    .max(100, PROFILE_CONSTANTS.VALIDATION_ERRORS.NAME_TOO_LONG),
   avatarUrl: z.string().optional(),
-  socialLinks: z.record(z.string()).optional(),
-  privacySettings: z.record(z.string()).optional(),
+  avatarStorageId: z.string().optional(),
+  socialLinks: z
+    .object({
+      twitter: z.string().optional(),
+      linkedin: z.string().optional(),
+      github: z.string().optional(),
+      instagram: z.string().optional(),
+      facebook: z.string().optional(),
+      youtube: z.string().optional(),
+      website: z.string().optional(),
+    })
+    .optional(),
+  privacySettings: z
+    .object({
+      profile: z.enum(['public', 'organization', 'team', 'private']).optional(),
+      email: z.enum(['public', 'organization', 'team', 'private']).optional(),
+      socialLinks: z.enum(['public', 'organization', 'team', 'private']).optional(),
+      reports: z.enum(['public', 'organization', 'team', 'private']).optional(),
+      avatar: z.enum(['public', 'organization', 'team', 'private']).optional(),
+    })
+    .optional(),
 });
 
+// zodスキーマから型を推論
 type ProfileFormData = z.infer<typeof profileFormSchema>;
 
 export default function ProfileScreen() {
-  const { user, isLoaded } = useUser();
+  const { isLoaded, user } = useUser();
   const { signOut } = useClerk();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Convexからユーザープロフィールを取得
-  const userProfile = useQuery(api.users.current);
-  const updateProfile = useMutation(api.users.updateProfile);
-  const generateUploadUrl = useMutation(api.uploads.generateAvatarUploadUrl);
-  const saveAvatarToProfile = useMutation(api.uploads.saveAvatarToProfile);
+  // userProfileをUserProfile型として扱う
+  const userProfile = useQuery(api.index.current) as UserProfile | undefined;
+  const updateProfile = useMutation(api.index.updateProfile);
+  const generateUploadUrl = useMutation(api.index.generateAvatarUploadUrl);
+  const saveAvatarToProfile = useMutation(api.index.saveAvatarToProfile);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -67,52 +93,44 @@ export default function ProfileScreen() {
   }, [userProfile, isEditing, form.reset]);
 
   const handleSignOut = async () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await signOut();
-            router.replace('/(auth)');
-          } catch {
-            Alert.alert('Error', 'Failed to sign out. Please try again.');
-          }
+    Alert.alert(
+      PROFILE_CONSTANTS.ALERTS.SIGN_OUT_TITLE,
+      PROFILE_CONSTANTS.ALERTS.SIGN_OUT_MESSAGE,
+      [
+        { text: PROFILE_CONSTANTS.ALERTS.CANCEL, style: 'cancel' },
+        {
+          text: PROFILE_CONSTANTS.ALERTS.SIGN_OUT_CONFIRM,
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/(auth)');
+            } catch {
+              Alert.alert('Error', PROFILE_CONSTANTS.ALERTS.SIGN_OUT_ERROR);
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
-  const handleSave = async (data: ProfileFormData) => {
+  const handleSubmit = async (data: ProfileFormData) => {
     if (!userProfile) {
       return;
     }
 
     try {
-      setIsLoading(true);
-
       await updateProfile({
         name: data.name,
-        avatarUrl: data.avatarUrl ?? undefined,
-        socialLinks: data.socialLinks ?? undefined,
-        privacySettings: data.privacySettings ?? undefined,
+        avatarUrl: data.avatarUrl,
+        socialLinks: data.socialLinks,
+        privacySettings: data.privacySettings,
         _version: userProfile.updated_at,
       });
-
-      Alert.alert('成功', 'プロフィールを更新しました');
+      Alert.alert('成功', PROFILE_CONSTANTS.ALERTS.PROFILE_UPDATE_SUCCESS);
       setIsEditing(false);
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('updated by another process')) {
-        Alert.alert(
-          'エラー',
-          'プロフィールが他の場所で更新されています。画面を再読み込みしてください。'
-        );
-      } else {
-        Alert.alert('エラー', 'プロフィールの更新に失敗しました');
-      }
-    } finally {
-      setIsLoading(false);
+    } catch {
+      Alert.alert('エラー', PROFILE_CONSTANTS.ALERTS.PROFILE_UPDATE_ERROR);
     }
   };
 
@@ -131,7 +149,7 @@ export default function ProfileScreen() {
   if (!isLoaded || !userProfile) {
     return (
       <View className='flex-1 items-center justify-center bg-white'>
-        <Text className='text-gray-600'>Loading...</Text>
+        <Text className='text-gray-600'>{PROFILE_CONSTANTS.LOADING_TEXT}</Text>
       </View>
     );
   }
@@ -139,7 +157,7 @@ export default function ProfileScreen() {
   if (!user) {
     return (
       <View className='flex-1 items-center justify-center bg-white'>
-        <Text className='text-red-600'>Not authenticated</Text>
+        <Text className='text-red-600'>{PROFILE_CONSTANTS.ERROR_TEXT}</Text>
       </View>
     );
   }
@@ -155,7 +173,9 @@ export default function ProfileScreen() {
       <ScrollView className='flex-1' contentContainerStyle={{ paddingBottom: 100 }}>
         <View className='px-6 py-8'>
           <View className='flex-row items-center justify-between mb-6'>
-            <Text className='text-2xl font-bold text-gray-900'>Profile</Text>
+            <Text className='text-2xl font-bold text-gray-900'>
+              {PROFILE_CONSTANTS.SCREEN_TITLE}
+            </Text>
             {!isEditing ? (
               <TouchableOpacity
                 className='bg-blue-600 px-4 py-2 rounded-lg'
@@ -167,7 +187,7 @@ export default function ProfileScreen() {
               <View className='flex-row space-x-2'>
                 <TouchableOpacity
                   className='bg-green-600 px-4 py-2 rounded-lg'
-                  onPress={form.handleSubmit(handleSave)}
+                  onPress={form.handleSubmit(handleSubmit)}
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -219,12 +239,12 @@ export default function ProfileScreen() {
 
                     if (resultUrl?.url) {
                       form.setValue('avatarUrl', resultUrl.url);
-                      Alert.alert('成功', '画像がアップロードされました');
+                      Alert.alert('成功', PROFILE_CONSTANTS.ALERTS.IMAGE_UPLOAD_SUCCESS);
                     } else {
                       throw new Error('Failed to get avatar URL after saving.');
                     }
                   } catch {
-                    Alert.alert('エラー', '画像のアップロードに失敗しました');
+                    Alert.alert('エラー', PROFILE_CONSTANTS.ALERTS.IMAGE_UPLOAD_ERROR);
                   }
                 }}
                 disabled={isLoading}
@@ -248,7 +268,9 @@ export default function ProfileScreen() {
 
           {/* Name Section */}
           <View className='mb-6'>
-            <Text className='text-sm font-medium text-gray-700 mb-2'>名前</Text>
+            <Text className='text-sm font-medium text-gray-700 mb-2'>
+              {PROFILE_CONSTANTS.FORM_LABELS.NAME}
+            </Text>
             {isEditing ? (
               <Controller
                 control={form.control}
@@ -257,7 +279,7 @@ export default function ProfileScreen() {
                   <View>
                     <TextInput
                       className='w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900'
-                      placeholder='名前を入力してください'
+                      placeholder={PROFILE_CONSTANTS.PLACEHOLDERS.NAME}
                       value={value}
                       onChangeText={onChange}
                       editable={!isLoading}
@@ -274,7 +296,9 @@ export default function ProfileScreen() {
           {/* Social Links Section */}
           {isEditing && (
             <View className='mb-6'>
-              <Text className='text-sm font-medium text-gray-700 mb-2'>ソーシャルリンク</Text>
+              <Text className='text-sm font-medium text-gray-700 mb-2'>
+                {PROFILE_CONSTANTS.FORM_LABELS.SOCIAL_LINKS}
+              </Text>
               <SocialLinksEditor
                 socialLinks={form.watch('socialLinks') ?? userProfile.socialLinks ?? {}}
                 onChange={(links) => {
@@ -287,7 +311,9 @@ export default function ProfileScreen() {
           {/* Privacy Settings Section */}
           {isEditing && (
             <View className='mb-6'>
-              <Text className='text-sm font-medium text-gray-700 mb-2'>プライバシー設定</Text>
+              <Text className='text-sm font-medium text-gray-700 mb-2'>
+                {PROFILE_CONSTANTS.FORM_LABELS.PRIVACY_SETTINGS}
+              </Text>
               <PrivacySettingsEditor
                 privacySettings={form.watch('privacySettings') ?? userProfile.privacySettings ?? {}}
                 onChange={(settings) => {
@@ -300,20 +326,26 @@ export default function ProfileScreen() {
           {/* Account Details */}
           <View className='space-y-4'>
             <View className='bg-gray-50 p-4 rounded-lg'>
-              <Text className='text-sm font-medium text-gray-700 mb-1'>Email</Text>
+              <Text className='text-sm font-medium text-gray-700 mb-1'>
+                {PROFILE_CONSTANTS.FORM_LABELS.EMAIL}
+              </Text>
               <Text className='text-base text-gray-900'>
                 {userProfile.email ?? user.primaryEmailAddress?.emailAddress ?? 'Not set'}
               </Text>
             </View>
 
             <View className='bg-gray-50 p-4 rounded-lg'>
-              <Text className='text-sm font-medium text-gray-700 mb-1'>Role</Text>
+              <Text className='text-sm font-medium text-gray-700 mb-1'>
+                {PROFILE_CONSTANTS.FORM_LABELS.ROLE}
+              </Text>
               <Text className='text-base text-gray-900 capitalize'>{userProfile.role}</Text>
             </View>
 
             <View className='bg-gray-50 p-4 rounded-lg'>
-              <Text className='text-sm font-medium text-gray-700 mb-1'>Member Since</Text>
-              <Text className='text-base text-gray-900'>
+              <Text className='text-sm font-medium text-gray-700 mb-1'>
+                {PROFILE_CONSTANTS.FORM_LABELS.MEMBER_SINCE}
+              </Text>
+              <Text className='text-base text-gray-600'>
                 {new Date(userProfile.created_at).toLocaleDateString()}
               </Text>
             </View>
@@ -323,12 +355,17 @@ export default function ProfileScreen() {
               className='bg-gray-600 p-4 rounded-lg mt-4 flex-row items-center justify-center'
               onPress={() => {
                 // React NativeでのエクスポートはファイルシステムAPIを使用
-                Alert.alert('プロフィールエクスポート', 'この機能は準備中です');
+                Alert.alert(
+                  'プロフィールエクスポート',
+                  PROFILE_CONSTANTS.ALERTS.EXPORT_COMING_SOON
+                );
               }}
               disabled={isLoading}
             >
               <Download size={20} color='white' />
-              <Text className='ml-2 text-center font-semibold text-white'>Export Profile</Text>
+              <Text className='ml-2 text-center font-semibold text-white'>
+                {PROFILE_CONSTANTS.BUTTONS.EXPORT_PROFILE}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -336,7 +373,9 @@ export default function ProfileScreen() {
               onPress={handleSignOut}
               disabled={isLoading}
             >
-              <Text className='text-center font-semibold text-white'>Sign Out</Text>
+              <Text className='text-center font-semibold text-white'>
+                {PROFILE_CONSTANTS.BUTTONS.SIGN_OUT}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -381,18 +420,22 @@ function SocialLinksEditor({
       <TouchableOpacity
         className='bg-blue-50 p-3 rounded-lg flex-row items-center justify-center'
         onPress={() => {
-          Alert.prompt('ソーシャルリンクを追加', 'URLを入力してください', (url) => {
-            if (url) {
-              // URLからプラットフォームを推測する処理
-              const newLinks = { ...links, twitter: url }; // 簡易実装
-              setLinks(newLinks);
-              onChange(newLinks);
+          Alert.prompt(
+            PROFILE_CONSTANTS.SOCIAL_LINKS.ADD_LINK_PROMPT,
+            PROFILE_CONSTANTS.ALERTS.URL_PROMPT,
+            (url) => {
+              if (url) {
+                // URLからプラットフォームを推測する処理
+                const newLinks = { ...links, twitter: url }; // 簡易実装
+                setLinks(newLinks);
+                onChange(newLinks);
+              }
             }
-          });
+          );
         }}
       >
         <Plus size={16} color='#3b82f6' />
-        <Text className='ml-2 text-blue-600 text-sm'>リンクを追加</Text>
+        <Text className='ml-2 text-blue-600 text-sm'>{PROFILE_CONSTANTS.BUTTONS.ADD_LINK}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -408,12 +451,7 @@ function PrivacySettingsEditor({
 }) {
   const [settings, setSettings] = useState(privacySettings);
 
-  const privacyOptions = [
-    { key: 'profile', label: 'プロフィール全体' },
-    { key: 'email', label: 'メールアドレス' },
-    { key: 'socialLinks', label: 'ソーシャルリンク' },
-    { key: 'reports', label: '日報' },
-  ];
+  const privacyOptions = PROFILE_CONSTANTS.PRIVACY_OPTIONS;
 
   return (
     <View className='space-y-2'>

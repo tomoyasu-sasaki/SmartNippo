@@ -1,15 +1,8 @@
+import type { MutationOptions } from '@/types';
 import { useMutation } from 'convex/react';
 import type { FunctionReference, OptionalRestArgs } from 'convex/server';
 import { useState } from 'react';
 import { toast } from 'sonner';
-
-interface MutationOptions {
-  onSuccess?: (result: any) => void;
-  onError?: (error: Error) => void;
-  successMessage?: string;
-  errorMessage?: string;
-  loadingMessage?: string;
-}
 
 export function useConvexMutation<Mutation extends FunctionReference<'mutation'>>(
   mutation: Mutation,

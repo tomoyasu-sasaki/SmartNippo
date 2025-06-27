@@ -82,8 +82,6 @@ function RootLayoutContent() {
     const originalHandler = ErrorUtils.getGlobalHandler();
 
     ErrorUtils.setGlobalHandler((error, isFatal) => {
-      console.error('Global Error:', error);
-
       if (isFatal) {
         Alert.alert(
           'アプリケーションエラー',

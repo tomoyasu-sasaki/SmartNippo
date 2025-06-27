@@ -2,12 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   // Transpile packages from the monorepo
-  transpilePackages: [
-    '@smartnippo/ui',
-    '@smartnippo/lib',
-    '@smartnippo/types',
-    '@smartnippo/config',
-  ],
+  transpilePackages: ['@smartnippo/lib', '@smartnippo/types', '@smartnippo/config'],
 
   // Experimental features
   experimental: {

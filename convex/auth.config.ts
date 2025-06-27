@@ -1,44 +1,81 @@
 /**
- * Convex Authentication Configuration
+ * @fileoverview Convex 認証設定
  *
- * Clerk認証プロバイダーの設定
- * 環境変数を使用して異なる環境（開発、本番）をサポート
+ * @description Clerk認証プロバイダーとの統合設定を管理します。
+ * 環境変数を使用して開発・本番環境に対応した認証設定を提供し、
+ * セキュアな認証プロセスを実現します。
  *
- * 環境変数:
- * - CLERK_DOMAIN: Clerkのドメイン（例: https://your-app.clerk.accounts.dev）
- * - CLERK_APPLICATION_ID: Convexアプリケーション識別子（通常は"convex"）
+ * @since 1.0.0
  */
 
 /**
- * 認証プロバイダー設定の型定義
+ * 認証プロバイダー設定
+ *
+ * @description 個別の認証プロバイダー（Clerk）の設定情報を定義するインターフェース。
+ * ドメインとアプリケーションIDを管理し、認証プロバイダーとの連携を可能にします。
+ *
+ * @interface
+ * @since 1.0.0
  */
 interface AuthProvider {
+  /** 認証プロバイダーのドメインURL */
   domain: string;
+  /** Convexアプリケーション識別子 */
   applicationID: string;
 }
 
 /**
- * 認証設定全体の型定義
+ * 認証設定全体
+ *
+ * @description アプリケーション全体の認証設定を定義するインターフェース。
+ * 複数の認証プロバイダーをサポートする構造になっています。
+ *
+ * @interface
+ * @since 1.0.0
  */
 interface AuthConfig {
+  /** 設定済み認証プロバイダーの配列 */
   providers: AuthProvider[];
 }
 
 /**
- * 環境変数から認証設定を取得する関数
+ * 環境変数から認証設定を構築
  *
- * @returns {AuthProvider} 認証プロバイダー設定
+ * @description 環境変数から認証プロバイダーの設定を取得し、妥当性を検証します。
+ * Clerkドメインの形式チェック、アプリケーションIDの必須確認などを行います。
+ *
+ * @function
+ * @returns {AuthProvider} 検証済みの認証プロバイダー設定
  * @throws {Error} 必須環境変数が不正または未設定の場合
+ * @example
+ * ```typescript
+ * // 環境変数設定例
+ * // NEXT_PUBLIC_CLERK_FRONTEND_API_URL=https://your-app.clerk.accounts.dev
+ * // CLERK_APPLICATION_ID=convex
+ *
+ * const config = getAuthConfig();
+ * console.log('Auth domain:', config.domain);
+ * ```
+ * @since 1.0.0
  */
 const getAuthConfig = (): AuthProvider => {
   // Convexでは process.env へのアクセスが制限されているため、
   // ビルド時に値が解決される必要があります
-  const clerkDomain = process.env.CLERK_DOMAIN ?? 'https://neutral-marmoset-26.clerk.accounts.dev';
+  const clerkDomain =
+    process.env.NEXT_PUBLIC_CLERK_FRONTEND_API_URL ??
+    process.env.CLERK_FRONTEND_API_URL ??
+    process.env.CLERK_DOMAIN;
   const applicationId = process.env.CLERK_APPLICATION_ID ?? 'convex';
 
   // 設定の妥当性チェック
-  if (!clerkDomain?.startsWith('https://')) {
-    throw new Error('CLERK_DOMAIN must be a valid HTTPS URL');
+  if (!clerkDomain) {
+    throw new Error(
+      'Add NEXT_PUBLIC_CLERK_FRONTEND_API_URL, CLERK_FRONTEND_API_URL, or CLERK_DOMAIN to .env.local'
+    );
+  }
+
+  if (!clerkDomain.startsWith('https://')) {
+    throw new Error('NEXT_PUBLIC_CLERK_FRONTEND_API_URL must be a valid HTTPS URL');
   }
 
   if (!applicationId || applicationId.trim().length === 0) {
@@ -47,7 +84,7 @@ const getAuthConfig = (): AuthProvider => {
 
   // Clerkドメインの形式チェック（基本的な検証）
   if (!clerkDomain.includes('.clerk.accounts.dev') && !clerkDomain.includes('clerk.')) {
-    throw new Error('CLERK_DOMAIN must be a valid Clerk domain');
+    throw new Error('NEXT_PUBLIC_CLERK_FRONTEND_API_URL must be a valid Clerk domain');
   }
 
   return {
@@ -57,10 +94,22 @@ const getAuthConfig = (): AuthProvider => {
 };
 
 /**
- * Convex認証設定
+ * Convex 認証設定オブジェクト
  *
- * この設定は認証プロバイダー（Clerk）との統合に使用されます。
- * 環境ごとに異なるClerkドメインを設定できます。
+ * @description アプリケーション全体で使用される認証設定です。
+ * Clerk認証プロバイダーとの統合に必要な情報を含み、
+ * セキュアな認証フローを提供します。
+ *
+ * @constant
+ * @type {AuthConfig}
+ * @example
+ * ```typescript
+ * import authConfig from './auth.config';
+ *
+ * // 設定された認証プロバイダーを確認
+ * console.log('Configured providers:', authConfig.providers);
+ * ```
+ * @since 1.0.0
  */
 const authConfig: AuthConfig = {
   providers: [getAuthConfig()],

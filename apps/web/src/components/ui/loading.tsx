@@ -1,10 +1,7 @@
+import type { LoadingOverlayProps, LoadingProps, LoadingSpinnerProps } from '@/types';
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
-
-export interface LoadingSpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
-  size?: 'sm' | 'md' | 'lg';
-}
 
 const LoadingSpinner = React.forwardRef<HTMLDivElement, LoadingSpinnerProps>(
   ({ className, size = 'md', ...props }, ref) => {
@@ -29,11 +26,6 @@ const LoadingSpinner = React.forwardRef<HTMLDivElement, LoadingSpinnerProps>(
 );
 LoadingSpinner.displayName = 'LoadingSpinner';
 
-export interface LoadingProps extends React.HTMLAttributes<HTMLDivElement> {
-  text?: string;
-  size?: 'sm' | 'md' | 'lg';
-}
-
 const Loading = React.forwardRef<HTMLDivElement, LoadingProps>(
   ({ className, text = '読み込み中...', size = 'md', ...props }, ref) => (
     <div
@@ -47,11 +39,6 @@ const Loading = React.forwardRef<HTMLDivElement, LoadingProps>(
   )
 );
 Loading.displayName = 'Loading';
-
-export interface LoadingOverlayProps extends React.HTMLAttributes<HTMLDivElement> {
-  isLoading: boolean;
-  text?: string;
-}
 
 const LoadingOverlay = React.forwardRef<HTMLDivElement, LoadingOverlayProps>(
   ({ className, isLoading, text = '読み込み中...', children, ...props }, ref) => (

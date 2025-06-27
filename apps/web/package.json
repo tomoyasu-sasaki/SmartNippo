@@ -19,7 +19,6 @@
     "@radix-ui/react-switch": "^1.2.5",
     "@smartnippo/lib": "workspace:*",
     "@smartnippo/types": "workspace:*",
-    "@smartnippo/ui": "workspace:*",
     "@tanstack/react-query": "^5.80.10",
     "@tanstack/react-table": "^8.21.3",
     "browser-image-compression": "^2.0.2",

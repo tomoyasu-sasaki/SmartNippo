@@ -1,15 +1,16 @@
-import { useSignIn, useSignUp, useOAuth } from '@clerk/clerk-expo';
+import { useOAuth, useSignIn, useSignUp } from '@clerk/clerk-expo';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import {
-  View,
+  Alert,
+  SafeAreaView,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
-  ScrollView,
-  SafeAreaView
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { AUTH_CONSTANTS } from '../../constants/auth';
 
 export default function AuthScreen() {
   const [email, setEmail] = useState('');
@@ -23,7 +24,7 @@ export default function AuthScreen() {
 
   const handleEmailAuth = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Error', AUTH_CONSTANTS.ERRORS.REQUIRED_FIELDS);
       return;
     }
 
@@ -43,7 +44,7 @@ export default function AuthScreen() {
           await setActiveSignUp({ session: result.createdSessionId });
           router.replace('/(tabs)');
         } else {
-          Alert.alert('Success', 'Account created! Please check your email for verification.');
+          Alert.alert('Success', AUTH_CONSTANTS.SUCCESS.ACCOUNT_CREATED);
         }
       } else {
         if (!isSignInLoaded) {
@@ -61,9 +62,14 @@ export default function AuthScreen() {
         }
       }
     } catch (error: unknown) {
-      const errorMessage = error && typeof error === 'object' && 'errors' in error && Array.isArray(error.errors) && error.errors[0]?.message
-        ? error.errors[0].message
-        : 'Authentication failed';
+      const errorMessage =
+        error &&
+        typeof error === 'object' &&
+        'errors' in error &&
+        Array.isArray(error.errors) &&
+        error.errors[0]?.message
+          ? error.errors[0].message
+          : AUTH_CONSTANTS.ERRORS.AUTH_FAILED;
       Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
@@ -80,9 +86,13 @@ export default function AuthScreen() {
         router.replace('/(tabs)');
       }
     } catch (error: unknown) {
-      const errorMessage = error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
-        ? error.message
-        : 'Google authentication failed';
+      const errorMessage =
+        error &&
+        typeof error === 'object' &&
+        'message' in error &&
+        typeof error.message === 'string'
+          ? error.message
+          : AUTH_CONSTANTS.ERRORS.GOOGLE_AUTH_FAILED;
       Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
@@ -90,39 +100,40 @@ export default function AuthScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className='flex-1 bg-white'>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1 justify-center px-6 py-8">
-          <Text className="text-3xl font-bold text-center text-gray-900 mb-2">
-            {isSignUp ? 'Create Account' : 'Welcome Back'}
+        <View className='flex-1 justify-center px-6 py-8'>
+          <Text className='text-3xl font-bold text-center text-gray-900 mb-2'>
+            {isSignUp ? AUTH_CONSTANTS.SCREEN_TITLES.SIGN_UP : AUTH_CONSTANTS.SCREEN_TITLES.SIGN_IN}
           </Text>
-          <Text className="text-base text-center text-gray-600 mb-8">
-            {isSignUp
-              ? 'Sign up to start managing your daily reports'
-              : 'Sign in to your account'
-            }
+          <Text className='text-base text-center text-gray-600 mb-8'>
+            {isSignUp ? AUTH_CONSTANTS.DESCRIPTIONS.SIGN_UP : AUTH_CONSTANTS.DESCRIPTIONS.SIGN_IN}
           </Text>
 
-          <View className="space-y-4 mb-6">
+          <View className='space-y-4 mb-6'>
             <View>
-              <Text className="text-sm font-medium text-gray-700 mb-2">Email</Text>
+              <Text className='text-sm font-medium text-gray-700 mb-2'>
+                {AUTH_CONSTANTS.FORM_LABELS.EMAIL}
+              </Text>
               <TextInput
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900"
-                placeholder="Enter your email"
+                className='w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900'
+                placeholder={AUTH_CONSTANTS.PLACEHOLDERS.EMAIL}
                 value={email}
                 onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
+                keyboardType='email-address'
+                autoCapitalize='none'
+                autoComplete='email'
                 editable={!isLoading}
               />
             </View>
 
             <View>
-              <Text className="text-sm font-medium text-gray-700 mb-2">Password</Text>
+              <Text className='text-sm font-medium text-gray-700 mb-2'>
+                {AUTH_CONSTANTS.FORM_LABELS.PASSWORD}
+              </Text>
               <TextInput
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900"
-                placeholder="Enter your password"
+                className='w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900'
+                placeholder={AUTH_CONSTANTS.PLACEHOLDERS.PASSWORD}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -133,14 +144,16 @@ export default function AuthScreen() {
           </View>
 
           <TouchableOpacity
-            className={`w-full py-4 rounded-lg mb-4 ${
-              isLoading ? 'bg-gray-400' : 'bg-blue-600'
-            }`}
+            className={`w-full py-4 rounded-lg mb-4 ${isLoading ? 'bg-gray-400' : 'bg-blue-600'}`}
             onPress={handleEmailAuth}
             disabled={isLoading}
           >
-            <Text className="text-white text-center font-semibold text-base">
-              {isLoading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+            <Text className='text-white text-center font-semibold text-base'>
+              {isLoading
+                ? AUTH_CONSTANTS.BUTTONS.LOADING
+                : isSignUp
+                  ? AUTH_CONSTANTS.BUTTONS.SIGN_UP
+                  : AUTH_CONSTANTS.BUTTONS.SIGN_IN}
             </Text>
           </TouchableOpacity>
 
@@ -151,18 +164,18 @@ export default function AuthScreen() {
             onPress={handleGoogleAuth}
             disabled={isLoading}
           >
-            <Text className="text-gray-700 text-center font-semibold text-base">
-              Continue with Google
+            <Text className='text-gray-700 text-center font-semibold text-base'>
+              {AUTH_CONSTANTS.BUTTONS.GOOGLE_AUTH}
             </Text>
           </TouchableOpacity>
 
-          <View className="flex-row justify-center">
-            <Text className="text-gray-600">
-              {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
+          <View className='flex-row justify-center'>
+            <Text className='text-gray-600'>
+              {isSignUp ? AUTH_CONSTANTS.LINKS.HAVE_ACCOUNT : AUTH_CONSTANTS.LINKS.NO_ACCOUNT}
             </Text>
             <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)} disabled={isLoading}>
-              <Text className="text-blue-600 font-semibold">
-                {isSignUp ? 'Sign In' : 'Sign Up'}
+              <Text className='text-blue-600 font-semibold'>
+                {isSignUp ? AUTH_CONSTANTS.BUTTONS.SIGN_IN : AUTH_CONSTANTS.BUTTONS.SIGN_UP}
               </Text>
             </TouchableOpacity>
           </View>
