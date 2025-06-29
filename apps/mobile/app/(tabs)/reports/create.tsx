@@ -88,7 +88,19 @@ export default function CreateReportScreen() {
         }
         break;
       case 1: // 作業内容
-        // 作業内容の検証（オプショナル）
+        if (
+          formData.workItems.length > 0 &&
+          formData.workItems.some((item) => !item.projectId || !item.workCategoryId)
+        ) {
+          newErrors.workItems =
+            REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.WORK_ITEM_INCOMPLETE;
+          Toast.show({
+            type: 'error',
+            text1: '入力が完了していません',
+            text2: REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.WORK_ITEM_INCOMPLETE,
+            visibilityTime: 4000,
+          });
+        }
         break;
       case 2: // メタデータ
         // メタデータの検証（オプショナル）

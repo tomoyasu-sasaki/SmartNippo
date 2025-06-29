@@ -81,6 +81,7 @@ export const REPORTS_CONSTANTS = {
       TITLE_TOO_LONG: 'タイトルは200文字以内で入力してください',
       CONTENT_REQUIRED: '内容は必須です',
       CONTENT_TOO_LONG: '内容は10000文字以内で入力してください',
+      WORK_ITEM_INCOMPLETE: 'すべての作業項目でプロジェクトと作業分類を選択してください。',
     },
     ALERTS: {
       OFFLINE_TITLE: 'オフラインです',
