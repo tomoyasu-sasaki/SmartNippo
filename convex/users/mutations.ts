@@ -52,7 +52,7 @@ export const store = mutation({
       clerkId: identity.subject,
       name: identity.name ?? 'New User',
       tokenIdentifier: identity.tokenIdentifier,
-      role: 'viewer', // デフォルトロール
+      role: 'user', // デフォルトロール
       created_at: Date.now(),
       updated_at: Date.now(),
     };
@@ -122,7 +122,7 @@ export const upsertUserWithIdempotency = internalMutation({
         name,
         email,
         avatarUrl: image_url,
-        role: 'viewer',
+        role: 'user',
         created_at: Date.now(),
         updated_at: Date.now(),
       });
@@ -611,7 +611,6 @@ export const cleanupDuplicateUsers = internalMutation({
     for (const [clerkId, users] of usersByClerkId) {
       if (users.length > 1) {
         totalDuplicatesFound += users.length - 1;
-        console.log(`Found ${users.length} duplicate users for clerkId: ${clerkId}`);
 
         // Sort users by priority: orgId first, then role hierarchy
         const sortedUsers = users.sort((a, b) => {
@@ -621,21 +620,16 @@ export const cleanupDuplicateUsers = internalMutation({
           if (!a.orgId && b.orgId) {
             return 1;
           }
-          const roleOrder: Record<UserRole, number> = { admin: 4, manager: 3, user: 2, viewer: 1 };
+          const roleOrder: Record<UserRole, number> = { admin: 3, manager: 2, user: 1 };
           return (roleOrder[b.role] || 0) - (roleOrder[a.role] || 0);
         });
 
-        const keepUser = sortedUsers[0];
+        const [keepUser] = sortedUsers;
         const deleteUsers = sortedUsers.slice(1);
-
-        console.log(
-          `Keeping user: ${keepUser._id} (${keepUser.name}) with role: ${keepUser.role}, orgId: ${keepUser.orgId}`
-        );
 
         for (const duplicateUser of deleteUsers) {
           await ctx.db.delete(duplicateUser._id);
           totalDuplicatesDeleted++;
-          console.log(`Deleted duplicate user: ${duplicateUser._id} (${duplicateUser.name})`);
         }
 
         // Record the cleanup action

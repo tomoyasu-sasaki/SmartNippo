@@ -301,8 +301,8 @@
       inline deps 設定
 - [x] define-auth-rules — `convex/lib/auth.ts` ユーザー認証チェック関数実装
 - [x] implement-org-access-control — orgId による組織レベルアクセス制御
-- [x] create-role-based-access — viewer/user/manager/admin ロール権限制御
-- [x] implement-viewer-permissions — viewer ロール：読取専用権限実装
+- [x] create-role-based-access — user/manager/admin ロール権限制御
+- [x] implement--permissions — ロール：読取専用権限実装
 - [x] create-permission-helpers — 権限チェック用ヘルパー関数
 - [x] implement-data-isolation — 組織間データ完全分離
 - [x] create-auth-test-suite
@@ -431,8 +431,8 @@
       component + URL 連携
 - [x] build-report-editor — `app/reports/[id]/edit/page.tsx` Server Component +
       react-hook-form
-- [x] build-report-viewer — `app/reports/[id]/page.tsx` RSC data fetching +
-      Client print/export
+- [x] build-report- — `app/reports/[id]/page.tsx` RSC data fetching + Client
+      print/export
 - [x] implement-bulk-operations — useSWR.mutate 楽観的更新 + Server Component
 - [x] add-data-visualization — Server Component Chart data 取得 + Client
       Chart 表示

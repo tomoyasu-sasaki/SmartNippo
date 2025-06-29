@@ -127,16 +127,6 @@ export const migrateReportRecord = mutation({
       migrationUpdates.aiSummaryStatus = report.summary ? 'completed' : undefined;
     }
 
-    // タスクの拡張フィールド初期化
-    if (report.tasks && Array.isArray(report.tasks)) {
-      migrationUpdates.tasks = report.tasks.map((task: any) => ({
-        ...task,
-        estimatedHours: task.estimatedHours ?? undefined,
-        actualHours: task.actualHours ?? undefined,
-        category: task.category ?? undefined,
-      }));
-    }
-
     // 添付ファイルの拡張フィールド初期化
     if (report.attachments && Array.isArray(report.attachments)) {
       migrationUpdates.attachments = report.attachments.map((attachment: any) => ({

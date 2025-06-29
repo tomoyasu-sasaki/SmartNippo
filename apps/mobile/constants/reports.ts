@@ -31,7 +31,7 @@ export const REPORTS_CONSTANTS = {
       CREATE_SUGGESTION: '新しい日報を作成してください',
       CREATE_BUTTON: '日報を作成',
     },
-    TASK_SUMMARY: 'タスク: ',
+    WORK_ITEM_SUMMARY: '作業項目: ',
     AUTHOR_LABEL: '作成者: ',
   },
   CREATE_SCREEN: {
@@ -44,6 +44,7 @@ export const REPORTS_CONSTANTS = {
       TITLE: 'タイトル',
       CONTENT: '内容',
       REQUIRED_MARKER: ' *',
+      WORK_ITEM_NAME: '作業項目名',
     },
     PLACEHOLDERS: {
       TITLE: '今日の作業内容を簡潔に',
@@ -60,15 +61,13 @@ export const REPORTS_CONSTANTS = {
       CREATE: '日報を作成',
       CREATING: '作成中...',
       OFFLINE_DISABLED: 'オフライン',
-      ADD_TASK: 'タスク追加',
+      ADD_WORK_ITEM: '作業内容追加',
       RETRY: '再試行',
       DISCARD: '破棄',
     },
-    TASK_MANAGEMENT: {
-      TITLE: 'タスク管理',
-      COMPLETED: '完了',
-      INCOMPLETE: '未完了',
-      EMPTY_STATE: 'タスクを追加して、今日の作業を記録しましょう',
+    WORK_ITEM_MANAGEMENT: {
+      TITLE: '作業内容',
+      EMPTY_STATE: '作業内容がありません',
     },
     METADATA_SECTIONS: {
       DIFFICULTY: '難易度',
@@ -108,17 +107,19 @@ export const REPORTS_CONSTANTS = {
     LOADING_TEXT: '読み込み中...',
     SECTIONS: {
       CONTENT: '内容',
-      TASKS: 'タスク',
+      TASKS: '作業項目',
       METADATA: 'メタデータ',
       STATISTICS: '統計',
       APPROVAL_HISTORY: '承認履歴',
       COMMENTS: 'コメント',
+      WORK_ITEMS: '作業項目',
     },
     STATISTICS: {
       ESTIMATED_HOURS: '予定時間',
       ACTUAL_HOURS: '実績時間',
       COMMENT_COUNT: 'コメント数',
-      COMPLETED_TASKS: (completed: number, total: number) => `${completed}/${total} 完了`,
+      COMPLETED_WORK_ITEMS: (completed: number, total: number) => `${completed}/${total} 完了`,
+      COMPLETED_TASKS: (completed: number, total: number) => `${completed}/${total} 完了`, // 互換性のため残す
     },
     REJECTION: {
       TITLE: '却下理由',

@@ -14,6 +14,7 @@ export const LAYOUT_CONSTANTS = {
     REPORTS: '日報',
     ANALYTICS: '分析（準備中）',
     PROFILE: 'プロフィール',
+    ADMIN: '管理',
     SETTINGS: '設定', // This seems to be in header.tsx but not in navigation.tsx
   },
 

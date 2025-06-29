@@ -24,7 +24,7 @@ export type OrganizationPlan = 'free' | 'pro' | 'enterprise';
  */
 export type UserProfile = Doc<'userProfiles'>;
 export type UserProfileId = Id<'userProfiles'>;
-export type UserRole = 'viewer' | 'user' | 'manager' | 'admin';
+export type UserRole = 'user' | 'manager' | 'admin';
 
 /**
  * プライバシー設定の型定義
@@ -331,7 +331,6 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
  * ユーザーロールのラベル
  */
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
-  viewer: '閲覧者',
   user: 'ユーザー',
   manager: 'マネージャー',
   admin: '管理者',

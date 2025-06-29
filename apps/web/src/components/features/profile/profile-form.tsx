@@ -30,7 +30,7 @@ interface UserProfile {
   name: string;
   email?: string;
   avatarUrl?: string;
-  role: 'viewer' | 'user' | 'manager' | 'admin';
+  role: 'user' | 'manager' | 'admin';
   orgId?: Id<'orgs'>;
   pushToken?: string;
   created_at: number;

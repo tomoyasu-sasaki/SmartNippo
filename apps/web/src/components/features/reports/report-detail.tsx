@@ -20,7 +20,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
 import { useAuth } from '@clerk/nextjs';
 import { api } from 'convex/_generated/api';
-import type { Doc } from 'convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -44,6 +43,18 @@ import { toast } from 'sonner';
 import { REPORTS_CONSTANTS } from '@/constants/reports';
 import type { ReportDetailProps } from '@/types';
 
+const formatDuration = (minutes: number) => {
+  if (minutes < 60) {
+    return `${minutes}分`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (remainingMinutes === 0) {
+    return `${hours}時間`;
+  }
+  return `${hours}時間${remainingMinutes}分`;
+};
+
 function ReportDetailInner({ reportId }: ReportDetailProps) {
   const router = useRouter();
   const { userId, has } = useAuth();
@@ -54,6 +65,8 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
 
   // Fetch report detail
   const report = useQuery(api.index.getReportDetail, { reportId });
+  const workItems = useQuery(api.index.listWorkItemsForReport, { reportId });
+  const currentUser = useQuery(api.index.current);
 
   // Mutations
   const addComment = useMutation(api.index.addComment);
@@ -219,6 +232,8 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
   };
 
   const statusInfo = getStatusBadge(report.status);
+  const completedWorkItems = workItems?.filter((t) => (t as any).completed).length ?? 0;
+  const isOwner = currentUser?._id === report.author?._id;
 
   return (
     <div className='space-y-6'>
@@ -240,7 +255,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
         </div>
         <div className='flex items-center gap-3'>
           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-          {report.status === 'draft' && (
+          {isOwner && report.status === 'draft' && (
             <>
               <Link href={`/reports/${reportId}/edit`}>
                 <Button variant='outline' size='sm'>
@@ -269,8 +284,16 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
             </div>
             <div className='flex items-center gap-1'>
               <Clock className='h-4 w-4' />
-              {REPORTS_CONSTANTS.CREATED_AT_PREFIX}:{' '}
-              {format(new Date(report.created_at), 'yyyy/MM/dd HH:mm')}
+              {report.workingHours
+                ? `${report.workingHours.startHour}:${String(
+                    report.workingHours.startMinute
+                  ).padStart(2, '0')} 〜 ${report.workingHours.endHour}:${String(
+                    report.workingHours.endMinute
+                  ).padStart(2, '0')}`
+                : `${REPORTS_CONSTANTS.CREATED_AT_PREFIX}: ${format(
+                    new Date(report.created_at),
+                    'yyyy/MM/dd HH:mm'
+                  )}`}
             </div>
           </div>
         </CardHeader>
@@ -279,48 +302,34 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
         </CardContent>
       </Card>
 
-      {/* タスク */}
-      {report.tasks.length > 0 && (
+      {/* 作業内容 */}
+      {workItems && workItems.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>{REPORTS_CONSTANTS.TASKS_CARD_TITLE}</CardTitle>
-            <CardDescription>
-              {REPORTS_CONSTANTS.TASKS_COMPLETED_STATUS(
-                report.stats.completedTasks,
-                report.stats.totalTasks
-              )}
-            </CardDescription>
+            <CardTitle>作業内容</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className='space-y-2'>
-              {report.tasks.map((task: Doc<'reports'>['tasks'][number]) => (
-                <div
-                  key={task.id}
-                  className='flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50'
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 ${
-                      task.completed ? 'bg-green-500 border-green-500' : 'border-gray-300'
-                    }`}
-                  >
-                    {task.completed && <Check className='h-3 w-3 text-white' />}
-                  </div>
-                  <span className={task.completed ? 'line-through text-gray-500' : ''}>
-                    {task.title}
-                  </span>
-                  {task.estimatedHours && (
-                    <span className='ml-auto text-sm text-gray-500'>
-                      {REPORTS_CONSTANTS.TASK_ESTIMATED_HOURS}: {task.estimatedHours}h
-                    </span>
-                  )}
-                  {task.actualHours && (
-                    <span className='text-sm text-gray-500'>
-                      {REPORTS_CONSTANTS.TASK_ACTUAL_HOURS}: {task.actualHours}h
-                    </span>
-                  )}
+          <CardContent className='space-y-6 pt-4'>
+            {workItems.map((workItem) => (
+              <div key={workItem._id} className='rounded-lg border p-4 relative'>
+                <div className='absolute top-4 right-4 text-lg font-bold text-gray-700'>
+                  {formatDuration(workItem.workDuration)}
                 </div>
-              ))}
-            </div>
+                <div className='space-y-3'>
+                  <div>
+                    <p className='text-sm font-medium text-gray-500'>プロジェクト</p>
+                    <p className='text-md'>{workItem.projectName}</p>
+                  </div>
+                  <div>
+                    <p className='text-sm font-medium text-gray-500'>作業区分</p>
+                    <p className='text-md'>{workItem.workCategoryName}</p>
+                  </div>
+                  <div>
+                    <p className='text-sm font-medium text-gray-500'>作業内容</p>
+                    <p className='text-md whitespace-pre-wrap'>{workItem.description}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}

@@ -3,12 +3,16 @@
  *
  * @property {Id<'userProfiles'>} authorId - 作成者のID
  * @property {string} reportDate - 日報の日付 (YYYY-MM-DD形式)
+ * @property {object | undefined} workingHours - 勤務時間オブジェクト
+ * @property {number} workingHours.startHour - 開始 時
+ * @property {number} workingHours.startMinute - 開始 分
+ * @property {number} workingHours.endHour - 終了 時
+ * @property {number} workingHours.endMinute - 終了 分
  * @property {string} title - タイトル
  * @property {string} content - 内容
  * @property {'draft' | 'submitted' | 'approved' | 'rejected'} status - ステータス
  * @property {string | undefined} summary - AIによる要約
  * @property {'pending' | 'processing' | 'completed' | 'failed' | undefined} aiSummaryStatus - AI要約の処理状況
- * @property {Array<object>} tasks - 関連タスクの配列
  * @property {Array<object>} attachments - 添付ファイルの配列
  * @property {object} metadata - その他のメタデータ
  * @property {number | undefined} submittedAt - 提出日時
@@ -33,6 +37,14 @@ import { v } from 'convex/values';
 export const reportsTable = defineTable({
   authorId: v.id('userProfiles'),
   reportDate: v.string(), // YYYY-MM-DD format
+  workingHours: v.optional(
+    v.object({
+      startHour: v.number(),
+      startMinute: v.number(),
+      endHour: v.number(),
+      endMinute: v.number(),
+    })
+  ), // 勤務時間
   title: v.string(),
   content: v.string(),
   status: v.union(
@@ -50,17 +62,6 @@ export const reportsTable = defineTable({
       v.literal('failed')
     )
   ), // AI要約処理状況 - 強化項目
-  tasks: v.array(
-    v.object({
-      id: v.string(),
-      title: v.string(),
-      completed: v.boolean(),
-      priority: v.optional(v.union(v.literal('low'), v.literal('medium'), v.literal('high'))),
-      estimatedHours: v.optional(v.number()), // 予定工数 - 強化項目
-      actualHours: v.optional(v.number()), // 実績工数 - 強化項目
-      category: v.optional(v.string()), // タスクカテゴリ - 強化項目
-    })
-  ),
   attachments: v.array(
     v.object({
       id: v.string(),
@@ -75,7 +76,6 @@ export const reportsTable = defineTable({
   ),
   metadata: v.object({
     mood: v.optional(v.union(v.literal('positive'), v.literal('neutral'), v.literal('negative'))),
-    workingHours: v.optional(v.number()), // in minutes
     location: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
     // 強化項目
@@ -108,6 +108,8 @@ export const reportsTable = defineTable({
   orgId: v.id('orgs'), // RLS: org-based isolation
   created_at: v.number(),
   updated_at: v.number(),
+  // [LEGACY] tasks フィールド (旧スキーマ互換用)
+  tasks: v.optional(v.array(v.any())),
 })
   .index('by_org', ['orgId'])
   .index('by_author', ['authorId'])

@@ -1,5 +1,5 @@
 import type { ImageResult } from './common';
-import type { Comment, Report, Task, UserProfile } from './index';
+import type { Comment, Report, UserProfile, WorkItem } from './index';
 
 // AvatarPickerコンポーネントのProps型
 export interface AvatarPickerProps {
@@ -16,9 +16,9 @@ export interface StepIndicatorProps {
 }
 
 // タスクアイテムコンポーネントのProps型
-export interface TaskItemProps {
-  task: Task;
-  onUpdate: (task: Task) => void;
+export interface WorkItemFormProps {
+  workItem: WorkItem;
+  onUpdate: (workItem: WorkItem) => void;
   onDelete: () => void;
 }
 
@@ -52,8 +52,10 @@ export interface CommentItemProps {
 }
 
 // タスクリストアイテムコンポーネントのProps型
-export interface TaskListItemProps {
-  task: Task;
+export interface WorkItemListItemProps {
+  workItem: WorkItem;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 // メタデータセクションコンポーネントのProps型
@@ -74,4 +76,11 @@ export interface ImageSettings {
 export interface PermissionStatus {
   cameraStatus: string;
   libraryStatus: string;
+}
+
+// Report List Item Props
+export interface ReportListItemProps {
+  report: Report & {
+    author: Pick<UserProfile, 'name'>;
+  };
 }

@@ -2,14 +2,13 @@ import { useAuth } from '@clerk/clerk-expo';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
-import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import {
   AlertCircle,
   Calendar,
   CheckCircle,
   Clock,
+  Edit,
   MessageSquare,
   Send,
   Share2,
@@ -30,6 +29,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { CommentItem } from '../../../components/features/reports/comment-item';
+import { MetadataSection } from '../../../components/features/reports/metadata-section';
+import { StatusBadge } from '../../../components/features/reports/status-badge';
+import { WorkItemListItem } from '../../../components/features/reports/work-item-list-item';
 import { REPORTS_CONSTANTS } from '../../../constants/reports';
 
 // ステータスを日本語に変換
@@ -54,100 +57,8 @@ const getStatusStyle = (status: string) => {
   }
 };
 
-// 優先度の表示名
-const priorityLabels = REPORTS_CONSTANTS.PRIORITY_LABELS;
-
 // 難易度の表示名
 const difficultyLabels = REPORTS_CONSTANTS.DIFFICULTY_LABELS;
-
-// コメントコンポーネント
-function CommentItem({ comment }: { comment: any }) {
-  const isSystemComment = comment.type === 'system' || comment.type === 'ai';
-
-  return (
-    <View className={`mb-3 ${isSystemComment ? 'pl-4' : ''}`}>
-      <View className='flex-row items-start'>
-        <View
-          className={`mr-3 h-8 w-8 items-center justify-center rounded-full ${
-            isSystemComment ? 'bg-gray-200' : 'bg-blue-500'
-          }`}
-        >
-          <Text className={`text-xs font-bold ${isSystemComment ? 'text-gray-600' : 'text-white'}`}>
-            {isSystemComment ? 'S' : comment.author?.name?.[0] || '?'}
-          </Text>
-        </View>
-        <View className='flex-1'>
-          <View className='mb-1 flex-row items-center'>
-            <Text className='text-sm font-medium text-gray-900'>
-              {isSystemComment
-                ? REPORTS_CONSTANTS.DETAIL_SCREEN.COMMENTS.SYSTEM_AUTHOR
-                : comment.author?.name || REPORTS_CONSTANTS.DETAIL_SCREEN.COMMENTS.UNKNOWN_AUTHOR}
-            </Text>
-            <Text className='ml-2 text-xs text-gray-500'>
-              {format(new Date(comment.created_at), 'M月d日 HH:mm', { locale: ja })}
-            </Text>
-          </View>
-          <Text className='text-sm text-gray-700'>{comment.content}</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-// タスクアイテムコンポーネント
-function TaskListItem({ task }: { task: any }) {
-  return (
-    <View className='mb-2 flex-row items-center justify-between rounded-lg bg-gray-50 p-3'>
-      <View className='flex-1'>
-        <View className='flex-row items-center'>
-          <View
-            className={`mr-2 h-5 w-5 items-center justify-center rounded-full ${
-              task.completed ? 'bg-green-500' : 'bg-gray-300'
-            }`}
-          >
-            {task.completed && <CheckCircle size={12} color='white' />}
-          </View>
-          <Text
-            className={`flex-1 text-sm ${
-              task.completed ? 'text-gray-500 line-through' : 'text-gray-900'
-            }`}
-          >
-            {task.title}
-          </Text>
-        </View>
-        <View className='ml-7 mt-1 flex-row items-center space-x-3'>
-          {task.priority && (
-            <Text className='text-xs text-gray-600'>優先度: {priorityLabels[task.priority]}</Text>
-          )}
-          {task.estimatedHours && (
-            <Text className='text-xs text-gray-600'>予定: {task.estimatedHours}h</Text>
-          )}
-          {task.actualHours && (
-            <Text className='text-xs text-gray-600'>実績: {task.actualHours}h</Text>
-          )}
-        </View>
-      </View>
-    </View>
-  );
-}
-
-// メタデータセクション
-function MetadataSection({ title, items }: { title: string; items: string[] }) {
-  if (!items || items.length === 0) {
-    return null;
-  }
-
-  return (
-    <View className='mb-4'>
-      <Text className='mb-2 font-medium text-gray-700'>{title}</Text>
-      {items.map((item, index) => (
-        <View key={index} className='mb-1 rounded-lg bg-gray-50 px-3 py-2'>
-          <Text className='text-sm text-gray-700'>• {item}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
 
 export default function ReportDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -163,6 +74,14 @@ export default function ReportDetailScreen() {
   const report = useQuery(api.index.getReportDetail, {
     reportId,
   });
+
+  // 新: 作業項目（workItems）を取得
+  const workItems = useQuery(api.index.listWorkItemsForReport, {
+    reportId,
+  });
+
+  // 現在のユーザー情報を取得（Web版と同様）
+  const currentUser = useQuery(api.index.current);
 
   // Convex mutations
   const addComment = useMutation(api.index.addComment);
@@ -186,6 +105,11 @@ export default function ReportDetailScreen() {
       console.error('コメント追加エラー:', error);
       Alert.alert('エラー', REPORTS_CONSTANTS.DETAIL_SCREEN.ALERTS.COMMENT_ERROR);
     }
+  };
+
+  // 編集画面への遷移
+  const handleEdit = () => {
+    router.push(`/(tabs)/reports/edit?id=${id}`);
   };
 
   // 承認処理
@@ -299,7 +223,7 @@ ${report.title}
 
 ${report.content}
 
-${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
+${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` : ''}
     `.trim();
 
     try {
@@ -322,7 +246,11 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
     );
   }
 
-  const statusStyle = getStatusStyle(report.status);
+  // 自分のレポートかどうか判定（Web版と同様の方法）
+  const isOwner = currentUser?._id === report.author?._id;
+  const canEdit = isOwner && report.status === 'draft';
+  const canModerate =
+    !isOwner && (currentUser?.role === 'manager' || currentUser?.role === 'admin');
 
   return (
     <SafeAreaView className='flex-1 bg-gray-50'>
@@ -341,15 +269,13 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
                 </Text>
               </View>
               <View className='flex-row items-center'>
-                <View
-                  className={`flex-row items-center rounded-full px-3 py-1 ${statusStyle.color}`}
-                >
-                  {statusStyle.icon}
-                  <Text className='ml-1 text-sm font-medium'>
-                    {statusLabels[report.status as keyof typeof statusLabels]}
-                  </Text>
-                </View>
-                <Pressable onPress={handleShare} className='ml-3 p-1'>
+                <StatusBadge status={report.status} showIcon />
+                {canEdit && (
+                  <Pressable onPress={handleEdit} className='ml-2 p-1'>
+                    <Edit size={20} color='#6B7280' />
+                  </Pressable>
+                )}
+                <Pressable onPress={handleShare} className='ml-2 p-1'>
                   <Share2 size={20} color='#6B7280' />
                 </Pressable>
               </View>
@@ -367,6 +293,19 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
                 <Text className='text-xs text-gray-500'>{report.author.role}</Text>
               </View>
             </View>
+
+            {/* 勤務時間 */}
+            {report.workingHours && (
+              <View className='mt-3 flex-row items-center'>
+                <Clock size={16} color='#6B7280' />
+                <Text className='ml-2 text-sm text-gray-600'>
+                  勤務時間: {report.workingHours.startHour.toString().padStart(2, '0')}:
+                  {report.workingHours.startMinute.toString().padStart(2, '0')} -
+                  {report.workingHours.endHour.toString().padStart(2, '0')}:
+                  {report.workingHours.endMinute.toString().padStart(2, '0')}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* 本文 */}
@@ -377,8 +316,8 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
             <Text className='text-gray-700'>{report.content}</Text>
           </View>
 
-          {/* タスク */}
-          {report.tasks.length > 0 && (
+          {/* 作業項目 */}
+          {workItems && workItems.length > 0 && (
             <View className='mt-2 bg-white p-4'>
               <View className='mb-3 flex-row items-center justify-between'>
                 <Text className='text-lg font-semibold text-gray-900'>
@@ -386,13 +325,13 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
                 </Text>
                 <Text className='text-sm text-gray-500'>
                   {REPORTS_CONSTANTS.DETAIL_SCREEN.STATISTICS.COMPLETED_TASKS(
-                    report.stats.completedTasks,
-                    report.stats.totalTasks
+                    report?.stats?.completedTasks ?? 0,
+                    report?.stats?.totalTasks ?? workItems.length
                   )}
                 </Text>
               </View>
-              {report.tasks.map((task: any, index: number) => (
-                <TaskListItem key={task.id || index} task={task} />
+              {workItems.map((item: any) => (
+                <WorkItemListItem key={item._id} item={item} />
               ))}
             </View>
           )}
@@ -563,7 +502,7 @@ ${report.tasks.length > 0 ? `\nタスク数: ${report.tasks.length}` : ''}
             </View>
           )}
 
-          {report.status === 'submitted' && (
+          {report.status === 'submitted' && canModerate && (
             <View className='mt-2 bg-white p-4'>
               <View className='flex-row space-x-2'>
                 <Pressable

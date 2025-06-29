@@ -16,10 +16,13 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { LAYOUT_CONSTANTS } from '@/constants/layout';
 import { cn } from '@/lib/utils';
+import { api } from 'convex/_generated/api';
+import { useQuery } from 'convex/react';
 import { ThemeToggle } from './theme-toggle';
 
 export function Header() {
   const pathname = usePathname();
+  const userProfile = useQuery(api.index.current);
 
   return (
     <header className='sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6'>
@@ -75,6 +78,22 @@ export function Header() {
                 </Link>
               </NavigationMenuLink>
             </NavigationMenuItem>
+            {userProfile?.role === 'admin' && (
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href='/admin/projects'
+                    className={cn(
+                      navigationMenuTriggerStyle(),
+                      pathname.startsWith('/admin') && 'bg-accent'
+                    )}
+                  >
+                    <Package2 className='mr-2 h-4 w-4' />
+                    {LAYOUT_CONSTANTS.NAV_LINKS.ADMIN}
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            )}
             <NavigationMenuItem>
               <NavigationMenuLink asChild>
                 <Link
@@ -135,7 +154,17 @@ export function Header() {
             >
               {LAYOUT_CONSTANTS.NAV_LINKS.PROFILE}
             </Link>
-
+            {userProfile?.role === 'admin' && (
+              <Link
+                href='/admin/projects'
+                className={cn(
+                  'text-muted-foreground hover:text-foreground',
+                  pathname.startsWith('/admin') && 'text-foreground'
+                )}
+              >
+                {LAYOUT_CONSTANTS.NAV_LINKS.ADMIN}
+              </Link>
+            )}
             <Link
               href='/analytics'
               className='cursor-not-allowed text-muted-foreground opacity-50'

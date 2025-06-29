@@ -14,7 +14,7 @@ export const passwordSchema = z
   .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'パスワードは大文字、小文字、数字を含む必要があります');
 
 // User role validation
-export const userRoleSchema = z.enum(['viewer', 'user', 'manager', 'admin']);
+export const userRoleSchema = z.enum(['user', 'manager', 'admin']);
 
 // Report status validation
 export const reportStatusSchema = z.enum(['draft', 'submitted', 'approved']);
@@ -66,10 +66,7 @@ export const profileUpdateSchema = z.object({
 
 // Profile form schema - フォーム用（必須項目を含む）
 export const profileFormSchema = z.object({
-  name: z
-    .string()
-    .min(1, '名前は必須です')
-    .max(100, '名前は100文字以内で入力してください'),
+  name: z.string().min(1, '名前は必須です').max(100, '名前は100文字以内で入力してください'),
   avatarUrl: avatarUrlSchema,
 });
 

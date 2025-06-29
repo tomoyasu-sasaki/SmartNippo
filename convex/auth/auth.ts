@@ -121,12 +121,12 @@ export async function requireOrgMembership(
  * ユーザーロール定義
  *
  * @description システムで利用可能なユーザーロールの型定義です。
- * 権限レベルは viewer < user < manager < admin の順で上位になります。
+ * 権限レベルは user < manager < admin の順で上位になります。
  *
- * @typedef {'viewer' | 'user' | 'manager' | 'admin'} UserRole
+ * @typedef {'user' | 'manager' | 'admin'} UserRole
  * @since 1.0.0
  */
-export type UserRole = 'viewer' | 'user' | 'manager' | 'admin';
+export type UserRole = 'user' | 'manager' | 'admin';
 
 /**
  * ロール権限レベル判定
@@ -148,10 +148,9 @@ export type UserRole = 'viewer' | 'user' | 'manager' | 'admin';
  */
 export function hasRole(user: Doc<'userProfiles'>, requiredRole: UserRole): boolean {
   const roleHierarchy: Record<UserRole, number> = {
-    viewer: 1,
-    user: 2,
-    manager: 3,
-    admin: 4,
+    user: 1,
+    manager: 2,
+    admin: 3,
   };
 
   return roleHierarchy[user.role as UserRole] >= roleHierarchy[requiredRole];
@@ -235,7 +234,7 @@ export async function requireOwnershipOrManagerRole(
 /**
  * 読み取り専用アクセス権限チェック
  *
- * @description 最低限のアクセス権（viewer以上）を確認します。
+ * @description 最低限のアクセス権（user以上）を確認します。
  * データの閲覧のみ許可される操作で使用します。
  *
  * @async
@@ -255,7 +254,7 @@ export async function requireReadAccess(
   ctx: QueryCtx | MutationCtx,
   orgId: Id<'orgs'>
 ): Promise<Doc<'userProfiles'>> {
-  return await requireRole(ctx, 'viewer', orgId);
+  return await requireRole(ctx, 'user', orgId);
 }
 
 /**
