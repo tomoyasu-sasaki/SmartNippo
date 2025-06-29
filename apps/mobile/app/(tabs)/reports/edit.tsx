@@ -25,7 +25,7 @@ import {
 } from '../../../components/features/reports/steps';
 import { LoadingScreen } from '../../../components/ui/loading-screen';
 import { REPORTS_CONSTANTS } from '../../../constants/reports';
-import type { ReportFormData, WorkItem } from '../../../types';
+import type { ReportFormData } from '../../../types';
 
 // ステップの定義
 const { STEPS } = REPORTS_CONSTANTS;
@@ -40,7 +40,7 @@ export default function EditReportScreen() {
   const [errors, setErrors] = useState<Partial<Record<keyof ReportFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
-  const [deletedWorkItemIds, setDeletedWorkItemIds] = useState<Id<'workItems'>[]>([]);
+  const [deletedWorkItems, setDeletedWorkItems] = useState<ReportFormData['workItems']>([]);
 
   const reportId = id as Id<'reports'>;
   const report = useQuery(api.index.getReportDetail, { reportId });
@@ -66,11 +66,8 @@ export default function EditReportScreen() {
         title: report.title,
         content: report.content,
         workItems: workItems.map((item) => ({
-          _id: item._id,
-          projectId: item.projectId,
-          workCategoryId: item.workCategoryId,
-          description: item.description,
-          workDuration: item.workDuration,
+          ...item,
+          isNew: false,
         })),
         workingHours: report.workingHours || {
           startHour: 9,
@@ -146,9 +143,9 @@ export default function EditReportScreen() {
 
     try {
       const workItemsForBackend = formData.workItems.map((item) => {
-        if (item._id && item._id.startsWith('temp-')) {
-          // 新規作業項目：バックエンドで新しいIDを生成するため、一時的なIDを削除します。
-          const { _id, ...rest } = item;
+        if (item.isNew) {
+          // 新規作業項目：バックエンドで新しいIDを生成するため、一時的なIDとisNewフラグを削除
+          const { _id, isNew, ...rest } = item;
           return rest;
         }
         // 既存の作業項目：更新のために元の_idを保持します。
@@ -158,13 +155,9 @@ export default function EditReportScreen() {
       // 削除されたアイテムを_isDeletedフラグ付きで追加
       const allWorkItems = [
         ...workItemsForBackend,
-        ...deletedWorkItemIds.map((id) => ({
-          _id: id,
+        ...deletedWorkItems.map((item) => ({
+          ...item,
           _isDeleted: true,
-          projectId: '' as Id<'projects'>,
-          workCategoryId: '' as Id<'workCategories'>,
-          description: '',
-          workDuration: 0,
         })),
       ];
 
@@ -210,16 +203,19 @@ export default function EditReportScreen() {
     }
 
     const newWorkItem: ReportFormData['workItems'][number] = {
-      _id: `temp-${Date.now()}` as Id<'workItems'>,
-      projectId: '' as Id<'projects'>,
-      workCategoryId: '' as Id<'workCategories'>,
+      isNew: true,
+      projectId: null,
+      workCategoryId: null,
       description: '',
       workDuration: 0,
     };
     setFormData({ ...formData, workItems: [...formData.workItems, newWorkItem] });
   };
 
-  const updateWorkItem = (index: number, updatedItem: Partial<WorkItem>) => {
+  const updateWorkItem = (
+    index: number,
+    updatedItem: Partial<ReportFormData['workItems'][number]>
+  ) => {
     if (!formData) {
       return;
     }
@@ -235,8 +231,9 @@ export default function EditReportScreen() {
     }
 
     const itemToDelete = formData.workItems[index];
-    if (itemToDelete._id && !itemToDelete._id.startsWith('temp-')) {
-      setDeletedWorkItemIds([...deletedWorkItemIds, itemToDelete._id as Id<'workItems'>]);
+    // isNewでない（＝永続化されている）アイテムのみ削除リストに追加
+    if (!itemToDelete.isNew && itemToDelete._id) {
+      setDeletedWorkItems([...deletedWorkItems, itemToDelete]);
     }
     setFormData({ ...formData, workItems: formData.workItems.filter((_, i) => i !== index) });
   };

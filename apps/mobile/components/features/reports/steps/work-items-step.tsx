@@ -3,14 +3,17 @@ import { Plus } from 'lucide-react-native';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { REPORTS_CONSTANTS } from '../../../../constants/reports';
-import type { ReportFormData, WorkItem } from '../../../../types';
+import type { ReportFormData } from '../../../../types';
 import { WorkItemForm } from '../work-item-form';
 
 interface WorkItemsStepProps {
   formData: ReportFormData;
   projects: Doc<'projects'>[] | undefined;
   onAddWorkItem: () => void;
-  onUpdateWorkItem: (index: number, updatedItem: Partial<WorkItem>) => void;
+  onUpdateWorkItem: (
+    index: number,
+    updatedItem: Partial<ReportFormData['workItems'][number]>
+  ) => void;
   onDeleteWorkItem: (index: number) => void;
 }
 
@@ -48,7 +51,7 @@ export const WorkItemsStep: React.FC<WorkItemsStepProps> = ({
         <ScrollView className='max-h-96'>
           {formData.workItems.map((item, index) => (
             <WorkItemForm
-              key={item._id}
+              key={item._id ?? index}
               workItem={item}
               onUpdate={(updated) => onUpdateWorkItem(index, updated)}
               onDelete={() => onDeleteWorkItem(index)}

@@ -5,11 +5,11 @@ import { useQuery } from 'convex/react';
 import { X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import type { WorkItem } from '../../../types';
+import type { ReportFormData } from '../../../types';
 
 interface WorkItemFormProps {
-  workItem: Partial<WorkItem> & { _id?: string };
-  onUpdate: (item: Partial<WorkItem>) => void;
+  workItem: ReportFormData['workItems'][number];
+  onUpdate: (item: Partial<ReportFormData['workItems'][number]>) => void;
   onDelete: () => void;
   projects: Doc<'projects'>[] | undefined;
 }
@@ -43,14 +43,15 @@ export const WorkItemForm: React.FC<WorkItemFormProps> = ({
           <Text style={styles.label}>プロジェクト</Text>
           <View style={styles.pickerWrapper}>
             <Picker
-              selectedValue={workItem.projectId || ''}
-              onValueChange={(itemValue) =>
+              selectedValue={workItem.projectId ?? ''}
+              onValueChange={(itemValue) => {
+                const newProjectId = itemValue ? (itemValue as Id<'projects'>) : null;
                 onUpdate({
                   ...workItem,
-                  projectId: itemValue as Id<'projects'>,
-                  workCategoryId: undefined,
-                })
-              }
+                  projectId: newProjectId,
+                  workCategoryId: null,
+                });
+              }}
               style={styles.picker}
               itemStyle={styles.pickerItem}
             >
@@ -66,13 +67,14 @@ export const WorkItemForm: React.FC<WorkItemFormProps> = ({
           <Text style={styles.label}>作業区分</Text>
           <View style={[styles.pickerWrapper, !workItem.projectId && styles.disabledPicker]}>
             <Picker
-              selectedValue={workItem.workCategoryId || ''}
-              onValueChange={(itemValue) =>
+              selectedValue={workItem.workCategoryId ?? ''}
+              onValueChange={(itemValue) => {
+                const newWorkCategoryId = itemValue ? (itemValue as Id<'workCategories'>) : null;
                 onUpdate({
                   ...workItem,
-                  workCategoryId: itemValue ? (itemValue as Id<'workCategories'>) : undefined,
-                })
-              }
+                  workCategoryId: newWorkCategoryId,
+                });
+              }}
               enabled={!!workItem.projectId}
               style={styles.picker}
               itemStyle={styles.pickerItem}

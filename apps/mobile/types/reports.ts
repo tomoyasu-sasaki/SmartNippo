@@ -23,9 +23,9 @@ export interface ReportFormData {
   };
   workItems: Array<
     Partial<WorkItem> & {
-      _id?: string; // for client-side key
-      projectId: string;
-      workCategoryId: string;
+      isNew?: boolean;
+      projectId: Id<'projects'> | null;
+      workCategoryId: Id<'workCategories'> | null;
       description: string;
       workDuration: number;
     }

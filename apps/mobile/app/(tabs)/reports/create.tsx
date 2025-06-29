@@ -1,6 +1,5 @@
 import NetInfo from '@react-native-community/netinfo';
 import { api } from 'convex/_generated/api';
-import type { Id } from 'convex/_generated/dataModel';
 import { useAction, useQuery } from 'convex/react';
 import { router } from 'expo-router';
 import { ChevronLeft, ChevronRight, Wifi, WifiOff } from 'lucide-react-native';
@@ -24,7 +23,7 @@ import {
   WorkItemsStep,
 } from '../../../components/features/reports/steps';
 import { REPORTS_CONSTANTS } from '../../../constants/reports';
-import type { ReportFormData, WorkItem } from '../../../types';
+import type { ReportFormData } from '../../../types';
 
 // ステップの定義
 const { STEPS } = REPORTS_CONSTANTS;
@@ -130,7 +129,7 @@ export default function CreateReportScreen() {
     Toast.show({ type: 'info', text1: '日報を作成中...' });
 
     try {
-      const workItemsForBackend = formData.workItems.map(({ _id, ...rest }) => rest);
+      const workItemsForBackend = formData.workItems.map(({ _id, isNew, ...rest }) => rest);
 
       await saveReport({
         reportData: {
@@ -165,16 +164,19 @@ export default function CreateReportScreen() {
   // 作業項目の操作
   const addWorkItem = () => {
     const newWorkItem: ReportFormData['workItems'][number] = {
-      _id: Date.now().toString() as Id<'workItems'>,
-      projectId: '' as Id<'projects'>,
-      workCategoryId: '' as Id<'workCategories'>,
+      isNew: true,
+      projectId: null,
+      workCategoryId: null,
       description: '',
       workDuration: 0,
     };
     setFormData((prev) => ({ ...prev, workItems: [...prev.workItems, newWorkItem] }));
   };
 
-  const updateWorkItem = (index: number, updatedItem: Partial<WorkItem>) => {
+  const updateWorkItem = (
+    index: number,
+    updatedItem: Partial<ReportFormData['workItems'][number]>
+  ) => {
     setFormData((prev) => {
       const newWorkItems = [...prev.workItems];
       newWorkItems[index] = { ...newWorkItems[index], ...updatedItem };
