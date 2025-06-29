@@ -382,8 +382,8 @@ export const getReportDetail = query({
 
     // 統計情報を計算
     const stats = {
-      totalTasks: 0,
-      completedTasks: 0,
+      totalWorkItems: 0,
+      completedWorkItems: 0,
       totalEstimatedHours: 0,
       totalActualHours: 0,
       commentCount: commentsWithAuthors.length,

@@ -37,6 +37,7 @@ import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
 import type { ReportEditorProps } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { api } from 'convex/_generated/api';
+import type { Id } from 'convex/_generated/dataModel';
 import { useAction, useQuery } from 'convex/react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -163,7 +164,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
             content: pendingValues.content,
             workingHours: pendingValues.workingHours,
           },
-          workItems: [...(pendingValues.workItems ?? []), ...deletedWorkItems],
+          workItems: [...(pendingValues.workItems ?? []), ...deletedWorkItems] as any,
           expectedUpdatedAt: latestReport.updated_at,
           status: submitTypeRef.current,
         });
@@ -212,7 +213,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
           content: values.content,
           workingHours: values.workingHours,
         },
-        workItems: finalWorkItems,
+        workItems: finalWorkItems as any,
         ...(expectedUpdatedAt && { expectedUpdatedAt }),
         status: submitType,
       });
@@ -690,7 +691,7 @@ function WorkCategorySelector({
 }) {
   const workCategories = useQuery(
     api.index.listWorkCategories,
-    projectId ? { projectId: projectId as any } : 'skip'
+    projectId ? { projectId: projectId as Id<'projects'> } : 'skip'
   );
 
   return (

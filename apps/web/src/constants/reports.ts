@@ -48,8 +48,6 @@ export const REPORTS_CONSTANTS = {
   AUTHOR_PREFIX: '作成者',
   CREATED_AT_PREFIX: '作成日時',
 
-  TASKS_CARD_TITLE: 'タスク',
-  TASKS_COMPLETED_STATUS: (completed: number, total: number) => `${completed} / ${total} 完了`,
   TASK_ESTIMATED_HOURS: '予定',
   TASK_ACTUAL_HOURS: '実績',
 
@@ -134,12 +132,6 @@ export const REPORTS_CONSTANTS = {
   FORM_FIELD_CONTENT_LABEL: '内容',
   FORM_FIELD_CONTENT_PLACEHOLDER: '本日の作業内容を詳しく記載してください...',
   FORM_FIELD_CONTENT_DESCRIPTION: '作業内容、成果、課題などを記載してください（10000文字以内）',
-
-  TASKS_EDITOR_CARD_TITLE: 'タスク',
-  TASKS_EDITOR_CARD_DESCRIPTION: '本日のタスクを記録します（任意）',
-  ADD_TASK_BUTTON: 'タスクを追加',
-  TASK_NAME_PLACEHOLDER: 'タスク名',
-  NO_TASKS_MESSAGE: 'タスクがありません',
 
   CANCEL_BUTTON: COMMON_CONSTANTS.CANCEL_BUTTON,
   SAVE_DRAFT_BUTTON: '下書き保存',

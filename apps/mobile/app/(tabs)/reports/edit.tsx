@@ -145,9 +145,15 @@ export default function EditReportScreen() {
     Toast.show({ type: 'info', text1: '日報を更新中...' });
 
     try {
-      const workItemsForBackend = formData.workItems
-        .filter((item) => item._id && !item._id.startsWith('temp-'))
-        .map(({ _id, ...rest }) => rest);
+      const workItemsForBackend = formData.workItems.map((item) => {
+        if (item._id && item._id.startsWith('temp-')) {
+          // 新規作業項目：バックエンドで新しいIDを生成するため、一時的なIDを削除します。
+          const { _id, ...rest } = item;
+          return rest;
+        }
+        // 既存の作業項目：更新のために元の_idを保持します。
+        return item;
+      });
 
       // 削除されたアイテムを_isDeletedフラグ付きで追加
       const allWorkItems = [

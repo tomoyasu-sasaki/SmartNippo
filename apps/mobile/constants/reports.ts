@@ -107,7 +107,6 @@ export const REPORTS_CONSTANTS = {
     LOADING_TEXT: '読み込み中...',
     SECTIONS: {
       CONTENT: '内容',
-      TASKS: '作業項目',
       METADATA: 'メタデータ',
       STATISTICS: '統計',
       APPROVAL_HISTORY: '承認履歴',
@@ -119,7 +118,6 @@ export const REPORTS_CONSTANTS = {
       ACTUAL_HOURS: '実績時間',
       COMMENT_COUNT: 'コメント数',
       COMPLETED_WORK_ITEMS: (completed: number, total: number) => `${completed}/${total} 完了`,
-      COMPLETED_TASKS: (completed: number, total: number) => `${completed}/${total} 完了`, // 互換性のため残す
     },
     REJECTION: {
       TITLE: '却下理由',

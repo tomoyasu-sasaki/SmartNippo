@@ -7,9 +7,9 @@ import type { Id } from '../_generated/dataModel';
 import { action } from '../_generated/server';
 
 const workItemInputValidator = v.object({
-  _id: v.optional(v.string()),
-  projectId: v.string(),
-  workCategoryId: v.string(),
+  _id: v.optional(v.id('workItems')),
+  projectId: v.id('projects'),
+  workCategoryId: v.id('workCategories'),
   description: v.string(),
   workDuration: v.number(),
   _isDeleted: v.optional(v.boolean()),
@@ -98,17 +98,16 @@ export const saveReportWithWorkItems = action({
 
     // 作業項目の処理
     for (const workItem of workItems) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { _id, _isDeleted, ...workItemData } = workItem;
 
       if (_isDeleted && _id) {
-        await ctx.runMutation(api.index._deleteWorkItem, { taskId: _id as Id<'workItems'> });
+        await ctx.runMutation(api.index._deleteWorkItem, { taskId: _id });
       } else if (_id) {
         await ctx.runMutation(api.index._updateWorkItem, {
-          taskId: _id as Id<'workItems'>,
+          taskId: _id,
           updates: {
-            projectId: workItem.projectId as Id<'projects'>,
-            workCategoryId: workItem.workCategoryId as Id<'workCategories'>,
+            projectId: workItem.projectId,
+            workCategoryId: workItem.workCategoryId,
             description: workItem.description,
             workDuration: workItem.workDuration,
           },
@@ -117,8 +116,8 @@ export const saveReportWithWorkItems = action({
         await ctx.runMutation(api.index._createWorkItem, {
           ...workItemData,
           reportId: currentReportId,
-          projectId: workItem.projectId as Id<'projects'>,
-          workCategoryId: workItem.workCategoryId as Id<'workCategories'>,
+          projectId: workItem.projectId,
+          workCategoryId: workItem.workCategoryId,
         });
       }
     }

@@ -321,12 +321,12 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
             <View className='mt-2 bg-white p-4'>
               <View className='mb-3 flex-row items-center justify-between'>
                 <Text className='text-lg font-semibold text-gray-900'>
-                  {REPORTS_CONSTANTS.DETAIL_SCREEN.SECTIONS.TASKS}
+                  {REPORTS_CONSTANTS.DETAIL_SCREEN.SECTIONS.WORK_ITEMS}
                 </Text>
                 <Text className='text-sm text-gray-500'>
-                  {REPORTS_CONSTANTS.DETAIL_SCREEN.STATISTICS.COMPLETED_TASKS(
-                    report?.stats?.completedTasks ?? 0,
-                    report?.stats?.totalTasks ?? workItems.length
+                  {REPORTS_CONSTANTS.DETAIL_SCREEN.STATISTICS.COMPLETED_WORK_ITEMS(
+                    report?.stats?.completedWorkItems ?? 0,
+                    report?.stats?.totalWorkItems ?? workItems.length
                   )}
                 </Text>
               </View>
