@@ -75,10 +75,7 @@ export default function ReportDetailScreen() {
     reportId,
   });
 
-  // 新: 作業項目（workItems）を取得
-  const workItems = useQuery(api.index.listWorkItemsForReport, {
-    reportId,
-  });
+  const workItems = report?.workItems;
 
   // 現在のユーザー情報を取得（Web版と同様）
   const currentUser = useQuery(api.index.current);
@@ -324,10 +321,7 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
                   {REPORTS_CONSTANTS.DETAIL_SCREEN.SECTIONS.WORK_ITEMS}
                 </Text>
                 <Text className='text-sm text-gray-500'>
-                  {REPORTS_CONSTANTS.DETAIL_SCREEN.STATISTICS.COMPLETED_WORK_ITEMS(
-                    report?.stats?.completedWorkItems ?? 0,
-                    report?.stats?.totalWorkItems ?? workItems.length
-                  )}
+                  {`総作業項目数: ${report?.stats?.totalWorkItems ?? workItems?.length ?? 0}`}
                 </Text>
               </View>
               {workItems.map((item: any) => (

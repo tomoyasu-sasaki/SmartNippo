@@ -322,6 +322,12 @@ export const getReportDetail = query({
       .withIndex('by_report', (q) => q.eq('reportId', args.reportId))
       .collect();
 
+    // 作業項目を取得
+    const workItems = await ctx.db
+      .query('workItems')
+      .withIndex('by_report', (q) => q.eq('reportId', args.reportId))
+      .collect();
+
     // 関連データのIDを収集
     const userIds = new Set<Id<'userProfiles'>>();
     userIds.add(report.authorId);
@@ -381,11 +387,19 @@ export const getReportDetail = query({
     const deletedByUser = report.deletedBy ? getUserInfo(report.deletedBy) : null;
 
     // 統計情報を計算
+    // 実作業時間を分単位で合計
+    const totalWorkDurationMinutes = workItems.reduce(
+      (sum, item) => sum + (item.workDuration ?? 0),
+      0
+    );
+    // 時間に変換し、小数点以下2桁に丸める
+    const totalActualHours = parseFloat((totalWorkDurationMinutes / 60).toFixed(2));
+
     const stats = {
-      totalWorkItems: 0,
-      completedWorkItems: 0,
-      totalEstimatedHours: 0,
-      totalActualHours: 0,
+      totalWorkItems: workItems.length,
+      // `completedWorkItems` はUIから削除するため、ここでも削除
+      totalEstimatedHours: 0, // 推定時間のデータソースがないため0
+      totalActualHours,
       commentCount: commentsWithAuthors.length,
       attachmentCount: report.attachments.length,
     };
@@ -404,6 +418,7 @@ export const getReportDetail = query({
       editHistory: editHistoryWithEditors,
       deletedBy: deletedByUser,
       stats,
+      workItems,
     };
   },
 });
