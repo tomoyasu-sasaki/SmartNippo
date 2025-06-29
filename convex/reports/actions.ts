@@ -101,10 +101,10 @@ export const saveReportWithWorkItems = action({
       const { _id, _isDeleted, ...workItemData } = workItem;
 
       if (_isDeleted && _id) {
-        await ctx.runMutation(api.index._deleteWorkItem, { taskId: _id });
+        await ctx.runMutation(api.index._deleteWorkItem, { workItemId: _id });
       } else if (_id) {
         await ctx.runMutation(api.index._updateWorkItem, {
-          taskId: _id,
+          workItemId: _id,
           updates: {
             projectId: workItem.projectId,
             workCategoryId: workItem.workCategoryId,

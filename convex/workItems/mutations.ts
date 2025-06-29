@@ -37,7 +37,7 @@ export const _createWorkItem = mutation({
  */
 export const _updateWorkItem = mutation({
   args: {
-    taskId: v.id('workItems'),
+    workItemId: v.id('workItems'),
     updates: v.object({
       projectId: v.optional(v.id('projects')),
       workCategoryId: v.optional(v.id('workCategories')),
@@ -45,12 +45,12 @@ export const _updateWorkItem = mutation({
       workDuration: v.optional(v.number()),
     }),
   },
-  handler: async (ctx, { taskId, updates }) => {
-    const task = await ctx.db.get(taskId);
-    if (!task) {
+  handler: async (ctx, { workItemId, updates }) => {
+    const workItem = await ctx.db.get(workItemId);
+    if (!workItem) {
       throw new Error('WorkItem not found');
     }
-    const report = await ctx.db.get(task.reportId);
+    const report = await ctx.db.get(workItem.reportId);
     if (!report) {
       throw new Error('Report not found');
     }
@@ -70,7 +70,7 @@ export const _updateWorkItem = mutation({
       patchData.workDuration = updates.workDuration;
     }
 
-    await ctx.db.patch(taskId, patchData);
+    await ctx.db.patch(workItemId, patchData);
   },
 });
 
@@ -78,18 +78,18 @@ export const _updateWorkItem = mutation({
  * [INTERNAL] 作業項目を削除する
  */
 export const _deleteWorkItem = mutation({
-  args: { taskId: v.id('workItems') },
-  handler: async (ctx, { taskId }) => {
-    const task = await ctx.db.get(taskId);
-    if (!task) {
+  args: { workItemId: v.id('workItems') },
+  handler: async (ctx, { workItemId }) => {
+    const workItem = await ctx.db.get(workItemId);
+    if (!workItem) {
       throw new Error('WorkItem not found');
     }
-    const report = await ctx.db.get(task.reportId);
+    const report = await ctx.db.get(workItem.reportId);
     if (!report) {
       throw new Error('Report not found');
     }
     await requireOwnershipOrManagerRole(ctx, report.authorId, report.orgId);
 
-    await ctx.db.delete(taskId);
+    await ctx.db.delete(workItemId);
   },
 });
