@@ -7,12 +7,12 @@
 
 ## 1. 概要
 
-| 項目         | 内容                                                                                               |
-| ------------ | -------------------------------------------------------------------------------------------------- |
-| 目的         | 日報提出・承認・フィードバックをモバイル中心で高速化し、AI 要約で振り返りを効率化する              |
-| 対象ユーザー | ・**一般ユーザー** (user)・**閲覧専用ユーザー** (viewer)・**承認者** (manager)・**管理者** (admin) |
-| KPI          | ①提出率 ≥95% ②承認24h以内 ③Web LCP≤2.5s/CLS≤0.1 ④Mobile cold‑start≤1.5s                            |
-| 使用端末     | iOS 15+/Android 11+（Expo）、Chrome/Edge/Safari 最新                                               |
+| 項目         | 内容                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------- |
+| 目的         | 日報提出・承認・フィードバックをモバイル中心で高速化し、AI 要約で振り返りを効率化する |
+| 対象ユーザー | ・**一般ユーザー** (user)・**承認者** (manager)・**管理者** (admin)                   |
+| KPI          | ①提出率 ≥95% ②承認24h以内 ③Web LCP≤2.5s/CLS≤0.1 ④Mobile cold‑start≤1.5s               |
+| 使用端末     | iOS 15+/Android 11+（Expo）、Chrome/Edge/Safari 最新                                  |
 
 ---
 
@@ -48,7 +48,7 @@ erDiagram
     uuid id PK
     text email
     text name
-    text role "viewer|user|manager|admin"
+    text role "user|manager|admin"
     uuid orgId FK
     text avatarUrl
     text pushToken
@@ -129,7 +129,6 @@ erDiagram
 - Clerk JWT → Convex認証統合
 - RLS: `org_id` 完全分離
 - ロール別権限:
-  - **viewer**: 読取のみ
   - **user**: 自分の日報 CRUD
   - **manager**: チーム日報閲覧/承認/コメント
   - **admin**: 全操作 + org 設定

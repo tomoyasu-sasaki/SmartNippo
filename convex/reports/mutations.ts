@@ -19,6 +19,18 @@ import {
  */
 
 // ============================
+// Validators
+// ============================
+const taskInput = v.object({
+  _id: v.optional(v.id('tasks')),
+  projectId: v.id('projects'),
+  workCategoryId: v.id('workCategories'),
+  description: v.string(),
+  workDuration: v.number(),
+  _isDeleted: v.optional(v.boolean()),
+});
+
+// ============================
 // Mutations
 // ============================
 
@@ -47,18 +59,13 @@ export const createReport = mutation({
     reportDate: v.string(), // YYYY-MM-DD形式
     title: v.string(),
     content: v.string(),
-    tasks: v.optional(
-      v.array(
-        v.object({
-          id: v.string(),
-          title: v.string(),
-          completed: v.boolean(),
-          priority: v.optional(v.union(v.literal('low'), v.literal('medium'), v.literal('high'))),
-          estimatedHours: v.optional(v.number()),
-          actualHours: v.optional(v.number()),
-          category: v.optional(v.string()),
-        })
-      )
+    workingHours: v.optional(
+      v.object({
+        startHour: v.number(),
+        startMinute: v.number(),
+        endHour: v.number(),
+        endMinute: v.number(),
+      })
     ),
     attachments: v.optional(
       v.array(
@@ -120,14 +127,14 @@ export const createReport = mutation({
       throw new Error('内容は10000文字以内で入力してください');
     }
 
+    const now = Date.now();
     // 日報作成
-    const reportId = await ctx.db.insert('reports', {
+    const reportInsert: any = {
       authorId: user._id,
       reportDate: args.reportDate,
       title: args.title.trim(),
       content: args.content.trim(),
       status: 'draft',
-      tasks: args.tasks ?? [],
       attachments: args.attachments ?? [],
       metadata: {
         ...args.metadata,
@@ -135,11 +142,16 @@ export const createReport = mutation({
       },
       isDeleted: false,
       orgId: user.orgId!,
-      created_at: Date.now(),
-      updated_at: Date.now(),
+      created_at: now,
+      updated_at: now,
       aiSummaryStatus: 'pending',
       editHistory: [],
-    });
+    };
+    if (args.workingHours) {
+      reportInsert.workingHours = args.workingHours;
+    }
+
+    const reportId = await ctx.db.insert('reports', reportInsert);
 
     // 監査ログ記録
     await logAuditEvent(
@@ -187,25 +199,20 @@ export const updateReport = mutation({
     reportDate: v.optional(v.string()),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
+    workingHours: v.optional(
+      v.object({
+        startHour: v.number(),
+        startMinute: v.number(),
+        endHour: v.number(),
+        endMinute: v.number(),
+      })
+    ),
     status: v.optional(
       v.union(
         v.literal('draft'),
         v.literal('submitted'),
         v.literal('approved'),
         v.literal('rejected')
-      )
-    ),
-    tasks: v.optional(
-      v.array(
-        v.object({
-          id: v.string(),
-          title: v.string(),
-          completed: v.boolean(),
-          priority: v.optional(v.union(v.literal('low'), v.literal('medium'), v.literal('high'))),
-          estimatedHours: v.optional(v.number()),
-          actualHours: v.optional(v.number()),
-          category: v.optional(v.string()),
-        })
       )
     ),
     attachments: v.optional(
@@ -301,11 +308,11 @@ export const updateReport = mutation({
     if (updates.content !== undefined && updates.content !== report.content) {
       changedFields.push('content');
     }
+    if (updates.workingHours !== undefined) {
+      changedFields.push('workingHours');
+    }
     if (updates.status !== undefined && updates.status !== report.status) {
       changedFields.push('status');
-    }
-    if (updates.tasks !== undefined) {
-      changedFields.push('tasks');
     }
     if (updates.attachments !== undefined) {
       changedFields.push('attachments');
@@ -322,9 +329,10 @@ export const updateReport = mutation({
       });
     }
 
+    const now = Date.now();
     // 更新実行
     const updatedFields: any = {
-      updated_at: Date.now(),
+      updated_at: now,
       editHistory,
     };
 
@@ -337,6 +345,9 @@ export const updateReport = mutation({
     if (updates.content !== undefined) {
       updatedFields.content = updates.content.trim();
     }
+    if (updates.workingHours !== undefined) {
+      updatedFields.workingHours = updates.workingHours;
+    }
     if (updates.status !== undefined) {
       updatedFields.status = updates.status;
       if (updates.status === 'submitted') {
@@ -346,9 +357,6 @@ export const updateReport = mutation({
       } else if (updates.status === 'rejected') {
         updatedFields.rejectedAt = Date.now();
       }
-    }
-    if (updates.tasks !== undefined) {
-      updatedFields.tasks = updates.tasks;
     }
     if (updates.attachments !== undefined) {
       updatedFields.attachments = updates.attachments;

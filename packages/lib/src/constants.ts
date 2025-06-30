@@ -4,7 +4,6 @@
 
 // User roles
 export const USER_ROLES = {
-  VIEWER: 'viewer',
   USER: 'user',
   MANAGER: 'manager',
   ADMIN: 'admin',

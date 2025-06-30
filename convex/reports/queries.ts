@@ -141,16 +141,21 @@ export const listReports = query({
       };
     }
 
+    let { authorId } = args;
     const {
       limit = 20,
       cursor,
       status,
-      authorId,
       startDate,
       endDate,
       sortBy = 'reportDate',
       sortOrder = 'desc',
     } = args;
+
+    // userロールの場合は自分の日報のみに強制する
+    if (user.role === 'user') {
+      authorId = user._id;
+    }
 
     let query;
     const { orgId } = user;
@@ -302,11 +307,8 @@ export const getReportDetail = query({
       throw new Error('この日報を閲覧する権限がありません');
     }
 
-    // 自分以外の日報を見る場合はviewer以上の権限が必要
-    if (report.authorId !== user._id && user.role === 'user') {
-      // userロールは自分の日報のみ閲覧可能
-      throw new Error('他のユーザーの日報を閲覧する権限がありません');
-    }
+    // `user`ロールは自分の日報のみ閲覧可能。manager以上は組織内の日報を閲覧可能
+    await requireOwnershipOrManagerRole(ctx, report.authorId, user.orgId);
 
     // コメントを取得（作成者情報付き）
     const comments = await ctx.db
@@ -317,6 +319,12 @@ export const getReportDetail = query({
     // 承認情報を取得
     const approvals = await ctx.db
       .query('approvals')
+      .withIndex('by_report', (q) => q.eq('reportId', args.reportId))
+      .collect();
+
+    // 作業項目を取得
+    const workItems = await ctx.db
+      .query('workItems')
       .withIndex('by_report', (q) => q.eq('reportId', args.reportId))
       .collect();
 
@@ -379,11 +387,19 @@ export const getReportDetail = query({
     const deletedByUser = report.deletedBy ? getUserInfo(report.deletedBy) : null;
 
     // 統計情報を計算
+    // 実作業時間を分単位で合計
+    const totalWorkDurationMinutes = workItems.reduce(
+      (sum, item) => sum + (item.workDuration ?? 0),
+      0
+    );
+    // 時間に変換し、小数点以下2桁に丸める
+    const totalActualHours = parseFloat((totalWorkDurationMinutes / 60).toFixed(2));
+
     const stats = {
-      totalTasks: report.tasks.length,
-      completedTasks: report.tasks.filter((t: { completed: boolean }) => t.completed).length,
-      totalEstimatedHours: report.tasks.reduce((sum, t) => sum + (t.estimatedHours ?? 0), 0),
-      totalActualHours: report.tasks.reduce((sum, t) => sum + (t.actualHours ?? 0), 0),
+      totalWorkItems: workItems.length,
+      // `completedWorkItems` はUIから削除するため、ここでも削除
+      totalEstimatedHours: 0, // 推定時間のデータソースがないため0
+      totalActualHours,
       commentCount: commentsWithAuthors.length,
       attachmentCount: report.attachments.length,
     };
@@ -402,6 +418,7 @@ export const getReportDetail = query({
       editHistory: editHistoryWithEditors,
       deletedBy: deletedByUser,
       stats,
+      workItems,
     };
   },
 });

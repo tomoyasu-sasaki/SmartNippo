@@ -13,9 +13,12 @@ import { approvalsTable } from './schema/approvals';
 import { auditLogsTable } from './schema/audit_logs';
 import { commentsTable } from './schema/comments';
 import { orgsTable } from './schema/orgs';
+import { projectsTable } from './schema/projects';
 import { reportsTable } from './schema/reports';
 import { schemaVersionsTable } from './schema/schema_versions';
 import { userProfilesTable } from './schema/userProfiles';
+import { workCategoriesTable } from './schema/workCategories';
+import { workItemsTable } from './schema/workItems';
 
 /**
  * SmartNippo データベーススキーマ
@@ -29,8 +32,11 @@ export default defineSchema({
   orgs: orgsTable,
   userProfiles: userProfilesTable,
   reports: reportsTable,
+  projects: projectsTable,
+  workCategories: workCategoriesTable,
   comments: commentsTable,
   approvals: approvalsTable,
   audit_logs: auditLogsTable,
   schema_versions: schemaVersionsTable,
+  workItems: workItemsTable,
 });

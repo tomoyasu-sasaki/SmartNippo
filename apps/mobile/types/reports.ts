@@ -5,9 +5,7 @@ export type Report = Doc<'reports'>;
 export type ReportId = Id<'reports'>;
 export type Comment = Doc<'comments'>;
 export type Approval = Doc<'approvals'>;
-
-// Convexスキーマからタスク型を抽出
-export type Task = Report['tasks'][number];
+export type WorkItem = Doc<'workItems'>;
 
 // レポートのメタデータ型定義（Convexスキーマに基づく）
 export type ReportMetadata = NonNullable<Report['metadata']>;
@@ -17,10 +15,23 @@ export interface ReportFormData {
   reportDate: string;
   title: string;
   content: string;
-  tasks: Task[];
+  workingHours: {
+    startHour: number;
+    startMinute: number;
+    endHour: number;
+    endMinute: number;
+  };
+  workItems: Array<
+    Partial<WorkItem> & {
+      isNew?: boolean;
+      projectId: Id<'projects'> | null;
+      workCategoryId: Id<'workCategories'> | null;
+      description: string;
+      workDuration: number;
+    }
+  >;
   metadata: {
     mood?: 'positive' | 'neutral' | 'negative';
-    workingHours?: number;
     location?: string;
     tags?: string[];
     difficulty?: 'easy' | 'medium' | 'hard';
@@ -33,10 +44,8 @@ export interface ReportFormData {
 
 // レポート統計情報の型定義
 export interface ReportStats {
-  totalTasks: number;
-  completedTasks: number;
-  totalEstimatedHours: number;
-  totalActualHours: number;
+  workItemCount: number;
+  totalWorkDuration: number; // in minutes
   commentCount: number;
 }
 
@@ -45,7 +54,7 @@ export interface ReportValidationErrors {
   title?: string;
   content?: string;
   reportDate?: string;
-  tasks?: string;
+  workItems?: string;
   metadata?: string;
 }
 

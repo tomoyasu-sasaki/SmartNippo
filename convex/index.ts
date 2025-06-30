@@ -107,3 +107,23 @@ export * from './migrations/migrations';
 // 📦 スキーマバージョニング
 // ============================================================================
 export * from './schema_versioning/schema_versioning';
+
+// ============================================================================
+// 📂 プロジェクト & 作業区分管理
+// ============================================================================
+export { createProject, deleteProject, updateProject } from './projects/mutations';
+
+export { listProjects } from './projects/queries';
+
+export {
+  createWorkCategory,
+  deleteWorkCategory,
+  updateWorkCategory,
+} from './workCategories/mutations';
+
+export { listWorkCategories } from './workCategories/queries';
+
+export * from './reports/actions';
+
+export * from './workItems/mutations';
+export { listWorkItemsForReport } from './workItems/queries';

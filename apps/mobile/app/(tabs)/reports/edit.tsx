@@ -1,0 +1,370 @@
+import NetInfo from '@react-native-community/netinfo';
+import { api } from 'convex/_generated/api';
+import type { Id } from 'convex/_generated/dataModel';
+import { useAction, useQuery } from 'convex/react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { ChevronLeft, ChevronRight, Wifi, WifiOff } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView as SafeAreaViewContext } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
+import { StepIndicator } from '../../../components/features/reports/step-indicator';
+import {
+  BasicInfoStep,
+  MetadataStep,
+  WorkItemsStep,
+} from '../../../components/features/reports/steps';
+import { LoadingScreen } from '../../../components/ui/loading-screen';
+import { REPORTS_CONSTANTS } from '../../../constants/reports';
+import type { ReportFormData } from '../../../types';
+
+// ステップの定義
+const { STEPS } = REPORTS_CONSTANTS;
+
+// 難易度の表示名
+const difficultyLabels = REPORTS_CONSTANTS.DIFFICULTY_LABELS;
+
+export default function EditReportScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState<ReportFormData | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<keyof ReportFormData, string>>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
+  const [deletedWorkItems, setDeletedWorkItems] = useState<ReportFormData['workItems']>([]);
+
+  const reportId = id as Id<'reports'>;
+  const report = useQuery(api.index.getReportDetail, { reportId });
+  const workItems = useQuery(api.index.listWorkItemsForReport, { reportId });
+  const projects = useQuery(api.index.listProjects);
+  const saveReport = useAction(api.index.saveReportWithWorkItems);
+
+  // ネットワーク状態の監視
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const connected = state.isConnected && state.isInternetReachable;
+      setIsConnected(connected);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // 既存データの読み込み
+  useEffect(() => {
+    if (report && workItems && !formData) {
+      setFormData({
+        reportDate: report.reportDate,
+        title: report.title,
+        content: report.content,
+        workItems: workItems.map((item) => ({
+          ...item,
+          isNew: false,
+        })),
+        workingHours: report.workingHours || {
+          startHour: 9,
+          startMinute: 0,
+          endHour: 18,
+          endMinute: 0,
+        },
+        metadata: report.metadata || {
+          achievements: [],
+          challenges: [],
+          learnings: [],
+          nextActionItems: [],
+        },
+      });
+    }
+  }, [report, workItems, formData]);
+
+  // バリデーション
+  const validateStep = (step: number): boolean => {
+    if (!formData) {
+      return false;
+    }
+
+    const newErrors: Partial<Record<keyof ReportFormData, string>> = {};
+
+    switch (step) {
+      case 0: // 基本情報
+        if (!formData.title.trim()) {
+          newErrors.title = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.TITLE_REQUIRED;
+        } else if (formData.title.length > 200) {
+          newErrors.title = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.TITLE_TOO_LONG;
+        }
+        if (!formData.content.trim()) {
+          newErrors.content = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_REQUIRED;
+        } else if (formData.content.length > 10000) {
+          newErrors.content = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_TOO_LONG;
+        }
+        break;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ステップ進行
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      if (currentStep < STEPS.length - 1) {
+        setCurrentStep(currentStep + 1);
+      }
+    }
+  };
+
+  // ステップ戻る
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // フォーム送信
+  const handleSubmit = async () => {
+    if (!formData || !validateStep(currentStep) || !report) {
+      return;
+    }
+    if (isConnected === false) {
+      Alert.alert('オフラインです', 'オンラインのときに再試行してください。');
+      return;
+    }
+
+    setIsSubmitting(true);
+    Toast.show({ type: 'info', text1: '日報を更新中...' });
+
+    try {
+      const workItemsForBackend = formData.workItems.map((item) => {
+        if (item.isNew) {
+          // 新規作業項目：バックエンドで新しいIDを生成するため、一時的なIDとisNewフラグを削除
+          const { _id, isNew, ...rest } = item;
+          return rest;
+        }
+        // 既存の作業項目：更新のために元の_idを保持します。
+        return item;
+      });
+
+      // 削除されたアイテムを_isDeletedフラグ付きで追加
+      const allWorkItems = [
+        ...workItemsForBackend,
+        ...deletedWorkItems.map((item) => ({
+          ...item,
+          _isDeleted: true,
+        })),
+      ];
+
+      await saveReport({
+        reportId,
+        expectedUpdatedAt: report.updated_at,
+        reportData: {
+          reportDate: formData.reportDate,
+          title: formData.title,
+          content: formData.content,
+          workingHours: formData.workingHours,
+          metadata: formData.metadata,
+        },
+        workItems: allWorkItems,
+      });
+
+      Toast.show({ type: 'success', text1: '日報を更新しました', visibilityTime: 2000 });
+      setTimeout(() => router.back(), 1500);
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: '更新に失敗しました',
+        text2: (error as Error).message,
+        visibilityTime: 4000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // フォームデータ更新
+  const updateFormData = (updates: Partial<ReportFormData>) => {
+    if (!formData) {
+      return;
+    }
+    setFormData({ ...formData, ...updates });
+  };
+
+  // 作業項目の操作
+  const addWorkItem = () => {
+    if (!formData) {
+      return;
+    }
+
+    const newWorkItem: ReportFormData['workItems'][number] = {
+      isNew: true,
+      projectId: null,
+      workCategoryId: null,
+      description: '',
+      workDuration: 0,
+    };
+    setFormData({ ...formData, workItems: [...formData.workItems, newWorkItem] });
+  };
+
+  const updateWorkItem = (
+    index: number,
+    updatedItem: Partial<ReportFormData['workItems'][number]>
+  ) => {
+    if (!formData) {
+      return;
+    }
+
+    const newWorkItems = [...formData.workItems];
+    newWorkItems[index] = { ...newWorkItems[index], ...updatedItem };
+    setFormData({ ...formData, workItems: newWorkItems });
+  };
+
+  const deleteWorkItem = (index: number) => {
+    if (!formData) {
+      return;
+    }
+
+    const itemToDelete = formData.workItems[index];
+    // isNewでない（＝永続化されている）アイテムのみ削除リストに追加
+    if (!itemToDelete.isNew && itemToDelete._id) {
+      setDeletedWorkItems([...deletedWorkItems, itemToDelete]);
+    }
+    setFormData({ ...formData, workItems: formData.workItems.filter((_, i) => i !== index) });
+  };
+
+  if (!report || !formData) {
+    return <LoadingScreen message='日報を読み込んでいます...' />;
+  }
+
+  // 各ステップのコンテンツを表示
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0: // 基本情報
+        return (
+          <BasicInfoStep
+            formData={formData}
+            errors={errors}
+            onUpdateFormData={updateFormData}
+            isEditMode={true}
+          />
+        );
+
+      case 1: // 作業内容
+        return (
+          <WorkItemsStep
+            formData={formData}
+            projects={projects}
+            onAddWorkItem={addWorkItem}
+            onUpdateWorkItem={updateWorkItem}
+            onDeleteWorkItem={deleteWorkItem}
+          />
+        );
+
+      case 2: // メタデータ
+        return <MetadataStep formData={formData} onUpdateFormData={updateFormData} />;
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <SafeAreaViewContext className='flex-1 bg-gray-50'>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className='flex-1'
+      >
+        {/* ヘッダー */}
+        <View className='border-b border-gray-200 bg-white px-4 py-4'>
+          <View className='flex-row items-center justify-between'>
+            <Text className='text-center text-lg font-bold text-gray-900'>
+              日報を編集 - {STEPS[currentStep]}
+            </Text>
+            {/* ネットワーク状態インジケーター */}
+            <View className='flex-row items-center'>
+              {isConnected === false ? (
+                <View className='flex-row items-center'>
+                  <WifiOff size={16} color='#EF4444' />
+                  <Text className='ml-1 text-xs text-red-600'>
+                    {REPORTS_CONSTANTS.CREATE_SCREEN.NETWORK_STATUS.OFFLINE}
+                  </Text>
+                </View>
+              ) : isConnected === true ? (
+                <View className='flex-row items-center'>
+                  <Wifi size={16} color='#10B981' />
+                  <Text className='ml-1 text-xs text-green-600'>
+                    {REPORTS_CONSTANTS.CREATE_SCREEN.NETWORK_STATUS.ONLINE}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        </View>
+
+        {/* ステップインジケーター */}
+        <View className='bg-white pb-2 pt-4'>
+          <StepIndicator currentStep={currentStep} totalSteps={STEPS.length} />
+        </View>
+
+        {/* コンテンツ */}
+        <ScrollView className='flex-1 p-4' showsVerticalScrollIndicator={false}>
+          {renderStepContent()}
+        </ScrollView>
+
+        {/* ナビゲーションボタン */}
+        <View className='border-t border-gray-200 bg-white px-4 py-4'>
+          <View className='flex-row space-x-2'>
+            {currentStep > 0 && (
+              <Pressable
+                onPress={handlePrevious}
+                className='flex-1 flex-row items-center justify-center rounded-lg bg-gray-200 py-3 active:bg-gray-300'
+              >
+                <ChevronLeft size={20} color='#374151' />
+                <Text className='ml-1 font-semibold text-gray-700'>
+                  {REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.PREVIOUS}
+                </Text>
+              </Pressable>
+            )}
+
+            {currentStep < STEPS.length - 1 ? (
+              <Pressable
+                onPress={handleNext}
+                className='flex-1 flex-row items-center justify-center rounded-lg bg-blue-500 py-3 active:bg-blue-600'
+              >
+                <Text className='mr-1 font-semibold text-white'>
+                  {REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.NEXT}
+                </Text>
+                <ChevronRight size={20} color='white' />
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={handleSubmit}
+                disabled={isSubmitting || isConnected === false}
+                className={`flex-1 flex-row items-center justify-center rounded-lg py-3 ${
+                  isSubmitting || isConnected === false
+                    ? 'bg-gray-400'
+                    : 'bg-green-500 active:bg-green-600'
+                }`}
+              >
+                {isSubmitting && <ActivityIndicator size='small' color='white' className='mr-2' />}
+                <Text className='text-center font-semibold text-white'>
+                  {isConnected === false
+                    ? REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.OFFLINE_DISABLED
+                    : isSubmitting
+                      ? '更新中...'
+                      : '更新する'}
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaViewContext>
+  );
+}

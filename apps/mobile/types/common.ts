@@ -2,9 +2,6 @@
 
 import type { Report, UserProfile } from './index';
 
-// 優先度の型定義（Convexスキーマから派生）
-export type Priority = NonNullable<Report['tasks'][number]['priority']>;
-
 // 難易度の型定義（Convexスキーマから派生）
 export type Difficulty = NonNullable<Report['metadata']['difficulty']>;
 

@@ -4,7 +4,7 @@
  * @property {string | undefined} email - メールアドレス (後方互換性のためのオプショナル)
  * @property {string | undefined} tokenIdentifier - Clerkのトークン識別子
  * @property {string} name - ユーザー名
- * @property {'viewer' | 'user' | 'manager' | 'admin'} role - ユーザーロール
+ * @property {'user' | 'manager' | 'admin'} role - ユーザーロール
  * @property {Id<'orgs'> | undefined} orgId - 所属組織ID
  * @property {string | undefined} avatarUrl - アバター画像のURL (レガシーサポート)
  * @property {Id<'_storage'> | undefined} avatarStorageId - ConvexファイルストレージID
@@ -27,7 +27,6 @@ export const userProfilesTable = defineTable({
   tokenIdentifier: v.optional(v.string()), // Clerk token identifier
   name: v.string(),
   role: v.union(
-    v.literal('viewer'), // 読取専用
     v.literal('user'), // 自分の日報CRUD
     v.literal('manager'), // チーム日報閲覧/承認
     v.literal('admin') // 全操作 + org設定

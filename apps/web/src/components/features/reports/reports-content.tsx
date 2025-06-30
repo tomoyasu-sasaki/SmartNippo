@@ -78,6 +78,7 @@ function ReportsContentInner() {
     page: searchParams.get('page') ?? '1',
   });
   const [debouncedSearch, setDebouncedSearch] = useState(queryStates.search);
+  const currentUser = useQuery(api.index.current);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -245,6 +246,7 @@ function ReportsContentInner() {
               ) : (
                 reports.reports.map((report) => {
                   const statusInfo = getStatusBadge(report.status);
+                  const isOwner = currentUser?._id === report.authorId;
                   return (
                     <TableRow key={report._id}>
                       <TableCell>
@@ -279,7 +281,7 @@ function ReportsContentInner() {
                               {REPORTS_CONSTANTS.ACTION_BUTTON_DETAILS}
                             </Button>
                           </Link>
-                          {report.status === 'draft' && (
+                          {isOwner && report.status === 'draft' && (
                             <Link href={`/reports/${report._id}/edit`}>
                               <Button variant='ghost' size='sm'>
                                 {REPORTS_CONSTANTS.ACTION_BUTTON_EDIT}

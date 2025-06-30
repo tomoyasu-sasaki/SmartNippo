@@ -120,8 +120,8 @@ export interface UserRelationship {
   isSameUser: boolean;
   isSameOrganization: boolean;
   isSameTeam: boolean;
-  viewerRole: 'viewer' | 'user' | 'manager' | 'admin';
-  targetRole: 'viewer' | 'user' | 'manager' | 'admin';
+  viewerRole: 'user' | 'manager' | 'admin';
+  targetRole: 'user' | 'manager' | 'admin';
 }
 
 /**
@@ -317,20 +317,11 @@ export function applyPrivacyPreset(preset: PrivacyPreset): PrivacySettings {
 /**
  * カスタムプライバシー設定の保存可能性チェック
  */
-export function canSavePrivacySettings(
-  settings: PrivacySettings,
-  userRole: 'viewer' | 'user' | 'manager' | 'admin'
-): {
+export function canSavePrivacySettings(): {
   canSave: boolean;
   restrictions: string[];
 } {
   const restrictions: string[] = [];
-
-  // 閲覧専用ユーザーの制限
-  if (userRole === 'viewer') {
-    restrictions.push('閲覧専用アカウントはプライバシー設定を変更できません');
-    return { canSave: false, restrictions };
-  }
 
   // 特定の要素に対する制限（将来の拡張用）
   // 例: 組織管理者が特定の設定を強制する場合など

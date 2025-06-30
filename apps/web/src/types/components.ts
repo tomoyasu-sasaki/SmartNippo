@@ -18,15 +18,12 @@ export interface ReportEditorProps {
     reportDate?: Date;
     title?: string;
     content?: string;
-    tasks?: Array<{
-      id: string;
-      title: string;
-      completed: boolean;
-      priority?: 'low' | 'medium' | 'high' | undefined;
-      estimatedHours?: number | undefined;
-      actualHours?: number | undefined;
-      category?: string | undefined;
-    }>;
+    workingHours?: {
+      startHour: number;
+      startMinute: number;
+      endHour: number;
+      endMinute: number;
+    };
   };
   expectedUpdatedAt?: number;
 }

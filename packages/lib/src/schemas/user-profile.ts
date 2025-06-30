@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // ユーザーロールの型定義
-export const UserRole = z.enum(['viewer', 'user', 'manager', 'admin']);
+export const UserRole = z.enum(['user', 'manager', 'admin']);
 export type UserRole = z.infer<typeof UserRole>;
 
 // ソーシャルリンクの型定義

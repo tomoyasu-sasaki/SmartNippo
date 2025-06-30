@@ -12,7 +12,7 @@ export type ConvexDocument<T = Record<string, unknown>> = T & {
 };
 
 // User roles enum
-export type UserRole = 'viewer' | 'user' | 'manager' | 'admin';
+export type UserRole = 'user' | 'manager' | 'admin';
 
 // Report status enum
 export type ReportStatus = 'draft' | 'submitted' | 'approved';

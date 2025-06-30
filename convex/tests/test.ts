@@ -70,7 +70,7 @@ export const createTestUser = mutation({
     clerkId: v.string(),
     name: v.string(),
     email: v.string(),
-    role: v.union(v.literal('viewer'), v.literal('user'), v.literal('manager'), v.literal('admin')),
+    role: v.union(v.literal('user'), v.literal('manager'), v.literal('admin')),
     orgId: v.id('orgs'),
     tokenIdentifier: v.optional(v.string()),
   },
@@ -79,7 +79,7 @@ export const createTestUser = mutation({
       clerkId: string;
       name: string;
       email: string;
-      role: 'viewer' | 'user' | 'manager' | 'admin';
+      role: 'user' | 'manager' | 'admin';
       orgId: Id<'orgs'>;
       tokenIdentifier?: string;
       created_at: number;
@@ -220,15 +220,15 @@ export const cleanupDuplicateUsers = mutation({
             return 1;
           }
 
-          // roleの優先順位: admin > manager > user > viewer
-          const roleOrder = { admin: 4, manager: 3, user: 2, viewer: 1 };
+          // roleの優先順位: admin > manager > user
+          const roleOrder = { admin: 3, manager: 2, user: 1 };
           const aOrder = roleOrder[a.role] || 0;
           const bOrder = roleOrder[b.role] || 0;
 
           return bOrder - aOrder;
         });
 
-        const keepUser = sortedUsers[0];
+        const [keepUser] = sortedUsers;
         const deleteUsers = sortedUsers.slice(1);
 
         cleanupResults.push({

@@ -24,23 +24,34 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
 import type { ReportEditorProps } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { api } from 'convex/_generated/api';
-import { useConvex, useMutation, useQuery } from 'convex/react';
+import type { Id } from 'convex/_generated/dataModel';
+import { useAction, useQuery } from 'convex/react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ArrowLeft, CalendarIcon, Plus, Save, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useRef, useState } from 'react';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
 
 import { REPORTS_CONSTANTS } from '@/constants/reports';
+
+const hours = Array.from({ length: 24 }, (_, i) => i);
+const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
 
 // Form validation schema
 const reportFormSchema = z.object({
@@ -55,15 +66,22 @@ const reportFormSchema = z.object({
     .string()
     .min(1, '内容を入力してください')
     .max(10000, '内容は10000文字以内で入力してください'),
-  tasks: z
+  workingHours: z
+    .object({
+      startHour: z.number(),
+      startMinute: z.number(),
+      endHour: z.number(),
+      endMinute: z.number(),
+    })
+    .optional(),
+  workItems: z
     .array(
       z.object({
-        id: z.string(),
-        title: z.string().min(1, 'タスク名を入力してください'),
-        completed: z.boolean(),
-        estimatedHours: z.number().optional(),
-        actualHours: z.number().optional(),
-        category: z.string().optional(),
+        _id: z.string().optional(), // 既存作業項目の場合
+        projectId: z.string().min(1, 'プロジェクトを選択してください'),
+        workCategoryId: z.string().min(1, '作業区分を選択してください'),
+        description: z.string().min(1, '作業内容を入力してください'),
+        workDuration: z.coerce.number().min(0, '作業時間は0以上で入力してください'),
       })
     )
     .optional(),
@@ -75,27 +93,55 @@ type ReportFormValues = z.infer<typeof reportFormSchema>;
 
 export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: ReportEditorProps) {
   const router = useRouter();
-  const convex = useConvex();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const submitTypeRef = useRef<'draft' | 'submit'>('draft');
+  const submitTypeRef = useRef<'draft' | 'submitted'>('draft');
   const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<ReportFormValues | null>(null);
+  const [deletedWorkItems, setDeletedWorkItems] = useState<
+    (ReportFormValues['workItems'] extends (infer U)[] | undefined ? U : never)[]
+  >([]);
 
-  const createReport = useMutation(api.index.createReport);
-  const updateReport = useMutation(api.index.updateReport);
+  const saveReport = useAction(api.index.saveReportWithWorkItems);
+
+  const projects = useQuery(api.index.listProjects);
+  const existingWorkItems = useQuery(
+    api.index.listWorkItemsForReport,
+    reportId ? { reportId } : 'skip'
+  );
 
   // 最新のレポートデータを取得（競合解決用）
   const latestReport = useQuery(api.index.getReportDetail, reportId ? { reportId } : 'skip');
 
   const form = useForm<ReportFormValues>({
     resolver: zodResolver(reportFormSchema),
-    defaultValues: initialData ?? {
-      reportDate: new Date(),
-      title: '',
-      content: '',
-      tasks: [],
+    defaultValues: {
+      reportDate: initialData?.reportDate ? new Date(initialData.reportDate) : new Date(),
+      title: initialData?.title ?? '',
+      content: initialData?.content ?? '',
+      workItems: [], // workItemsは別途読み込むため、ここでは空で初期化
+      workingHours: initialData?.workingHours ?? {
+        startHour: 9,
+        startMinute: 0,
+        endHour: 18,
+        endMinute: 0,
+      },
     },
   });
+
+  const { fields, append, remove, replace } = useFieldArray({
+    control: form.control,
+    name: 'workItems',
+  });
+
+  // 既存作業項目をフォームにセットする
+  useEffect(() => {
+    if (existingWorkItems) {
+      replace(existingWorkItems);
+    }
+    if (initialData?.workingHours) {
+      form.setValue('workingHours', initialData.workingHours);
+    }
+  }, [existingWorkItems, initialData, replace, form]);
 
   const handleConflictResolution = async (forceUpdate: boolean) => {
     if (!pendingValues || !latestReport) {
@@ -110,14 +156,17 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
         setIsSubmitting(true);
         const toastId = toast.loading(REPORTS_CONSTANTS.FORCE_SAVING_TOAST);
 
-        await updateReport({
-          reportId: reportId!,
-          expectedUpdatedAt: latestReport.updated_at, // 最新のタイムスタンプを使用
-          title: pendingValues.title,
-          content: pendingValues.content,
-          tasks: pendingValues.tasks ?? [],
-          reportDate: format(pendingValues.reportDate, 'yyyy-MM-dd'),
-          status: submitTypeRef.current === 'submit' ? 'submitted' : 'draft',
+        await saveReport({
+          ...(reportId && { reportId }),
+          reportData: {
+            reportDate: format(pendingValues.reportDate, 'yyyy-MM-dd'),
+            title: pendingValues.title,
+            content: pendingValues.content,
+            workingHours: pendingValues.workingHours,
+          },
+          workItems: [...(pendingValues.workItems ?? []), ...deletedWorkItems] as any,
+          expectedUpdatedAt: latestReport.updated_at,
+          status: submitTypeRef.current,
         });
 
         toast.success(REPORTS_CONSTANTS.FORCE_SAVE_SUCCESS_TOAST, {
@@ -145,81 +194,42 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
     const submitType = submitTypeRef.current;
     try {
       setIsSubmitting(true);
+      const finalWorkItems = [...(values.workItems ?? []), ...deletedWorkItems];
 
       // 楽観的更新のためのトースト表示
       const toastId = toast.loading(
         reportId
           ? REPORTS_CONSTANTS.UPDATING_REPORT
-          : submitType === 'submit'
+          : submitType === 'submitted'
             ? REPORTS_CONSTANTS.SUBMITTING_REPORT
             : REPORTS_CONSTANTS.SAVING_REPORT
       );
 
-      const reportDataForCreate = {
-        reportDate: format(values.reportDate, 'yyyy-MM-dd'),
-        title: values.title,
-        content: values.content,
-        tasks: values.tasks ?? [],
-      };
-
-      const reportDataForUpdate = {
-        title: values.title,
-        content: values.content,
-        tasks: values.tasks ?? [],
-      };
-
-      if (reportId) {
-        // Update existing report
-        if (!expectedUpdatedAt) {
-          throw new Error('Expected updated at timestamp is missing for update.');
-        }
-        await updateReport({
-          reportId,
-          expectedUpdatedAt,
-          ...reportDataForUpdate,
+      await saveReport({
+        ...(reportId && { reportId }),
+        reportData: {
           reportDate: format(values.reportDate, 'yyyy-MM-dd'),
-          status: submitType === 'submit' ? 'submitted' : 'draft',
-        });
+          title: values.title,
+          content: values.content,
+          workingHours: values.workingHours,
+        },
+        workItems: finalWorkItems as any,
+        ...(expectedUpdatedAt && { expectedUpdatedAt }),
+        status: submitType,
+      });
 
-        toast.success(REPORTS_CONSTANTS.UPDATE_SUCCESS, {
+      toast.success(
+        submitType === 'submitted'
+          ? REPORTS_CONSTANTS.CREATE_SUCCESS_SUBMITTED
+          : REPORTS_CONSTANTS.CREATE_SUCCESS_DRAFT,
+        {
           id: toastId,
           description:
-            submitType === 'submit'
-              ? REPORTS_CONSTANTS.UPDATE_SUCCESS_DESC_SUBMITTED
-              : REPORTS_CONSTANTS.UPDATE_SUCCESS_DESC_DRAFT,
-        });
-      } else {
-        // Create new report
-        const newReportId = await createReport(reportDataForCreate);
-
-        if (submitType === 'submit' && newReportId) {
-          // If submitting, update the status
-          // Note: a more robust way would be to get the new `_ts` from the createReport result
-          const newReport = await convex.query(api.index.getReportDetail, {
-            reportId: newReportId,
-          });
-          if (newReport) {
-            await updateReport({
-              reportId: newReportId,
-              expectedUpdatedAt: newReport.updated_at,
-              status: 'submitted',
-            });
-          }
+            submitType === 'submitted'
+              ? REPORTS_CONSTANTS.CREATE_SUCCESS_DESC_SUBMITTED
+              : REPORTS_CONSTANTS.CREATE_SUCCESS_DESC_DRAFT,
         }
-
-        toast.success(
-          submitType === 'submit'
-            ? REPORTS_CONSTANTS.CREATE_SUCCESS_SUBMITTED
-            : REPORTS_CONSTANTS.CREATE_SUCCESS_DRAFT,
-          {
-            id: toastId,
-            description:
-              submitType === 'submit'
-                ? REPORTS_CONSTANTS.CREATE_SUCCESS_DESC_SUBMITTED
-                : REPORTS_CONSTANTS.CREATE_SUCCESS_DESC_DRAFT,
-          }
-        );
-      }
+      );
 
       router.push('/reports');
       router.refresh();
@@ -251,24 +261,22 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
     }
   };
 
-  const addTask = () => {
-    const currentTasks = form.getValues('tasks') ?? [];
-    form.setValue('tasks', [
-      ...currentTasks,
-      {
-        id: `task-${Date.now()}`,
-        title: '',
-        completed: false,
-      },
-    ]);
+  const addWorkItem = () => {
+    // append a new workItem with default values
+    append({
+      projectId: '',
+      workCategoryId: '',
+      description: '',
+      workDuration: 0,
+    });
   };
 
-  const removeTask = (index: number) => {
-    const currentTasks = form.getValues('tasks') ?? [];
-    form.setValue(
-      'tasks',
-      currentTasks.filter((_, i) => i !== index)
-    );
+  const removeWorkItem = (index: number) => {
+    const workItemToRemove = fields[index];
+    if (workItemToRemove._id) {
+      setDeletedWorkItems((prev) => [...prev, { ...(workItemToRemove as any), _isDeleted: true }]);
+    }
+    remove(index);
   };
 
   return (
@@ -346,6 +354,8 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                   )}
                 />
 
+                <WorkingTimePicker form={form} />
+
                 <FormField
                   control={form.control}
                   name='title'
@@ -389,54 +399,101 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
               </CardContent>
             </Card>
 
-            {/* タスク */}
+            {/* 作業内容 */}
             <Card>
               <CardHeader>
                 <div className='flex items-center justify-between'>
                   <div>
-                    <CardTitle>{REPORTS_CONSTANTS.TASKS_EDITOR_CARD_TITLE}</CardTitle>
-                    <CardDescription>
-                      {REPORTS_CONSTANTS.TASKS_EDITOR_CARD_DESCRIPTION}
-                    </CardDescription>
+                    <CardTitle>作業内容</CardTitle>
+                    <CardDescription>本日の作業内容を記録します（任意）</CardDescription>
                   </div>
-                  <Button type='button' variant='outline' size='sm' onClick={addTask}>
+                  <Button type='button' variant='outline' size='sm' onClick={addWorkItem}>
                     <Plus className='h-4 w-4 mr-2' />
-                    {REPORTS_CONSTANTS.ADD_TASK_BUTTON}
+                    作業を追加
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                {form.watch('tasks')?.map((task, index) => (
-                  <div key={task.id} className='flex gap-2 mb-3'>
+                {fields.map((field, index) => (
+                  <div key={field.id} className='rounded-lg border p-4 space-y-4 mb-4 relative'>
+                    <div className='flex justify-between items-center'>
+                      <h4 className='font-semibold'>作業 {index + 1}</h4>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon'
+                        onClick={() => removeWorkItem(index)}
+                        className='absolute top-2 right-2'
+                      >
+                        <X className='h-4 w-4' />
+                        <span className='sr-only'>作業内容を削除</span>
+                      </Button>
+                    </div>
+                    <div className='grid grid-cols-1 md:grid-cols-10 gap-4'>
+                      <FormField
+                        control={form.control}
+                        name={`workItems.${index}.projectId`}
+                        render={({ field }) => (
+                          <FormItem className='md:col-span-4'>
+                            <FormLabel>プロジェクト</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger className='w-full'>
+                                  <SelectValue placeholder='プロジェクトを選択' />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {projects?.map((p) => (
+                                  <SelectItem key={p._id} value={p._id}>
+                                    {p.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <WorkCategorySelector
+                        control={form.control}
+                        projectId={form.watch(`workItems.${index}.projectId`)}
+                        index={index}
+                        className='md:col-span-4'
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`workItems.${index}.workDuration`}
+                        render={({ field }) => (
+                          <FormItem className='md:col-span-2'>
+                            <FormLabel>作業時間 (分)</FormLabel>
+                            <FormControl>
+                              <Input type='number' placeholder='例: 60' {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
                       control={form.control}
-                      name={`tasks.${index}.title`}
+                      name={`workItems.${index}.description`}
                       render={({ field }) => (
-                        <FormItem className='flex-1'>
+                        <FormItem>
+                          <FormLabel>作業内容</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder={REPORTS_CONSTANTS.TASK_NAME_PLACEHOLDER}
-                              {...field}
-                            />
+                            <Textarea placeholder='具体的な作業内容を記述' {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='icon'
-                      onClick={() => removeTask(index)}
-                    >
-                      <X className='h-4 w-4' />
-                    </Button>
                   </div>
                 ))}
-                {(!form.watch('tasks') || form.watch('tasks')!.length === 0) && (
-                  <p className='text-sm text-gray-500 text-center py-4'>
-                    {REPORTS_CONSTANTS.NO_TASKS_MESSAGE}
-                  </p>
+                {fields.length === 0 && (
+                  <p className='text-sm text-gray-500 text-center py-4'>作業内容がありません</p>
                 )}
               </CardContent>
             </Card>
@@ -466,8 +523,8 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                 type='submit'
                 name='submit'
                 disabled={isSubmitting}
-                onClick={() => (submitTypeRef.current = 'submit')}
-                loading={isSubmitting && submitTypeRef.current === 'submit'}
+                onClick={() => (submitTypeRef.current = 'submitted')}
+                loading={isSubmitting && submitTypeRef.current === 'submitted'}
               >
                 <Send className='h-4 w-4 mr-2' />
                 {REPORTS_CONSTANTS.SUBMIT_BUTTON}
@@ -505,5 +562,162 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
         </AlertDialog>
       </div>
     </ErrorBoundaryProvider>
+  );
+}
+
+function WorkingTimePicker({ form }: { form: any }) {
+  return (
+    <FormField
+      control={form.control}
+      name='workingHours'
+      render={() => (
+        <FormItem>
+          <FormLabel>勤務時間</FormLabel>
+          <div className='flex items-center gap-2'>
+            <FormField
+              control={form.control}
+              name='workingHours.startHour'
+              render={({ field }) => (
+                <Select
+                  onValueChange={(v) => field.onChange(Number(v))}
+                  value={String(field.value)}
+                >
+                  <FormControl>
+                    <SelectTrigger className='w-20'>
+                      <SelectValue>{field.value}</SelectValue>
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {hours.map((h) => (
+                      <SelectItem key={h} value={String(h)}>
+                        {h}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <span>時</span>
+            <FormField
+              control={form.control}
+              name='workingHours.startMinute'
+              render={({ field }) => (
+                <Select
+                  onValueChange={(v) => field.onChange(Number(v))}
+                  value={String(field.value)}
+                >
+                  <FormControl>
+                    <SelectTrigger className='w-20'>
+                      <SelectValue>{field.value}</SelectValue>
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {minutes.map((m) => (
+                      <SelectItem key={m} value={String(m)}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <span>分 〜</span>
+            <FormField
+              control={form.control}
+              name='workingHours.endHour'
+              render={({ field }) => (
+                <Select
+                  onValueChange={(v) => field.onChange(Number(v))}
+                  value={String(field.value)}
+                >
+                  <FormControl>
+                    <SelectTrigger className='w-20'>
+                      <SelectValue>{field.value}</SelectValue>
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {hours.map((h) => (
+                      <SelectItem key={h} value={String(h)}>
+                        {h}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <span>時</span>
+            <FormField
+              control={form.control}
+              name='workingHours.endMinute'
+              render={({ field }) => (
+                <Select
+                  onValueChange={(v) => field.onChange(Number(v))}
+                  value={String(field.value)}
+                >
+                  <FormControl>
+                    <SelectTrigger className='w-20'>
+                      <SelectValue>{field.value}</SelectValue>
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {minutes.map((m) => (
+                      <SelectItem key={m} value={String(m)}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <span>分</span>
+          </div>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
+
+function WorkCategorySelector({
+  control,
+  projectId,
+  index,
+  className,
+}: {
+  control: any;
+  projectId: string;
+  index: number;
+  className?: string;
+}) {
+  const workCategories = useQuery(
+    api.index.listWorkCategories,
+    projectId ? { projectId: projectId as Id<'projects'> } : 'skip'
+  );
+
+  return (
+    <FormField
+      control={control}
+      name={`workItems.${index}.workCategoryId`}
+      render={({ field }) => (
+        <FormItem className={className}>
+          <FormLabel>作業区分</FormLabel>
+          <Select onValueChange={field.onChange} value={field.value} disabled={!projectId}>
+            <FormControl>
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder='作業区分を選択' />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              {workCategories?.map((c) => (
+                <SelectItem key={c._id} value={c._id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   );
 }
