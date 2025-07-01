@@ -44,11 +44,11 @@ import { ja } from 'date-fns/locale';
 import { ArrowLeft, CalendarIcon, Plus, Save, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, type UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
 
-import { REPORTS_CONSTANTS } from '@/constants/reports';
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
 
 const hours = Array.from({ length: 24 }, (_, i) => i);
 const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
@@ -92,6 +92,7 @@ type ReportFormValues = z.infer<typeof reportFormSchema>;
 // ReportEditorPropsは@/typesからインポート済み
 
 export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: ReportEditorProps) {
+  const reportIdConv = reportId as Id<'reports'>;
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitTypeRef = useRef<'draft' | 'submitted'>('draft');
@@ -106,11 +107,14 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
   const projects = useQuery(api.index.listProjects);
   const existingWorkItems = useQuery(
     api.index.listWorkItemsForReport,
-    reportId ? { reportId } : 'skip'
+    reportId ? { reportId: reportIdConv } : 'skip'
   );
 
   // 最新のレポートデータを取得（競合解決用）
-  const latestReport = useQuery(api.index.getReportDetail, reportId ? { reportId } : 'skip');
+  const latestReport = useQuery(
+    api.index.getReportDetail,
+    reportId ? { reportId: reportIdConv } : 'skip'
+  );
 
   const form = useForm<ReportFormValues>({
     resolver: zodResolver(reportFormSchema),
@@ -157,7 +161,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
         const toastId = toast.loading(REPORTS_CONSTANTS.FORCE_SAVING_TOAST);
 
         await saveReport({
-          ...(reportId && { reportId }),
+          ...(reportId && { reportId: reportIdConv }),
           reportData: {
             reportDate: format(pendingValues.reportDate, 'yyyy-MM-dd'),
             title: pendingValues.title,
@@ -206,7 +210,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
       );
 
       await saveReport({
-        ...(reportId && { reportId }),
+        ...(reportId && { reportId: reportIdConv }),
         reportData: {
           reportDate: format(values.reportDate, 'yyyy-MM-dd'),
           title: values.title,
@@ -272,7 +276,12 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
   };
 
   const removeWorkItem = (index: number) => {
-    const workItemToRemove = fields[index];
+    const workItems = form.getValues('workItems');
+    if (!workItems) {
+      return;
+    }
+
+    const workItemToRemove = workItems[index];
     if (workItemToRemove._id) {
       setDeletedWorkItems((prev) => [...prev, { ...(workItemToRemove as any), _isDeleted: true }]);
     }
@@ -341,7 +350,9 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                             mode='single'
                             selected={field.value}
                             onSelect={field.onChange}
-                            disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
+                            disabled={(date: Date) =>
+                              date > new Date() || date < new Date('1900-01-01')
+                            }
                             initialFocus
                           />
                         </PopoverContent>
@@ -565,7 +576,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
   );
 }
 
-function WorkingTimePicker({ form }: { form: any }) {
+function WorkingTimePicker({ form }: { form: UseFormReturn<ReportFormValues> }) {
   return (
     <FormField
       control={form.control}
@@ -684,7 +695,7 @@ function WorkCategorySelector({
   index,
   className,
 }: {
-  control: any;
+  control: UseFormReturn<ReportFormValues>['control'];
   projectId: string;
   index: number;
   className?: string;

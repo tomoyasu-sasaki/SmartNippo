@@ -37,7 +37,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { REPORTS_CONSTANTS } from '@/constants/reports';
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
 
 import type { ReportStatus } from '@/types';
 

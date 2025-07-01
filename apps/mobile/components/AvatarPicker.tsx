@@ -1,10 +1,10 @@
+import { COMPONENT_CONSTANTS } from '@smartnippo/lib';
+import type { AvatarPickerProps, ImageResult } from '@smartnippo/types';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, User } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { COMPONENT_CONSTANTS } from '../constants/components';
-import type { AvatarPickerProps, ImageResult } from '../types';
 
 export default function AvatarPicker({
   currentAvatarUrl,

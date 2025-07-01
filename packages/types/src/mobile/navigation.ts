@@ -1,6 +1,6 @@
-// ナビゲーション関連の型定義
-
-import type { ReportId } from './index';
+// ========================================
+// Navigation types for mobile
+// ========================================
 
 // タブナビゲーションのパラメータ型
 export interface TabParamList {
@@ -19,7 +19,7 @@ export interface ReportsParamList {
   index: undefined;
   create: undefined;
   '[id]': {
-    id: ReportId;
+    id: string;
   };
   _layout: undefined;
 }

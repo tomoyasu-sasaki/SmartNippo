@@ -1,7 +1,7 @@
 import { ReportsContent } from '@/components/features/reports/reports-content';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { REPORTS_CONSTANTS } from '@/constants/reports';
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 

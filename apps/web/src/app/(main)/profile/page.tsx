@@ -14,6 +14,7 @@ import {
   exportProfile,
   getSocialIcon,
   PRIVACY_LEVELS,
+  PROFILE_CONSTANTS,
   SOCIAL_PLATFORMS,
   validateSocialUrl,
   type PrivacyLevel,
@@ -21,7 +22,6 @@ import {
 } from '@smartnippo/lib';
 
 import { ProfileForm } from '@/components/features/profile/profile-form';
-import { PROFILE_CONSTANTS } from '@/constants/profile';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { api } from 'convex/_generated/api';
 import type { Doc } from 'convex/_generated/dataModel';
@@ -280,10 +280,14 @@ function SocialLinksSection({ userProfile }: { userProfile: UserProfile }) {
             <Button variant='outline' onClick={() => setIsEditing(false)}>
               {PROFILE_CONSTANTS.CANCEL_BUTTON}
             </Button>
-            <Button onClick={handleSave}>{PROFILE_CONSTANTS.SAVE_BUTTON}</Button>
+            <Button onClick={handleSave} variant='outline'>
+              {PROFILE_CONSTANTS.SAVE_BUTTON}
+            </Button>
           </>
         ) : (
-          <Button onClick={() => setIsEditing(true)}>{PROFILE_CONSTANTS.EDIT_BUTTON}</Button>
+          <Button onClick={() => setIsEditing(true)} variant='outline'>
+            {PROFILE_CONSTANTS.EDIT_BUTTON}
+          </Button>
         )}
       </div>
     </div>
@@ -345,7 +349,9 @@ function PrivacySettingsSection({ userProfile }: { userProfile: UserProfile }) {
       ))}
 
       <div className='flex justify-end'>
-        <Button onClick={handleSave}>{PROFILE_CONSTANTS.SAVE_SETTINGS_BUTTON}</Button>
+        <Button onClick={handleSave} variant='outline'>
+          {PROFILE_CONSTANTS.SAVE_SETTINGS_BUTTON}
+        </Button>
       </div>
     </div>
   );
@@ -401,7 +407,7 @@ function ProfileExportSection({ userProfile }: { userProfile: UserProfile }) {
   return (
     <div className='space-y-4'>
       <p className='text-sm text-muted-foreground'>{PROFILE_CONSTANTS.EXPORT_DESCRIPTION}</p>
-      <Button onClick={handleExport} className='w-full'>
+      <Button onClick={handleExport} className='w-full' variant='outline'>
         <Download className='mr-2 h-4 w-4' />
         {PROFILE_CONSTANTS.EXPORT_BUTTON}
       </Button>

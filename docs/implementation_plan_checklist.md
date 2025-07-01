@@ -148,15 +148,18 @@
 
 ### Section 1.5 — Convex Backend 基盤
 
-- [x] install-convex-cli — `pnpm add -D convex@^1.17.2` をルートに追加 (C › CLI
+- [x] install-convex-cli — `pnpm add -D convex@^1.25.0` をルートに追加 (C › CLI
       Reference)
 - [x] init-convex-project — `npx convex dev --once --configure=new` で `convex/`
       ディレクトリ生成 (C › Quickstart)
-- [x] define-schema-orgs — `convex/schema.ts` に orgs table 定義 (C › Schema
-      Definition)
-- [x] define-schema-users — users table をスキーマに追加
-- [x] define-schema-reports — reports table をスキーマに追加
-- [x] define-schema-comments-approvals — comments, approvals table 追加
+- [x] define-schema-orgs — `convex/schema/orgs.ts` に orgs table 定義 (C ›
+      Schema Definition)
+- [x] define-schema-userProfiles — `userProfiles` table をスキーマに追加 (旧
+      `users` から変更)
+- [x] define-schema-reports — `reports`
+      table をスキーマに追加 (詳細なメタデータ、履歴含む)
+- [x] define-schema-relations — `comments`, `approvals` table 追加、関連テーブル
+      `projects`, `workCategories`, `workItems` を定義
 - [x] configure-convex-env — 環境変数とデプロイ設定
 - [x] verify-convex-deployment — `pnpm dev:convex`
       で開発サーバー起動確認、Dashboard URL アクセス確認
@@ -166,13 +169,14 @@
 ### Section 1.6 — Next.js Web App 基盤
 
 - [x] create-next-app-router —
-      `npx create-next-app@15.1.3 apps/web --typescript --eslint --tailwind --app --src-dir`
+      `npx create-next-app@15.3.4 apps/web --typescript --eslint --tailwind --app --src-dir`
       で App Router 採用 (N › App Router)
 - [x] configure-next-config — `next.config.js` の基本設定：transpilePackages,
       env 等
 - [x] setup-nextjs-directory-structure —
       Next.js原則に従いディレクトリ構造作成 (Next.js原則 › ディレクトリレイアウト)
-- [x] upgrade-tailwind-v4 — Tailwind CSS v4 インストールと設定 (T › v4.0 Beta)
+- [x] upgrade-tailwind-v4 — Tailwind CSS v4.1.10 インストールと設定 (T › v4.0
+      Beta)
 - [x] install-convex-react-web — Convex React SDK インストール (C › React
       Quickstart)
 - [x] configure-convex-provider-web — RSC 対応 ConvexProvider + Suspense
@@ -187,15 +191,16 @@
 ### Section 1.7 — Expo Mobile App 基盤
 
 - [x] create-expo-app —
-      `npx create-expo-app@2.1.15 apps/mobile -t expo-template-blank-typescript`
+      `npx create-expo-app@latest apps/mobile -t expo-template-blank-typescript`
       実行 (E › Create Project)
 - [x] configure-expo-app-json — `app.json` 基本設定：bundle ID, permissions 等
-- [x] install-nativewind — NativeWind v4 対応版インストールと設定
+- [x] install-nativewind — NativeWind v4 (`4.1.23`) 対応版インストールと設定
 - [x] configure-nativewind-babel — `babel.config.js` に NativeWind plugin 追加
-- [x] install-convex-rn-sdk — Convex React Native SDK 追加 (C › React Native
-      Quickstart)
+- [x] install-convex-rn-sdk — Convex React Native SDK (`^1.24.8`) 追加 (C ›
+      React Native Quickstart)
 - [x] configure-convex-provider-mobile — `App.tsx` で ConvexProvider 設定
-- [x] install-expo-router — file-based routing セットアップ (E › Expo Router)
+- [x] install-expo-router — file-based routing (`~5.1.0`) セットアップ (E › Expo
+      Router)
 - [x] setup-mobile-dependencies — react-hook-form,
       lucide-react-native 等の依存関係
 - [x] configure-eas-json — EAS Build 設定ファイル作成
@@ -314,8 +319,9 @@
 
 ### Section 2.5 — プロフィール基盤実装
 
-- [x] define-profile-schema — `convex/schema.ts` userProfiles table 拡張：bio,
-      socialLinks, preferences 追加（現在のスキーマを使用）
+- [x] define-profile-schema — `convex/schema/userProfiles.ts` userProfiles
+      table拡張：`avatarStorageId`, `socialLinks`,
+      `privacySettings`等、Clerk連携を前提とした詳細フィールドを追加
 - [x] implement-profile-mutations — `convex/users.ts`
       プロフィール更新 mutation、楽観的ロック対応
 - [x] create-profile-validation — Zod
@@ -357,12 +363,15 @@
 
 ### Section 3.1 — 強化されたスキーマ & マイグレーション
 
-- [x] enhance-reports-schema — reports テーブルに tasks, attachments, metadata
-      fields 追加
+- [x] enhance-reports-schema — `reports` スキーマを強化し、`tasks` フィールドを
+      `workItems` テーブルとして正規化。詳細なメタデータや添付ファイル情報を追加
 - [x] create-migration-script — 既存データマイグレーション用 Convex action
-- [x] add-database-indexes — performance 向上のための複合 index 追加
-- [x] implement-schema-versioning — スキーマバージョン管理システム
-- [x] create-data-validation — サーバーサイドデータ validation
+- [x] add-database-indexes — `reports` テーブルに `by_org_status_date`
+      等の複合インデックスを追加し、パフォーマンスを向上
+- [x] implement-schema-versioning — `schema_versions`
+      テーブルによるスキーマバージョン管理システム
+- [x] create-data-validation
+      — サーバーサイド（各mutation内）でのデータ validation
 - [x] setup-backup-procedures — データバックアップ手順整備
 - [x] deploy-schema-changes — `pnpm convex deploy --prod` でスキーマデプロイ
 - [x] verify-schema-migration — スキーマ変更の動作確認
@@ -371,16 +380,22 @@
 
 ### Section 3.2 — Convex サーバー関数 実装
 
-- [x] implement-create-report-mutation — `convex/reports.ts` 日報作成 mutation
+- [x] implement-create-report-mutation — `convex/reports/mutations.ts`
+      日報作成mutation
 - [x] implement-update-report-mutation — 日報更新 mutation、楽観的ロック対応
-- [x] implement-delete-report-mutation — 論理削除 mutation、関連データ処理
-- [x] implement-approve-report-mutation — 承認 mutation、権限チェック付き
+- [x] implement-delete-report-mutation — 論理削除 mutation
+      (`deleteReport`)、関連データ処理
+- [x] implement-approve-reject-mutations
+      — 承認 (`approveReport`) および却下 (`rejectReport`)
+      mutation、権限チェック付き
 - [x] implement-comment-mutations — コメント CRUD mutations
-- [x] implement-list-reports-query — pagination, filtering, sorting 対応 query
+      (`convex/reports/comments.ts`)
+- [x] implement-list-reports-query — `convex/reports/queries.ts`
+      にて pagination, filtering, sorting 対応 query
 - [x] implement-report-detail-query — 日報詳細取得 query、関連データ join
 - [x] verify-mutation-functionality — 各 mutation の基本動作確認
 - [x] test-server-functions —
-      Convex サーバー関数の comprehensive テスト (convex-test使用)
+      Convex サーバー関数の comprehensive テスト (vitest使用)
 - [x] check-server-functions-implementation —
       Convex サーバー関数の実装完了チェック
 

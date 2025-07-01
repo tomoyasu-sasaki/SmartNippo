@@ -1,11 +1,11 @@
+import { REPORT_STATUS_LABELS } from '@smartnippo/lib';
+import type { Report, UserProfile } from '@smartnippo/types';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { router } from 'expo-router';
 import { Calendar, Clock, User } from 'lucide-react-native';
 import React, { useCallback } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { REPORTS_CONSTANTS } from '../../../constants/reports';
-import type { Report, UserProfile } from '../../../types';
 
 // ステータスに応じた色を返す
 const getStatusColor = (status: string) => {
@@ -32,7 +32,7 @@ export const ReportCard = React.memo(({ report }: ReportCardProps) => {
     router.push(`/(tabs)/reports/${report._id}`);
   }, [report._id]);
 
-  const statusLabel = REPORTS_CONSTANTS.STATUS_LABELS[report.status] || report.status;
+  const statusLabel = REPORT_STATUS_LABELS[report.status] || report.status;
   const statusColor = getStatusColor(report.status);
 
   return (

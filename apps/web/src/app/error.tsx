@@ -2,57 +2,45 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { COMMON_CONSTANTS } from '@/constants/common';
-import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
-import Link from 'next/link';
+import { COMMON_MESSAGES, ERROR_PAGE_CONSTANTS } from '@smartnippo/lib';
 import { useEffect } from 'react';
 
-export default function GlobalError({
-  error,
-  reset,
-}: {
+interface ErrorPageProps {
   error: Error & { digest?: string };
   reset: () => void;
-}) {
+}
+
+export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    // エラーをログサービスに送信
-    console.error('Global error:', error);
+    console.error(error);
   }, [error]);
 
   return (
-    <div className='flex items-center justify-center min-h-screen p-4'>
+    <div className='min-h-screen bg-gray-50 flex items-center justify-center p-4'>
       <Card className='max-w-md w-full'>
         <CardHeader className='text-center'>
-          <div className='flex justify-center mb-4'>
-            <AlertTriangle className='h-12 w-12 text-destructive' />
-          </div>
-          <CardTitle className='text-2xl'>{COMMON_CONSTANTS.ERROR_TITLE}</CardTitle>
-          <CardDescription>{COMMON_CONSTANTS.ERROR_DESCRIPTION}</CardDescription>
+          <CardTitle className='text-2xl text-red-600'>
+            {ERROR_PAGE_CONSTANTS.ERROR_TITLE}
+          </CardTitle>
+          <CardDescription>{ERROR_PAGE_CONSTANTS.ERROR_DESCRIPTION}</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className='space-y-4'>
-            {error.message && (
-              <div className='p-3 bg-muted rounded-md'>
-                <p className='text-sm text-muted-foreground font-mono'>{error.message}</p>
-              </div>
-            )}
-            {error.digest && (
-              <p className='text-xs text-muted-foreground text-center'>
-                {COMMON_CONSTANTS.ERROR_ID_PREFIX} {error.digest}
-              </p>
-            )}
-            <div className='flex gap-3'>
-              <Button onClick={reset} className='flex-1' variant='outline'>
-                <RefreshCw className='h-4 w-4 mr-2' />
-                {COMMON_CONSTANTS.RETRY_BUTTON}
-              </Button>
-              <Link href='/' className='flex-1'>
-                <Button className='w-full'>
-                  <Home className='h-4 w-4 mr-2' />
-                  {COMMON_CONSTANTS.HOME_BUTTON}
-                </Button>
-              </Link>
+        <CardContent className='space-y-4'>
+          {error.digest && (
+            <div className='text-sm text-gray-600 bg-gray-100 p-3 rounded'>
+              <strong>{ERROR_PAGE_CONSTANTS.ERROR_ID_PREFIX}</strong> {error.digest}
             </div>
+          )}
+          <div className='flex gap-2'>
+            <Button onClick={reset} className='flex-1'>
+              {COMMON_MESSAGES.RETRY}
+            </Button>
+            <Button
+              variant='outline'
+              onClick={() => (window.location.href = '/')}
+              className='flex-1'
+            >
+              {ERROR_PAGE_CONSTANTS.HOME_BUTTON}
+            </Button>
           </div>
         </CardContent>
       </Card>

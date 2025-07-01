@@ -1,7 +1,7 @@
+import { REPORT_STATUS_LABELS } from '@smartnippo/lib';
 import { CheckCircle, Clock, XCircle } from 'lucide-react-native';
 import React from 'react';
 import { Text, View } from 'react-native';
-import { REPORTS_CONSTANTS } from '../../../constants/reports';
 
 interface StatusBadgeProps {
   status: string;
@@ -28,9 +28,7 @@ export const getStatusStyle = (status: string) => {
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, showIcon = false }) => {
   const statusStyle = getStatusStyle(status);
-  const statusLabel =
-    REPORTS_CONSTANTS.STATUS_LABELS[status as keyof typeof REPORTS_CONSTANTS.STATUS_LABELS] ||
-    status;
+  const statusLabel = REPORT_STATUS_LABELS[status as keyof typeof REPORT_STATUS_LABELS] || status;
 
   return (
     <View className={`flex-row items-center rounded-full px-3 py-1 ${statusStyle.color}`}>

@@ -26,8 +26,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { DASHBOARD_CONSTANTS } from '@/constants/dashboard';
-import { REPORTS_CONSTANTS } from '@/constants/reports';
+import { DASHBOARD_CONSTANTS, REPORTS_CONSTANTS } from '@smartnippo/lib';
 
 const ReportsChart = dynamic(
   () => import('@/components/ui/reports-chart').then((mod) => mod.ReportsChart),
@@ -133,7 +132,7 @@ function DashboardContentInner() {
           </p>
         </div>
         <Link href='/reports/new'>
-          <Button>
+          <Button variant='outline'>
             <FileText className='mr-2 h-4 w-4' />
             {DASHBOARD_CONSTANTS.CREATE_REPORT_BUTTON}
           </Button>

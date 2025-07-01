@@ -1,5 +1,8 @@
 import NetInfo from '@react-native-community/netinfo';
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
+import type { ReportFormData } from '@smartnippo/types';
 import { api } from 'convex/_generated/api';
+import type { Id } from 'convex/_generated/dataModel';
 import { useAction, useQuery } from 'convex/react';
 import { router } from 'expo-router';
 import { ChevronLeft, ChevronRight, Wifi, WifiOff } from 'lucide-react-native';
@@ -22,11 +25,9 @@ import {
   MetadataStep,
   WorkItemsStep,
 } from '../../../components/features/reports/steps';
-import { REPORTS_CONSTANTS } from '../../../constants/reports';
-import type { ReportFormData } from '../../../types';
 
 // ステップの定義
-const { STEPS } = REPORTS_CONSTANTS;
+const { STEPS } = REPORTS_CONSTANTS.MOBILE_STEPS;
 
 // 初期フォームデータ
 const initialFormData: ReportFormData = {
@@ -47,9 +48,6 @@ const initialFormData: ReportFormData = {
     nextActionItems: [],
   },
 };
-
-// 難易度の表示名
-const difficultyLabels = REPORTS_CONSTANTS.DIFFICULTY_LABELS;
 
 export default function CreateReportScreen() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -77,14 +75,16 @@ export default function CreateReportScreen() {
     switch (step) {
       case 0: // 基本情報
         if (!formData.title.trim()) {
-          newErrors.title = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.TITLE_REQUIRED;
+          newErrors.title = REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.TITLE_REQUIRED;
         } else if (formData.title.length > 200) {
-          newErrors.title = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.TITLE_TOO_LONG;
+          newErrors.title = REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.TITLE_TOO_LONG;
         }
         if (!formData.content.trim()) {
-          newErrors.content = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_REQUIRED;
+          newErrors.content =
+            REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_REQUIRED;
         } else if (formData.content.length > 10000) {
-          newErrors.content = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_TOO_LONG;
+          newErrors.content =
+            REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_TOO_LONG;
         }
         break;
       case 1: // 作業内容
@@ -93,11 +93,11 @@ export default function CreateReportScreen() {
           formData.workItems.some((item) => !item.projectId || !item.workCategoryId)
         ) {
           newErrors.workItems =
-            REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.WORK_ITEM_INCOMPLETE;
+            REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.WORK_ITEM_INCOMPLETE;
           Toast.show({
             type: 'error',
             text1: '入力が完了していません',
-            text2: REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.WORK_ITEM_INCOMPLETE,
+            text2: REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.WORK_ITEM_INCOMPLETE,
             visibilityTime: 4000,
           });
         }
@@ -141,7 +141,13 @@ export default function CreateReportScreen() {
     Toast.show({ type: 'info', text1: '日報を作成中...' });
 
     try {
-      const workItemsForBackend = formData.workItems.map(({ _id, isNew, ...rest }) => rest);
+      const workItemsForBackend = formData.workItems.map(
+        ({ _id: __id, isNew: _isNew, ...rest }) => ({
+          ...rest,
+          projectId: rest.projectId as Id<'projects'>,
+          workCategoryId: rest.workCategoryId as Id<'workCategories'>,
+        })
+      );
 
       await saveReport({
         reportData: {
@@ -245,14 +251,14 @@ export default function CreateReportScreen() {
                 <View className='flex-row items-center'>
                   <WifiOff size={16} color='#EF4444' />
                   <Text className='ml-1 text-xs text-red-600'>
-                    {REPORTS_CONSTANTS.CREATE_SCREEN.NETWORK_STATUS.OFFLINE}
+                    {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.NETWORK_STATUS.OFFLINE}
                   </Text>
                 </View>
               ) : isConnected === true ? (
                 <View className='flex-row items-center'>
                   <Wifi size={16} color='#10B981' />
                   <Text className='ml-1 text-xs text-green-600'>
-                    {REPORTS_CONSTANTS.CREATE_SCREEN.NETWORK_STATUS.ONLINE}
+                    {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.NETWORK_STATUS.ONLINE}
                   </Text>
                 </View>
               ) : null}
@@ -280,7 +286,7 @@ export default function CreateReportScreen() {
               >
                 <ChevronLeft size={20} color='#374151' />
                 <Text className='ml-1 font-semibold text-gray-700'>
-                  {REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.PREVIOUS}
+                  {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.PREVIOUS}
                 </Text>
               </Pressable>
             )}
@@ -291,7 +297,7 @@ export default function CreateReportScreen() {
                 className='flex-1 flex-row items-center justify-center rounded-lg bg-blue-500 py-3 active:bg-blue-600'
               >
                 <Text className='mr-1 font-semibold text-white'>
-                  {REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.NEXT}
+                  {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.NEXT}
                 </Text>
                 <ChevronRight size={20} color='white' />
               </Pressable>
@@ -308,10 +314,10 @@ export default function CreateReportScreen() {
                 {isSubmitting && <ActivityIndicator size='small' color='white' className='mr-2' />}
                 <Text className='text-center font-semibold text-white'>
                   {isConnected === false
-                    ? REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.OFFLINE_DISABLED
+                    ? REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.OFFLINE_DISABLED
                     : isSubmitting
-                      ? REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.CREATING
-                      : REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.CREATE}
+                      ? REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.CREATING
+                      : REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.CREATE}
                 </Text>
               </Pressable>
             )}

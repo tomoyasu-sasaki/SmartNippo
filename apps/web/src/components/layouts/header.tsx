@@ -13,9 +13,9 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { LAYOUT_CONSTANTS } from '@/constants/layout';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { LAYOUT_CONSTANTS } from '@smartnippo/lib';
 import { api } from 'convex/_generated/api';
 import { useQuery } from 'convex/react';
 import { ThemeToggle } from './theme-toggle';
@@ -25,7 +25,7 @@ export function Header() {
   const userProfile = useQuery(api.index.current);
 
   return (
-    <header className='sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6'>
+    <header className='sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-[var(--popover)] px-4 md:px-6'>
       <div className='flex items-center gap-6'>
         <Link
           href='/dashboard'
@@ -122,6 +122,9 @@ export function Header() {
           </Button>
         </SheetTrigger>
         <SheetContent side='left'>
+          <SheetHeader>
+            <SheetTitle className='sr-only'>Navigation Menu</SheetTitle>
+          </SheetHeader>
           <nav className='grid gap-6 text-lg font-medium'>
             <Link href='#' className='flex items-center gap-2 text-lg font-semibold'>
               <Package2 className='h-6 w-6' />

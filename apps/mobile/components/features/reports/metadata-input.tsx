@@ -1,7 +1,7 @@
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
 import { Plus, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { REPORTS_CONSTANTS } from '../../../constants/reports';
 
 interface MetadataInputProps {
   label: string;
@@ -35,7 +35,7 @@ export const MetadataInput: React.FC<MetadataInputProps> = ({
           className='flex-1 rounded-l-lg bg-white px-3 py-2 text-gray-900'
           value={inputValue}
           onChangeText={setInputValue}
-          placeholder={REPORTS_CONSTANTS.CREATE_SCREEN.PLACEHOLDERS.METADATA_INPUT(label)}
+          placeholder={REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.PLACEHOLDERS.METADATA_INPUT(label)}
           placeholderTextColor='#9CA3AF'
           onSubmitEditing={handleAdd}
         />

@@ -1,4 +1,5 @@
 import { useOAuth, useSignIn, useSignUp } from '@clerk/clerk-expo';
+import { AUTH_CONSTANTS } from '@smartnippo/lib';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -10,7 +11,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AUTH_CONSTANTS } from '../../../constants/auth';
 
 export function AuthForm() {
   const [email, setEmail] = useState('');
