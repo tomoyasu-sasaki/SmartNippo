@@ -37,7 +37,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { REPORTS_CONSTANTS } from '@/constants/reports';
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
 
 import type { ReportStatus } from '@/types';
 
@@ -149,7 +149,7 @@ function ReportsContentInner() {
           <p className='text-gray-600 mt-1'>{REPORTS_CONSTANTS.PAGE_DESCRIPTION}</p>
         </div>
         <Link href='/reports/new'>
-          <Button>
+          <Button variant='outline'>
             <Plus className='mr-2 h-4 w-4' />
             {REPORTS_CONSTANTS.CREATE_NEW_BUTTON}
           </Button>

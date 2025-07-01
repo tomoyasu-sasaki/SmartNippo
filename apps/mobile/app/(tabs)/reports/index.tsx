@@ -1,3 +1,5 @@
+import { REPORTS_CONSTANTS, REPORT_STATUS_LABELS } from '@smartnippo/lib';
+import type { Report, ReportStatus, UserProfile } from '@smartnippo/types';
 import { api } from 'convex/_generated/api';
 import { useQuery } from 'convex/react';
 import { router } from 'expo-router';
@@ -16,19 +18,16 @@ import {
 import { ReportListSkeleton } from '../../../components/AvatarPicker';
 import { FilterChip } from '../../../components/features/reports/filter-chip';
 import { ReportCard } from '../../../components/features/reports/report-card';
-import { REPORTS_CONSTANTS } from '../../../constants/reports';
-import type { Report, UserProfile } from '../../../types';
-
 export default function ReportsScreen() {
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<ReportStatus | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
 
   // Convexクエリでデータ取得
   const queryResult = useQuery(api.index.listReports, {
     limit: 20,
     cursor: cursor ?? undefined,
-    status: (selectedStatus ?? undefined) as any,
+    status: selectedStatus ?? undefined,
   });
 
   const reports = queryResult?.reports ?? [];
@@ -64,7 +63,7 @@ export default function ReportsScreen() {
   );
 
   // フィルターチップのプレスハンドラ (メモ化)
-  const handleFilterPress = useCallback((status: string | null) => {
+  const handleFilterPress = useCallback((status: ReportStatus | null) => {
     setSelectedStatus(status);
     setCursor(null);
   }, []);
@@ -72,7 +71,10 @@ export default function ReportsScreen() {
   // アイテムの高さを概算してパフォーマンス向上
   const ITEM_HEIGHT = 180; // おおよその高さを指定
   const getItemLayout = useCallback(
-    (data: any, index: number) => ({
+    (
+      data: Array<Report & { author?: Pick<UserProfile, 'name'> }> | null | undefined,
+      index: number
+    ) => ({
       length: ITEM_HEIGHT,
       offset: ITEM_HEIGHT * index,
       index,
@@ -106,12 +108,12 @@ export default function ReportsScreen() {
     <View className='flex-1 items-center justify-center px-8 py-16'>
       <FileText size={64} color='#D1D5DB' />
       <Text className='mt-4 text-center text-lg font-semibold text-gray-600'>
-        {REPORTS_CONSTANTS.LIST_SCREEN.EMPTY_STATE.NO_REPORTS}
+        {REPORTS_CONSTANTS.MOBILE_LIST_SCREEN.EMPTY_STATE.NO_REPORTS}
       </Text>
       <Text className='mt-2 text-center text-sm text-gray-500'>
         {selectedStatus
-          ? REPORTS_CONSTANTS.LIST_SCREEN.EMPTY_STATE.NO_FILTERED_REPORTS(selectedStatus)
-          : REPORTS_CONSTANTS.LIST_SCREEN.EMPTY_STATE.CREATE_SUGGESTION}
+          ? REPORTS_CONSTANTS.MOBILE_LIST_SCREEN.EMPTY_STATE.NO_FILTERED_REPORTS()
+          : REPORTS_CONSTANTS.MOBILE_LIST_SCREEN.EMPTY_STATE.CREATE_SUGGESTION}
       </Text>
       {!selectedStatus && (
         <Pressable
@@ -119,7 +121,7 @@ export default function ReportsScreen() {
           className='mt-6 rounded-lg bg-blue-500 px-6 py-3 active:bg-blue-600'
         >
           <Text className='font-semibold text-white'>
-            {REPORTS_CONSTANTS.LIST_SCREEN.EMPTY_STATE.CREATE_BUTTON}
+            {REPORTS_CONSTANTS.MOBILE_LIST_SCREEN.EMPTY_STATE.CREATE_BUTTON}
           </Text>
         </Pressable>
       )}
@@ -132,27 +134,27 @@ export default function ReportsScreen() {
       <View className='bg-white px-4 py-3 shadow-sm'>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <FilterChip
-            label={REPORTS_CONSTANTS.LIST_SCREEN.FILTER_LABELS.ALL}
+            label={REPORTS_CONSTANTS.MOBILE_LIST_SCREEN.FILTER_LABELS.ALL}
             selected={!selectedStatus}
             onPress={() => handleFilterPress(null)}
           />
           <FilterChip
-            label={REPORTS_CONSTANTS.LIST_SCREEN.FILTER_LABELS.DRAFT}
+            label={REPORT_STATUS_LABELS.draft}
             selected={selectedStatus === 'draft'}
             onPress={() => handleFilterPress('draft')}
           />
           <FilterChip
-            label={REPORTS_CONSTANTS.LIST_SCREEN.FILTER_LABELS.SUBMITTED}
+            label={REPORT_STATUS_LABELS.submitted}
             selected={selectedStatus === 'submitted'}
             onPress={() => handleFilterPress('submitted')}
           />
           <FilterChip
-            label={REPORTS_CONSTANTS.LIST_SCREEN.FILTER_LABELS.APPROVED}
+            label={REPORT_STATUS_LABELS.approved}
             selected={selectedStatus === 'approved'}
             onPress={() => handleFilterPress('approved')}
           />
           <FilterChip
-            label={REPORTS_CONSTANTS.LIST_SCREEN.FILTER_LABELS.REJECTED}
+            label={REPORT_STATUS_LABELS.rejected}
             selected={selectedStatus === 'rejected'}
             onPress={() => handleFilterPress('rejected')}
           />

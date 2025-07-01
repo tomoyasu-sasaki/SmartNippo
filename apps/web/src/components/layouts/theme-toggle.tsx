@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LAYOUT_CONSTANTS } from '@/constants/layout';
+import { LAYOUT_CONSTANTS } from '@smartnippo/lib';
 
 export function ThemeToggle() {
   const { setTheme } = useTheme();

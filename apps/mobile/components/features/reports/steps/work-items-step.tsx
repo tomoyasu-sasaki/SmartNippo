@@ -1,9 +1,9 @@
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
+import type { ReportFormData } from '@smartnippo/types';
 import type { Doc } from 'convex/_generated/dataModel';
 import { Plus } from 'lucide-react-native';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { REPORTS_CONSTANTS } from '../../../../constants/reports';
-import type { ReportFormData } from '../../../../types';
 import { WorkItemForm } from '../work-item-form';
 
 interface WorkItemsStepProps {
@@ -28,7 +28,7 @@ export const WorkItemsStep: React.FC<WorkItemsStepProps> = ({
     <View>
       <View className='mb-4 flex-row items-center justify-between'>
         <Text className='font-medium text-gray-700'>
-          {REPORTS_CONSTANTS.CREATE_SCREEN.WORK_ITEM_MANAGEMENT.TITLE}
+          {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.WORK_ITEM_MANAGEMENT.TITLE}
         </Text>
         <Pressable
           onPress={onAddWorkItem}
@@ -36,7 +36,7 @@ export const WorkItemsStep: React.FC<WorkItemsStepProps> = ({
         >
           <Plus size={16} color='white' />
           <Text className='ml-1 text-sm font-medium text-white'>
-            {REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.ADD_WORK_ITEM}
+            {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.ADD_WORK_ITEM}
           </Text>
         </Pressable>
       </View>
@@ -44,7 +44,7 @@ export const WorkItemsStep: React.FC<WorkItemsStepProps> = ({
       {formData.workItems.length === 0 ? (
         <View className='rounded-lg bg-gray-50 p-8'>
           <Text className='text-center text-gray-600'>
-            {REPORTS_CONSTANTS.CREATE_SCREEN.WORK_ITEM_MANAGEMENT.EMPTY_STATE}
+            {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.WORK_ITEM_MANAGEMENT.EMPTY_STATE}
           </Text>
         </View>
       ) : (

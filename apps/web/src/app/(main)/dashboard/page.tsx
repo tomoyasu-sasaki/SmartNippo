@@ -1,8 +1,8 @@
 import { DashboardContent } from '@/components/features/dashboard/dashboard-content';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DASHBOARD_CONSTANTS } from '@/constants/dashboard';
 import { auth } from '@clerk/nextjs/server';
+import { DASHBOARD_CONSTANTS } from '@smartnippo/lib';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';

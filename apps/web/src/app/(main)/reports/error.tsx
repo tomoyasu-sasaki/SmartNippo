@@ -2,71 +2,43 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { COMMON_CONSTANTS } from '@/constants/common';
-import { REPORTS_CONSTANTS } from '@/constants/reports';
-import { ArrowLeft, FileX, RefreshCw } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { COMMON_MESSAGES, ERROR_PAGE_CONSTANTS } from '@smartnippo/lib';
 import { useEffect } from 'react';
 
-export default function ReportsError({
-  error,
-  reset,
-}: {
+interface ErrorPageProps {
   error: Error & { digest?: string };
   reset: () => void;
-}) {
-  const router = useRouter();
+}
 
-  useEffect(() => {
-    // エラーをログサービスに送信
-    console.error('Reports error:', error);
-  }, [error]);
-
-  const getErrorMessage = () => {
-    if (error.message.includes('permission')) {
-      return REPORTS_CONSTANTS.REPORTS_ERROR_PERMISSION;
-    }
-    if (error.message.includes('not found')) {
-      return REPORTS_CONSTANTS.REPORTS_ERROR_NOT_FOUND;
-    }
-    if (error.message.includes('network')) {
-      return REPORTS_CONSTANTS.REPORTS_ERROR_NETWORK;
-    }
-    return REPORTS_CONSTANTS.REPORTS_ERROR_GENERAL;
-  };
+export default function ReportsErrorPage({ error, reset }: ErrorPageProps) {
+  useEffect(() => {}, [error]);
 
   return (
-    <div className='flex items-center justify-center min-h-[70vh] p-4'>
+    <div className='min-h-screen bg-gray-50 flex items-center justify-center p-4'>
       <Card className='max-w-md w-full'>
         <CardHeader className='text-center'>
-          <div className='flex justify-center mb-4'>
-            <FileX className='h-12 w-12 text-muted-foreground' />
-          </div>
-          <CardTitle className='text-2xl'>{REPORTS_CONSTANTS.REPORTS_ERROR_TITLE}</CardTitle>
-          <CardDescription>{getErrorMessage()}</CardDescription>
+          <CardTitle className='text-2xl text-red-600'>
+            {ERROR_PAGE_CONSTANTS.ERROR_TITLE}
+          </CardTitle>
+          <CardDescription>{ERROR_PAGE_CONSTANTS.ERROR_DESCRIPTION}</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className='space-y-4'>
-            {process.env.NODE_ENV === 'development' && error.message && (
-              <details className='text-sm'>
-                <summary className='cursor-pointer text-muted-foreground'>
-                  {REPORTS_CONSTANTS.REPORTS_ERROR_DETAILS_SUMMARY}
-                </summary>
-                <pre className='mt-2 p-2 bg-muted rounded text-xs overflow-auto'>
-                  {error.message}
-                </pre>
-              </details>
-            )}
-            <div className='flex gap-3'>
-              <Button onClick={() => router.back()} variant='outline' className='flex-1'>
-                <ArrowLeft className='h-4 w-4 mr-2' />
-                {REPORTS_CONSTANTS.BACK_BUTTON}
-              </Button>
-              <Button onClick={reset} className='flex-1'>
-                <RefreshCw className='h-4 w-4 mr-2' />
-                {COMMON_CONSTANTS.RETRY_BUTTON}
-              </Button>
+        <CardContent className='space-y-4'>
+          {error.digest && (
+            <div className='text-sm text-gray-600 bg-gray-100 p-3 rounded'>
+              <strong>{ERROR_PAGE_CONSTANTS.ERROR_ID_PREFIX}</strong> {error.digest}
             </div>
+          )}
+          <div className='flex gap-2'>
+            <Button onClick={reset} className='flex-1'>
+              {COMMON_MESSAGES.RETRY}
+            </Button>
+            <Button
+              variant='outline'
+              onClick={() => (window.location.href = '/reports')}
+              className='flex-1'
+            >
+              {ERROR_PAGE_CONSTANTS.REPORTS_BUTTON}
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -1,11 +1,11 @@
 import { Picker } from '@react-native-picker/picker';
+import type { ReportFormData } from '@smartnippo/types';
 import { api } from 'convex/_generated/api';
 import type { Doc, Id } from 'convex/_generated/dataModel';
 import { useQuery } from 'convex/react';
 import { X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import type { ReportFormData } from '../../../types';
 
 interface WorkItemFormProps {
   workItem: ReportFormData['workItems'][number];

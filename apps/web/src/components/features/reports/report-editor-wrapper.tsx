@@ -1,12 +1,12 @@
 'use client';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import type { ReportEditorWrapperProps } from '@/types';
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
+import type { ReportEditorWrapperProps } from '@smartnippo/types';
 import { api } from 'convex/_generated/api';
+import type { Id } from 'convex/_generated/dataModel';
 import { useQuery } from 'convex/react';
 import { ReportEditor } from './report-editor';
-
-import { REPORTS_CONSTANTS } from '@/constants/reports';
 
 function ReportEditorSkeleton() {
   return (
@@ -34,7 +34,8 @@ function ReportEditorSkeleton() {
 }
 
 export function ReportEditorWrapper({ params }: ReportEditorWrapperProps) {
-  const reportData = useQuery(api.index.getReportForEdit, { reportId: params.id });
+  const reportIdConv = params.id as Id<'reports'>;
+  const reportData = useQuery(api.index.getReportForEdit, { reportId: reportIdConv });
 
   if (reportData === undefined) {
     return <ReportEditorSkeleton />;
@@ -46,11 +47,13 @@ export function ReportEditorWrapper({ params }: ReportEditorWrapperProps) {
 
   return (
     <ReportEditor
-      reportId={params.id}
-      initialData={{
-        ...reportData,
-        reportDate: new Date(reportData.reportDate),
-      }}
+      reportId={reportIdConv}
+      initialData={
+        {
+          ...reportData,
+          reportDate: new Date(reportData.reportDate),
+        } as any
+      }
       expectedUpdatedAt={reportData.updated_at}
     />
   );

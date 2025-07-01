@@ -8,9 +8,17 @@
  */
 
 import { v } from 'convex/values';
-import type { UserRole } from '../../apps/web/src/types/convex';
 import { internalMutation, mutation } from '../_generated/server';
 import { getAuthenticatedUser } from '../auth/auth';
+
+// Convex独自の型定義（共通ライブラリの依存関係問題を避けるため）
+const USER_ROLES = {
+  USER: 'user',
+  MANAGER: 'manager',
+  ADMIN: 'admin',
+} as const;
+
+type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 
 /**
  * ユーザー情報の初期保存 (クライアントからの呼び出し)
@@ -588,8 +596,6 @@ export const deleteProfile = mutation({
 export const cleanupDuplicateUsers = internalMutation({
   args: {},
   handler: async (ctx) => {
-    console.log('Starting comprehensive duplicate user cleanup...');
-
     // Get all users grouped by clerkId
     const allUsers = await ctx.db.query('userProfiles').collect();
     const usersByClerkId = new Map<string, typeof allUsers>();
@@ -649,9 +655,6 @@ export const cleanupDuplicateUsers = internalMutation({
       }
     }
 
-    console.log(
-      `Cleanup completed. Found ${totalDuplicatesFound} duplicates, deleted ${totalDuplicatesDeleted} users.`
-    );
     return {
       duplicatesFound: totalDuplicatesFound,
       duplicatesDeleted: totalDuplicatesDeleted,

@@ -1,7 +1,7 @@
+import { LAYOUT_CONSTANTS } from '@smartnippo/lib';
 import { Tabs } from 'expo-router';
 import { FileText, Home, User } from 'lucide-react-native';
 import { AuthGuard } from '../../components/layouts/auth-guard';
-import { LAYOUT_CONSTANTS } from '../../constants/layout';
 
 export default function TabLayout() {
   return (
@@ -27,21 +27,21 @@ export default function TabLayout() {
         <Tabs.Screen
           name='index'
           options={{
-            title: LAYOUT_CONSTANTS.TAB_TITLES.HOME,
+            title: LAYOUT_CONSTANTS.NAV_LINKS.DASHBOARD,
             tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
           }}
         />
         <Tabs.Screen
           name='reports'
           options={{
-            title: LAYOUT_CONSTANTS.TAB_TITLES.REPORTS,
+            title: LAYOUT_CONSTANTS.NAV_LINKS.REPORTS,
             tabBarIcon: ({ color, size }) => <FileText size={size} color={color} />,
           }}
         />
         <Tabs.Screen
           name='profile'
           options={{
-            title: LAYOUT_CONSTANTS.TAB_TITLES.PROFILE,
+            title: LAYOUT_CONSTANTS.NAV_LINKS.PROFILE,
             tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
           }}
         />

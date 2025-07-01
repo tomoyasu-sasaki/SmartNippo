@@ -1,6 +1,6 @@
 import { ReportEditor } from '@/components/features/reports/report-editor';
-import { REPORTS_CONSTANTS } from '@/constants/reports';
 import { auth } from '@clerk/nextjs/server';
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 

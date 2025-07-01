@@ -1,7 +1,7 @@
+import { REPORT_DIFFICULTY_LABELS, REPORT_METADATA_SECTIONS } from '@smartnippo/lib';
+import type { ReportFormData } from '@smartnippo/types';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { REPORTS_CONSTANTS } from '../../../../constants/reports';
-import type { ReportFormData } from '../../../../types';
 import { MetadataInput } from '../metadata-input';
 
 interface MetadataStepProps {
@@ -9,7 +9,7 @@ interface MetadataStepProps {
   onUpdateFormData: (updates: Partial<ReportFormData>) => void;
 }
 
-const difficultyLabels = REPORTS_CONSTANTS.DIFFICULTY_LABELS;
+const difficultyLabels = REPORT_DIFFICULTY_LABELS;
 
 export const MetadataStep: React.FC<MetadataStepProps> = ({ formData, onUpdateFormData }) => {
   // metadataが未定義の場合のデフォルト値
@@ -31,7 +31,7 @@ export const MetadataStep: React.FC<MetadataStepProps> = ({ formData, onUpdateFo
     <ScrollView className='max-h-96'>
       <View className='mb-4'>
         <Text className='mb-2 font-medium text-gray-700'>
-          {REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.DIFFICULTY}
+          {REPORT_METADATA_SECTIONS.DIFFICULTY}
         </Text>
         <View className='flex-row space-x-2'>
           {(['easy', 'medium', 'hard'] as const).map((difficulty) => (
@@ -55,7 +55,7 @@ export const MetadataStep: React.FC<MetadataStepProps> = ({ formData, onUpdateFo
       </View>
 
       <MetadataInput
-        label={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.ACHIEVEMENTS}
+        label={REPORT_METADATA_SECTIONS.ACHIEVEMENTS}
         items={metadata.achievements}
         onAdd={(item) =>
           updateMetadata({
@@ -70,7 +70,7 @@ export const MetadataStep: React.FC<MetadataStepProps> = ({ formData, onUpdateFo
       />
 
       <MetadataInput
-        label={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.CHALLENGES}
+        label={REPORT_METADATA_SECTIONS.CHALLENGES}
         items={metadata.challenges}
         onAdd={(item) =>
           updateMetadata({
@@ -85,7 +85,7 @@ export const MetadataStep: React.FC<MetadataStepProps> = ({ formData, onUpdateFo
       />
 
       <MetadataInput
-        label={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.LEARNINGS}
+        label={REPORT_METADATA_SECTIONS.LEARNINGS}
         items={metadata.learnings}
         onAdd={(item) =>
           updateMetadata({
@@ -100,7 +100,7 @@ export const MetadataStep: React.FC<MetadataStepProps> = ({ formData, onUpdateFo
       />
 
       <MetadataInput
-        label={REPORTS_CONSTANTS.CREATE_SCREEN.METADATA_SECTIONS.NEXT_ACTIONS}
+        label={REPORT_METADATA_SECTIONS.NEXT_ACTIONS}
         items={metadata.nextActionItems}
         onAdd={(item) =>
           updateMetadata({

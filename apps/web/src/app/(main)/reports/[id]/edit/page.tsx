@@ -1,6 +1,6 @@
 import ReportEditorWrapper from '@/components/features/reports/report-editor-wrapper';
-import { REPORTS_CONSTANTS } from '@/constants/reports';
 import { auth } from '@clerk/nextjs/server';
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
 import type { Id } from 'convex/_generated/dataModel';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';

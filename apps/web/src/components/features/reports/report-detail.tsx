@@ -40,8 +40,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { REPORTS_CONSTANTS } from '@/constants/reports';
 import type { ReportDetailProps } from '@/types';
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
 
 const formatDuration = (minutes: number) => {
   if (minutes < 60) {
@@ -56,6 +56,7 @@ const formatDuration = (minutes: number) => {
 };
 
 function ReportDetailInner({ reportId }: ReportDetailProps) {
+  const reportIdConv = reportId as any;
   const router = useRouter();
   const { userId, has } = useAuth();
   const [newComment, setNewComment] = useState('');
@@ -64,8 +65,8 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
   const [rejectionReason, setRejectionReason] = useState('');
 
   // Fetch report detail
-  const report = useQuery(api.index.getReportDetail, { reportId });
-  const workItems = useQuery(api.index.listWorkItemsForReport, { reportId });
+  const report = useQuery(api.index.getReportDetail, { reportId: reportIdConv });
+  const workItems = useQuery(api.index.listWorkItemsForReport, { reportId: reportIdConv });
   const currentUser = useQuery(api.index.current);
 
   // Mutations
@@ -96,7 +97,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       const toastId = toast.loading(REPORTS_CONSTANTS.COMMENT_SUBMITTING);
 
       await addComment({
-        reportId,
+        reportId: reportIdConv,
         content: newComment.trim(),
       });
 
@@ -119,7 +120,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       setIsSubmittingAction(true);
       const toastId = toast.loading(REPORTS_CONSTANTS.APPROVE_SUBMITTING);
 
-      await approveReport({ reportId });
+      await approveReport({ reportId: reportIdConv });
 
       toast.success(REPORTS_CONSTANTS.APPROVE_SUCCESS, {
         id: toastId,
@@ -143,7 +144,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       setIsSubmittingAction(true);
       const toastId = toast.loading(REPORTS_CONSTANTS.REJECT_SUBMITTING);
 
-      await rejectReport({ reportId, reason });
+      await rejectReport({ reportId: reportIdConv, reason });
 
       toast.success(REPORTS_CONSTANTS.REJECT_SUCCESS, {
         id: toastId,
@@ -167,7 +168,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       setIsSubmittingAction(true);
       const toastId = toast.loading(REPORTS_CONSTANTS.DELETE_SUBMITTING);
 
-      await deleteReport({ reportId });
+      await deleteReport({ reportId: reportIdConv });
 
       toast.success(REPORTS_CONSTANTS.DELETE_SUCCESS, {
         id: toastId,
@@ -193,7 +194,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       const toastId = toast.loading(REPORTS_CONSTANTS.SUBMIT_SUBMITTING);
 
       await updateReport({
-        reportId,
+        reportId: reportIdConv,
         expectedUpdatedAt: report.updated_at,
         status: 'submitted',
       });
@@ -263,7 +264,12 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                   {REPORTS_CONSTANTS.EDIT_BUTTON}
                 </Button>
               </Link>
-              <Button size='sm' onClick={handleSubmit} disabled={isSubmittingAction}>
+              <Button
+                size='sm'
+                onClick={handleSubmit}
+                disabled={isSubmittingAction}
+                variant='outline'
+              >
                 <Send className='h-4 w-4 mr-2' />
                 {REPORTS_CONSTANTS.SUBMIT_BUTTON}
               </Button>
@@ -434,6 +440,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                 size='sm'
                 onClick={handleAddComment}
                 disabled={!newComment.trim() || isSubmittingComment}
+                variant='outline'
               >
                 <MessageSquare className='h-4 w-4 mr-2' />
                 {REPORTS_CONSTANTS.COMMENT_SUBMIT_BUTTON}
@@ -452,13 +459,13 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
           <div className='flex gap-3'>
             {report.status === 'submitted' && (
               <>
-                <Button variant='default' onClick={handleApprove} disabled={isSubmittingAction}>
+                <Button variant='outline' onClick={handleApprove} disabled={isSubmittingAction}>
                   <Check className='h-4 w-4 mr-2' />
                   {REPORTS_CONSTANTS.ACTION_APPROVE_BUTTON}
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant='destructive' disabled={isSubmittingAction}>
+                    <Button variant='outline' disabled={isSubmittingAction}>
                       <XIcon className='h-4 w-4 mr-2' />
                       {REPORTS_CONSTANTS.ACTION_REJECT_BUTTON}
                     </Button>
@@ -498,7 +505,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
             {(report.status === 'draft' || report.status === 'rejected') && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant='destructive' disabled={isSubmittingAction}>
+                  <Button variant='outline' disabled={isSubmittingAction}>
                     <Trash2 className='h-4 w-4 mr-2' />
                     {REPORTS_CONSTANTS.ACTION_DELETE_BUTTON}
                   </Button>

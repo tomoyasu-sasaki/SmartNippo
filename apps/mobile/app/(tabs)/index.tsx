@@ -1,9 +1,9 @@
 import { useUser } from '@clerk/clerk-expo';
+import { DASHBOARD_CONSTANTS } from '@smartnippo/lib';
 import { api } from 'convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { useEffect } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
-import { DASHBOARD_CONSTANTS } from '../../constants/dashboard';
 
 export default function ReportsScreen() {
   const { user, isLoaded } = useUser();
@@ -76,7 +76,7 @@ export default function ReportsScreen() {
           }
         >
           <Text className='text-white text-center font-semibold'>
-            {DASHBOARD_CONSTANTS.MAIN_CONTENT.CREATE_BUTTON}
+            {DASHBOARD_CONSTANTS.BUTTONS.CREATE_NEW_REPORT}
           </Text>
         </TouchableOpacity>
       </View>

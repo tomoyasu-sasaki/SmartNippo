@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { COMMON_CONSTANTS } from '@/constants/common';
-import { FileSearch, Home } from 'lucide-react';
+import { ERROR_PAGE_CONSTANTS } from '@smartnippo/lib';
+import { FileSearch } from 'lucide-react';
 import Link from 'next/link';
 
-export default function NotFound() {
+export default function NotFoundPage() {
   return (
-    <div className='flex items-center justify-center min-h-screen p-4'>
+    <div className='min-h-screen bg-gray-50 flex items-center justify-center p-4'>
       <Card className='max-w-md w-full'>
         <CardHeader className='text-center'>
           <div className='flex justify-center mb-4'>
@@ -17,32 +17,27 @@ export default function NotFound() {
               </span> */}
             </div>
           </div>
-          <CardTitle className='text-2xl'>{COMMON_CONSTANTS.NOT_FOUND_TITLE}</CardTitle>
-          <CardDescription>{COMMON_CONSTANTS.NOT_FOUND_DESCRIPTION}</CardDescription>
+          <CardTitle className='text-2xl'>{ERROR_PAGE_CONSTANTS.NOT_FOUND_TITLE}</CardTitle>
+          <CardDescription>{ERROR_PAGE_CONSTANTS.NOT_FOUND_DESCRIPTION}</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className='space-y-4'>
-            <div className='text-center text-sm text-muted-foreground'>
-              <p>{COMMON_CONSTANTS.NOT_FOUND_GUIDE}</p>
-            </div>
-            <div className='grid gap-2'>
-              <Link href='/'>
-                <Button className='w-full' variant='default'>
-                  <Home className='h-4 w-4 mr-2' />
-                  {COMMON_CONSTANTS.HOME_BUTTON}
-                </Button>
-              </Link>
-              <Link href='/dashboard'>
-                <Button className='w-full' variant='outline'>
-                  {COMMON_CONSTANTS.DASHBOARD_BUTTON}
-                </Button>
-              </Link>
-              <Link href='/reports'>
-                <Button className='w-full' variant='outline'>
-                  {COMMON_CONSTANTS.REPORTS_BUTTON}
-                </Button>
-              </Link>
-            </div>
+        <CardContent className='space-y-4'>
+          <p className='text-sm text-gray-600 text-center'>
+            {ERROR_PAGE_CONSTANTS.NOT_FOUND_GUIDE}
+          </p>
+          <div className='space-y-2'>
+            <Link href='/' className='block'>
+              <Button className='w-full'>{ERROR_PAGE_CONSTANTS.HOME_BUTTON}</Button>
+            </Link>
+            <Link href='/dashboard' className='block'>
+              <Button variant='outline' className='w-full'>
+                {ERROR_PAGE_CONSTANTS.DASHBOARD_BUTTON}
+              </Button>
+            </Link>
+            <Link href='/reports' className='block'>
+              <Button variant='outline' className='w-full'>
+                {ERROR_PAGE_CONSTANTS.REPORTS_BUTTON}
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

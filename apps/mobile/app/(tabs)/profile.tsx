@@ -17,20 +17,24 @@ import {
 } from 'react-native';
 import { z } from 'zod';
 import AvatarPicker from '../../components/AvatarPicker';
-import { PROFILE_CONSTANTS } from '../../constants/profile';
 
-import { PRIVACY_LEVELS, SOCIAL_PLATFORMS } from '@smartnippo/lib';
+import {
+  PRIVACY_LEVELS,
+  PROFILE_CONSTANTS,
+  SOCIAL_PLATFORMS,
+  VALIDATION_MESSAGES,
+} from '@smartnippo/lib';
 import { api } from 'convex/_generated/api';
 import { Image as ExpoImage } from 'expo-image';
 
-import type { UserProfile } from '../../types';
+import type { UserProfile } from '@smartnippo/types';
 
 // Zodスキーマをこのファイル内で直接定義
 const profileFormSchema = z.object({
   name: z
     .string()
-    .min(1, PROFILE_CONSTANTS.VALIDATION_ERRORS.NAME_REQUIRED)
-    .max(100, PROFILE_CONSTANTS.VALIDATION_ERRORS.NAME_TOO_LONG),
+    .min(1, VALIDATION_MESSAGES.NAME_REQUIRED)
+    .max(100, VALIDATION_MESSAGES.NAME_TOO_LONG),
   avatarUrl: z.string().optional(),
   avatarStorageId: z.string().optional(),
   socialLinks: z
@@ -118,7 +122,7 @@ export default function ProfileScreen() {
     if (!userProfile) {
       return;
     }
-
+    setIsLoading(true);
     try {
       await updateProfile({
         name: data.name,
@@ -131,6 +135,8 @@ export default function ProfileScreen() {
       setIsEditing(false);
     } catch {
       Alert.alert('エラー', PROFILE_CONSTANTS.ALERTS.PROFILE_UPDATE_ERROR);
+    } finally {
+      setIsLoading(false);
     }
   };
 

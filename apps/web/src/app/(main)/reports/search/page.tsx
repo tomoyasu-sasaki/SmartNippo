@@ -16,8 +16,8 @@ import {
   CommandList,
   CommandLoading,
 } from '@/components/ui/command';
-import { REPORTS_CONSTANTS } from '@/constants/reports';
 import { useDebounce } from '@/hooks/use-debounce';
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
 
 // NOTE: A debounce hook is assumed to exist at '@/hooks/use-debounce'
 // If not, it needs to be created. Example:

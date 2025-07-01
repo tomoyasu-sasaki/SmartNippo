@@ -18,18 +18,18 @@
 
 ## 2. システム構成
 
-| レイヤ        | 技術                                 | 補足                                         |
-| ------------- | ------------------------------------ | -------------------------------------------- |
-| モバイル      | **Expo (React Native/TS)**           | OTA 更新／EAS Build、NativeWind v4           |
-| Web           | **Next.js 15.1.3 (App Router)**      | RSC優先、React 19対応、Cloudflare Pages 配信 |
-| UI System     | **shadcn/ui + Tailwind CSS v4.1.10** | 統一デザインシステム、lucide-react icons     |
-| BaaS          | **Convex**                           | DB + Edge Functions + ACL                    |
-| 認証          | **Clerk**                            | ソーシャルログイン、Magic Link、MFA対応      |
-| AI            | **Mastra GPT‑4o**                    | 要約・QA・改善提案 API                       |
-| 状態管理      | **useSWR + nuqs + React Context**    | 楽観的更新、URL状態、最小グローバル状態      |
-| CDN & Storage | Cloudflare Pages / R2                |                                              |
-| モニタリング  | Sentry + Convex logs export          |                                              |
-| CI/CD         | GitHub Actions + Turborepo + EAS CLI |                                              |
+| レイヤ        | 技術                                                          | 補足                                                       |
+| ------------- | ------------------------------------------------------------- | ---------------------------------------------------------- |
+| モバイル      | **Expo (~53.0.12, React Native 0.79.4)**                      | OTA 更新／EAS Build、NativeWind v4 (Tailwind CSS v3ベース) |
+| Web           | **Next.js 15.3.4 (App Router)**                               | RSC優先、React 19対応、Cloudflare Pages 配信               |
+| UI System     | **shadcn/ui + Tailwind CSS v4.1.10 (Web) / v3.4.17 (Mobile)** | 統一デザインシステム、lucide-react icons                   |
+| BaaS          | **Convex 1.25.0**                                             | DB + Edge Functions + ACL                                  |
+| 認証          | **Clerk**                                                     | ソーシャルログイン、Magic Link、MFA対応                    |
+| AI            | **Mastra GPT‑4o**                                             | 要約・QA・改善提案 API                                     |
+| 状態管理      | **useSWR + nuqs + React Context**                             | 楽観的更新、URL状態、最小グローバル状態                    |
+| CDN & Storage | Cloudflare Pages / R2                                         |                                                            |
+| モニタリング  | Sentry + Convex logs export                                   |                                                            |
+| CI/CD         | GitHub Actions + Turborepo + EAS CLI                          |                                                            |
 
 ---
 
@@ -38,85 +38,105 @@
 ```mermaid
 erDiagram
   orgs {
-    uuid id PK
-    text name
-    text plan
-    timestamptz created_at
-    timestamptz updated_at
+    string _id PK
+    string clerkId
+    string name
+    string plan "free|pro|enterprise"
+    number created_at
   }
-  users {
-    uuid id PK
-    text email
-    text name
-    text role "user|manager|admin"
-    uuid orgId FK
-    text avatarUrl
-    text pushToken
-    timestamptz created_at
-    timestamptz updated_at
+  userProfiles {
+    string _id PK
+    string clerkId
+    string name
+    string role "user|manager|admin"
+    string orgId FK
+    string avatarStorageId "optional"
+    number created_at
   }
   reports {
-    uuid id PK
-    uuid authorId FK
-    text reportDate
-    text title
-    text content
-    text status "draft|submitted|approved|rejected"
-    text summary
-    text aiSummaryStatus "pending|processing|completed|failed"
-    array tasks "with estimatedHours, actualHours, category"
-    array attachments "with uploadedAt, description, metadata"
-    object metadata "version, previousReportId, template, difficulty, achievements, challenges, learnings, nextActionItems"
+    string _id PK
+    string authorId FK
+    string reportDate
+    string title
+    string content
+    string status "draft|submitted|approved|rejected"
+    string summary "optional"
+    string aiSummaryStatus "optional"
+    array attachments "optional"
+    object metadata "optional"
     boolean isDeleted
-    uuid orgId FK
-    timestamptz created_at
-    timestamptz updated_at
-    timestamptz submittedAt
-    timestamptz approvedAt
-    timestamptz rejectedAt
-    text rejectionReason
-    array editHistory "timestamp, field, oldValue, newValue"
-    timestamptz deletedAt
-    uuid deletedBy FK
+    string orgId FK
+    number created_at
+    number updated_at
+    number submittedAt "optional"
+    number approvedAt "optional"
+    number rejectedAt "optional"
+    string rejectionReason "optional"
+    array editHistory "optional"
+    number deletedAt "optional"
+    string deletedBy FK "optional"
   }
   comments {
-    uuid id PK
-    uuid reportId FK
-    uuid authorId FK "nullable"
-    text content
-    text type "user|system|ai"
-    timestamptz created_at
+    string _id PK
+    string reportId FK
+    string authorId FK "nullable"
+    string content
+    string type "user|system|ai"
+    number created_at
   }
   approvals {
-    uuid id PK
-    uuid reportId FK
-    uuid managerId FK
-    timestamptz approved_at
+    string _id PK
+    string reportId FK
+    string managerId FK
+    number approved_at
   }
   audit_logs {
-    uuid id PK
-    uuid actor_id FK
-    text action
-    json payload
-    timestamptz created_at
-    uuid org_id
+    string _id PK
+    string actor_id FK "nullable"
+    string action
+    any payload
+    string org_id "nullable"
+    number created_at
   }
   schema_versions {
-    uuid id PK
+    string _id PK
     number version
-    text name
-    text description
-    text rollbackScript
-    timestamptz appliedAt
-    uuid appliedBy FK
+    string name
+    string description
+    number appliedAt
   }
-  orgs ||--o{ users : "has"
-  users ||--o{ reports : "creates"
-  users ||--o{ comments : "writes"
-  users ||--o{ approvals : "approves"
-  users ||--o{ audit_logs : "logs"
+  projects {
+      string _id PK
+      string orgId FK
+      string name
+      string description "optional"
+      number created_at
+  }
+  workCategories {
+      string _id PK
+      string projectId FK
+      string name
+      number created_at
+  }
+  workItems {
+      string _id PK
+      string reportId FK
+      string projectId FK
+      string workCategoryId FK
+      number workDuration
+      string description
+  }
+
+  orgs ||--o{ userProfiles : "has"
+  orgs ||--o{ projects : "has"
+  userProfiles ||--o{ reports : "creates"
+  userProfiles ||--o{ comments : "writes"
+  userProfiles ||--o{ approvals : "approves"
+  userProfiles ||--o{ audit_logs : "logs"
   reports ||--o{ comments : "has"
   reports ||--o{ approvals : "requires"
+  reports ||--o{ workItems : "has"
+  projects ||--o{ workCategories : "has"
 ```
 
 ---
@@ -142,10 +162,9 @@ erDiagram
 | 削除 | author or admin | `deleteReport (soft)` |
 | 承認 | manager 以上    | `approveReport`       |
 | 拒否 | manager 以上    | `rejectReport`        |
-| 検証 | システム        | `validateReport`      |
 | 復旧 | admin のみ      | `restoreReport`       |
 
-**Note**: Next.js 15.1.3 App Router (React 19対応) では API
+**Note**: Next.js 15.3.4 App Router (React 19対応) では API
 Routes を使用せず、Convex mutations/queries を直接使用。Server
 Components優先でSSR最適化
 

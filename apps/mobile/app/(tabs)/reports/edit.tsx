@@ -1,4 +1,6 @@
 import NetInfo from '@react-native-community/netinfo';
+import { REPORTS_CONSTANTS } from '@smartnippo/lib';
+import type { ReportFormData } from '@smartnippo/types';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
 import { useAction, useQuery } from 'convex/react';
@@ -24,14 +26,9 @@ import {
   WorkItemsStep,
 } from '../../../components/features/reports/steps';
 import { LoadingScreen } from '../../../components/ui/loading-screen';
-import { REPORTS_CONSTANTS } from '../../../constants/reports';
-import type { ReportFormData } from '../../../types';
 
 // ステップの定義
-const { STEPS } = REPORTS_CONSTANTS;
-
-// 難易度の表示名
-const difficultyLabels = REPORTS_CONSTANTS.DIFFICULTY_LABELS;
+const { STEPS } = REPORTS_CONSTANTS.MOBILE_STEPS;
 
 export default function EditReportScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -96,14 +93,16 @@ export default function EditReportScreen() {
     switch (step) {
       case 0: // 基本情報
         if (!formData.title.trim()) {
-          newErrors.title = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.TITLE_REQUIRED;
+          newErrors.title = REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.TITLE_REQUIRED;
         } else if (formData.title.length > 200) {
-          newErrors.title = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.TITLE_TOO_LONG;
+          newErrors.title = REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.TITLE_TOO_LONG;
         }
         if (!formData.content.trim()) {
-          newErrors.content = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_REQUIRED;
+          newErrors.content =
+            REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_REQUIRED;
         } else if (formData.content.length > 10000) {
-          newErrors.content = REPORTS_CONSTANTS.CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_TOO_LONG;
+          newErrors.content =
+            REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.CONTENT_TOO_LONG;
         }
         break;
     }
@@ -143,20 +142,33 @@ export default function EditReportScreen() {
 
     try {
       const workItemsForBackend = formData.workItems.map((item) => {
+        const { projectId, workCategoryId, description, workDuration } = item;
+        const commonData = {
+          projectId: projectId as Id<'projects'>,
+          workCategoryId: workCategoryId as Id<'workCategories'>,
+          description,
+          workDuration,
+        };
+
         if (item.isNew) {
-          // 新規作業項目：バックエンドで新しいIDを生成するため、一時的なIDとisNewフラグを削除
-          const { _id, isNew, ...rest } = item;
-          return rest;
+          return commonData;
         }
-        // 既存の作業項目：更新のために元の_idを保持します。
-        return item;
+
+        return {
+          ...commonData,
+          _id: item._id as Id<'workItems'>,
+        };
       });
 
       // 削除されたアイテムを_isDeletedフラグ付きで追加
       const allWorkItems = [
         ...workItemsForBackend,
         ...deletedWorkItems.map((item) => ({
-          ...item,
+          _id: item._id as Id<'workItems'>,
+          projectId: item.projectId as Id<'projects'>,
+          workCategoryId: item.workCategoryId as Id<'workCategories'>,
+          description: item.description,
+          workDuration: item.workDuration,
           _isDeleted: true,
         })),
       ];
@@ -292,14 +304,14 @@ export default function EditReportScreen() {
                 <View className='flex-row items-center'>
                   <WifiOff size={16} color='#EF4444' />
                   <Text className='ml-1 text-xs text-red-600'>
-                    {REPORTS_CONSTANTS.CREATE_SCREEN.NETWORK_STATUS.OFFLINE}
+                    {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.NETWORK_STATUS.OFFLINE}
                   </Text>
                 </View>
               ) : isConnected === true ? (
                 <View className='flex-row items-center'>
                   <Wifi size={16} color='#10B981' />
                   <Text className='ml-1 text-xs text-green-600'>
-                    {REPORTS_CONSTANTS.CREATE_SCREEN.NETWORK_STATUS.ONLINE}
+                    {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.NETWORK_STATUS.ONLINE}
                   </Text>
                 </View>
               ) : null}
@@ -327,7 +339,7 @@ export default function EditReportScreen() {
               >
                 <ChevronLeft size={20} color='#374151' />
                 <Text className='ml-1 font-semibold text-gray-700'>
-                  {REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.PREVIOUS}
+                  {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.PREVIOUS}
                 </Text>
               </Pressable>
             )}
@@ -338,7 +350,7 @@ export default function EditReportScreen() {
                 className='flex-1 flex-row items-center justify-center rounded-lg bg-blue-500 py-3 active:bg-blue-600'
               >
                 <Text className='mr-1 font-semibold text-white'>
-                  {REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.NEXT}
+                  {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.NEXT}
                 </Text>
                 <ChevronRight size={20} color='white' />
               </Pressable>
@@ -355,7 +367,7 @@ export default function EditReportScreen() {
                 {isSubmitting && <ActivityIndicator size='small' color='white' className='mr-2' />}
                 <Text className='text-center font-semibold text-white'>
                   {isConnected === false
-                    ? REPORTS_CONSTANTS.CREATE_SCREEN.BUTTONS.OFFLINE_DISABLED
+                    ? REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.OFFLINE_DISABLED
                     : isSubmitting
                       ? '更新中...'
                       : '更新する'}

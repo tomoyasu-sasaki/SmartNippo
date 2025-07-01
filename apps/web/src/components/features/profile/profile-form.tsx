@@ -20,8 +20,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { PROFILE_CONSTANTS } from '@/constants/profile';
-import { profileFormSchema, type ProfileFormData } from '@smartnippo/lib';
+import { PROFILE_CONSTANTS, profileFormSchema, type ProfileFormData } from '@smartnippo/lib';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
 
@@ -137,8 +136,8 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
               <FormLabel>{PROFILE_CONSTANTS.NAME_LABEL}</FormLabel>
               <FormControl>
                 <Input
-                  placeholder={PROFILE_CONSTANTS.NAME_PLACEHOLDER}
                   {...field}
+                  placeholder={PROFILE_CONSTANTS.PLACEHOLDERS.NAME}
                   disabled={isLoading}
                 />
               </FormControl>
@@ -176,7 +175,7 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
           </div>
         </div>
 
-        <Button type='submit' disabled={isLoading}>
+        <Button type='submit' disabled={isLoading} variant='outline'>
           {isLoading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
           {PROFILE_CONSTANTS.SUBMIT_BUTTON_TEXT}
         </Button>
