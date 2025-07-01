@@ -234,18 +234,6 @@ export const listReports = query({
       }
     }
 
-    const getUserInfo = (id: Id<'userProfiles'>) => {
-      const user = authors.get(id);
-      return user
-        ? {
-            _id: user._id,
-            name: user.name,
-            avatarUrl: user.avatarUrl,
-            role: user.role,
-          }
-        : null;
-    };
-
     const reportsWithAuthors = paginatedReports.map((report) => {
       const author = authors.get(report.authorId);
       return {

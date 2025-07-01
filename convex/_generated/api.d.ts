@@ -13,6 +13,8 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as approvalFlows_mutations from "../approvalFlows/mutations.js";
+import type * as approvalFlows_queries from "../approvalFlows/queries.js";
 import type * as auth_auth from "../auth/auth.js";
 import type * as backup_actions from "../backup/actions.js";
 import type * as backup_config from "../backup/config.js";
@@ -29,6 +31,7 @@ import type * as reports_comments from "../reports/comments.js";
 import type * as reports_dashboard from "../reports/dashboard.js";
 import type * as reports_mutations from "../reports/mutations.js";
 import type * as reports_queries from "../reports/queries.js";
+import type * as schema_approvalFlows from "../schema/approvalFlows.js";
 import type * as schema_approvals from "../schema/approvals.js";
 import type * as schema_audit_logs from "../schema/audit_logs.js";
 import type * as schema_comments from "../schema/comments.js";
@@ -62,6 +65,8 @@ import type * as workItems_queries from "../workItems/queries.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "approvalFlows/mutations": typeof approvalFlows_mutations;
+  "approvalFlows/queries": typeof approvalFlows_queries;
   "auth/auth": typeof auth_auth;
   "backup/actions": typeof backup_actions;
   "backup/config": typeof backup_config;
@@ -78,6 +83,7 @@ declare const fullApi: ApiFromModules<{
   "reports/dashboard": typeof reports_dashboard;
   "reports/mutations": typeof reports_mutations;
   "reports/queries": typeof reports_queries;
+  "schema/approvalFlows": typeof schema_approvalFlows;
   "schema/approvals": typeof schema_approvals;
   "schema/audit_logs": typeof schema_audit_logs;
   "schema/comments": typeof schema_comments;

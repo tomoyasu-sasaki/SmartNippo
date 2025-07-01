@@ -21,7 +21,7 @@ export default function HomePage() {
   // Show loading state while checking auth
   if (!isLoaded || isSignedIn) {
     return (
-      <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
+      <div className='min-h-screen  flex items-center justify-center'>
         <div className='text-center'>
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto' />
           <p className='mt-2 text-gray-600'>{COMMON_MESSAGES.LOADING_JP}</p>
@@ -34,7 +34,7 @@ export default function HomePage() {
   return (
     <>
       <AuthSync />
-      <div className='min-h-screen bg-gray-50 p-4'>
+      <div className='min-h-screen p-4'>
         <div className='max-w-4xl mx-auto'>
           <header className='text-center mb-12 mt-20'>
             <h1 className='text-5xl font-bold text-gray-900 mb-4'>
@@ -59,7 +59,7 @@ export default function HomePage() {
               </p>
               <div className='flex flex-col gap-3'>
                 <SignInButton mode='modal'>
-                  <Button className='w-full' size='lg'>
+                  <Button className='w-full' size='lg' variant='outline'>
                     {AUTH_CONSTANTS.BUTTONS.LOGIN}
                   </Button>
                 </SignInButton>

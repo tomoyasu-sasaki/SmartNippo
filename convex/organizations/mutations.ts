@@ -21,13 +21,6 @@ export const upsertOrganization = internalMutation({
   handler: async (ctx, { clerkOrganization }) => {
     const { id: clerkId, name, created_by: createdByClerkId } = clerkOrganization;
 
-    console.log('upsertOrganization called with:', {
-      clerkId,
-      name,
-      createdByClerkId,
-      fullData: clerkOrganization,
-    });
-
     const orgRecord = await ctx.db
       .query('orgs')
       .withIndex('by_clerk_id', (q) => q.eq('clerkId', clerkId))
@@ -45,25 +38,21 @@ export const upsertOrganization = internalMutation({
 
       // Link the creator to the new organization
       if (createdByClerkId) {
-        console.log('Looking for creator with clerkId:', createdByClerkId);
         const creator = await ctx.db
           .query('userProfiles')
           .withIndex('by_clerk_id', (q) => q.eq('clerkId', createdByClerkId))
           .unique();
 
         if (creator) {
-          console.log('Found creator:', creator._id, 'Updating with orgId:', newOrgId);
           await ctx.db.patch(creator._id, {
             orgId: newOrgId,
             role: 'admin', // The creator becomes an admin
             updated_at: Date.now(),
           });
         } else {
-          console.warn('Creator not found in userProfiles for clerkId:', createdByClerkId);
           // Note: The creator will be linked via organizationMembership.created event
         }
       } else {
-        console.warn('No created_by field in organization webhook data');
         // Note: The creator will be linked via organizationMembership.created event
       }
     } else {

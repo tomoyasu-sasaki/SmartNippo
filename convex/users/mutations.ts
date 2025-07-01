@@ -662,3 +662,44 @@ export const cleanupDuplicateUsers = internalMutation({
     };
   },
 });
+
+/**
+ * ユーザーロールの更新 (管理者のみ)
+ *
+ * @description 管理者がユーザーのロールを変更します。
+ *
+ * @mutation
+ * @param {Object} args - 更新データ
+ * @param {Id<'userProfiles'>} args.userId - 対象ユーザーのID
+ * @param {'user' | 'manager' | 'admin'} args.role - 新しいロール
+ * @returns {Promise<{success: boolean}>} 更新結果
+ * @throws {Error} 権限不足、またはユーザーが見つからない場合
+ */
+export const updateUserRole = mutation({
+  args: {
+    userId: v.id('userProfiles'),
+    role: v.union(v.literal('user'), v.literal('manager'), v.literal('admin')),
+  },
+  handler: async (ctx, args) => {
+    const adminUser = await getAuthenticatedUser(ctx);
+    if (!adminUser || adminUser.role !== 'admin' || !adminUser.orgId) {
+      throw new Error('Permission denied. Admin role required.');
+    }
+
+    const targetUser = await ctx.db.get(args.userId);
+    if (!targetUser) {
+      throw new Error('Target user not found.');
+    }
+
+    if (targetUser.orgId !== adminUser.orgId) {
+      throw new Error('Permission denied. Cannot change role for users outside your organization.');
+    }
+
+    await ctx.db.patch(args.userId, {
+      role: args.role,
+      updated_at: Date.now(),
+    });
+
+    return { success: true };
+  },
+});

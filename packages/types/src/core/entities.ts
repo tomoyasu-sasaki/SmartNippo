@@ -31,6 +31,7 @@ export interface UserProfile {
 export interface Report {
   _id: string;
   authorId: string;
+  projectId?: string;
   reportDate: string;
   workingHours?: WorkingHours;
   title: string;

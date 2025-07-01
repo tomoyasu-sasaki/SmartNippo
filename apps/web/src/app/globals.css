@@ -124,6 +124,7 @@
   --destructive-foreground: oklch(98.1% 0.011 254);
   --border: oklch(84.566% 0.13523 330.921);
   --input: oklch(93.151% 0.03024 339.076);
+  --hover: oklch(90.833% 0.05073 229.086);
   --ring: oklch(57.8% 0.23 262.1);
   --chart-1: oklch(62.8% 0.25 29.23);
   --chart-2: oklch(72.7% 0.25 50.74);
@@ -176,6 +177,7 @@
     --destructive-foreground: oklch(95.8% 0.023 15.5);
     --border: oklch(23.84% 0.07364 282.66);
     --input: oklch(15.1% 0.022 259);
+    --hover: oklch(23.84% 0.07364 282.66);
     --ring: oklch(95.8% 0.023 15.5);
     --chart-1: oklch(71% 0.25 29.23);
     --chart-2: oklch(81.7% 0.25 50.74);
