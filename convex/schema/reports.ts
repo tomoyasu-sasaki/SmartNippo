@@ -2,6 +2,7 @@
  * @fileoverview 日報テーブルのスキーマ定義
  *
  * @property {Id<'userProfiles'>} authorId - 作成者のID
+ * @property {Id<'projects'> | undefined} projectId - どのプロジェクトの日報か
  * @property {string} reportDate - 日報の日付 (YYYY-MM-DD形式)
  * @property {object | undefined} workingHours - 勤務時間オブジェクト
  * @property {number} workingHours.startHour - 開始 時
@@ -36,6 +37,7 @@ import { v } from 'convex/values';
  */
 export const reportsTable = defineTable({
   authorId: v.id('userProfiles'),
+  projectId: v.optional(v.id('projects')), // どのプロジェクトの日報か
   reportDate: v.string(), // YYYY-MM-DD format
   workingHours: v.optional(
     v.object({
@@ -114,6 +116,7 @@ export const reportsTable = defineTable({
   .index('by_org', ['orgId'])
   .index('by_author', ['authorId'])
   .index('by_org_author', ['orgId', 'authorId'])
+  .index('by_org_project', ['orgId', 'projectId']) // プロジェクトごとの日報一覧用
   .index('by_org_date', ['orgId', 'reportDate'])
   .index('by_org_status', ['orgId', 'status'])
   .index('by_org_not_deleted', ['orgId', 'isDeleted'])

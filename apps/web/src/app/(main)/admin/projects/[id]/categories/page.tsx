@@ -100,7 +100,7 @@ export default function CategoriesAdminPage() {
         </CardHeader>
         <CardContent className='space-y-4'>
           <Input placeholder='作業区分名' value={name} onChange={(e) => setName(e.target.value)} />
-          <Button onClick={handleCreate} disabled={isCreating}>
+          <Button onClick={handleCreate} disabled={isCreating} variant='outline'>
             追加
           </Button>
         </CardContent>
@@ -140,7 +140,7 @@ export default function CategoriesAdminPage() {
 
       {/* Edit Dialog */}
       <Dialog open={editingCategory !== null} onOpenChange={() => setEditingCategory(null)}>
-        <DialogContent>
+        <DialogContent className='bg-[var(--background)]'>
           <DialogHeader>
             <DialogTitle>作業区分を編集</DialogTitle>
           </DialogHeader>
@@ -149,7 +149,9 @@ export default function CategoriesAdminPage() {
             <Button variant='outline' onClick={() => setEditingCategory(null)}>
               キャンセル
             </Button>
-            <Button onClick={handleUpdate}>保存</Button>
+            <Button onClick={handleUpdate} variant='outline'>
+              保存
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

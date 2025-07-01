@@ -58,6 +58,7 @@ const reportFormSchema = z.object({
   reportDate: z.date({
     required_error: '日付を選択してください',
   }),
+  projectId: z.string().min(1, 'メインプロジェクトを選択してください'),
   title: z
     .string()
     .min(1, 'タイトルを入力してください')
@@ -120,6 +121,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
     resolver: zodResolver(reportFormSchema),
     defaultValues: {
       reportDate: initialData?.reportDate ? new Date(initialData.reportDate) : new Date(),
+      projectId: initialData?._id as Id<'projects'>,
       title: initialData?.title ?? '',
       content: initialData?.content ?? '',
       workItems: [], // workItemsは別途読み込むため、ここでは空で初期化
@@ -164,6 +166,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
           ...(reportId && { reportId: reportIdConv }),
           reportData: {
             reportDate: format(pendingValues.reportDate, 'yyyy-MM-dd'),
+            projectId: pendingValues.projectId as Id<'projects'>,
             title: pendingValues.title,
             content: pendingValues.content,
             workingHours: pendingValues.workingHours,
@@ -213,6 +216,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
         ...(reportId && { reportId: reportIdConv }),
         reportData: {
           reportDate: format(values.reportDate, 'yyyy-MM-dd'),
+          projectId: values.projectId as Id<'projects'>,
           title: values.title,
           content: values.content,
           workingHours: values.workingHours,
@@ -366,6 +370,34 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                 />
 
                 <WorkingTimePicker form={form} />
+
+                <FormField
+                  control={form.control}
+                  name='projectId'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>メインプロジェクト</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder='日報のメインプロジェクトを選択してください' />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {projects?.map((p) => (
+                            <SelectItem key={p._id} value={p._id}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        この日報を代表するプロジェクトを選択してください。承認フローに使用されます。
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}

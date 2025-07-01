@@ -9,6 +9,7 @@
  */
 import { defineSchema } from 'convex/server';
 
+import { approvalFlowsTable } from './schema/approvalFlows';
 import { approvalsTable } from './schema/approvals';
 import { auditLogsTable } from './schema/audit_logs';
 import { commentsTable } from './schema/comments';
@@ -36,6 +37,7 @@ export default defineSchema({
   workCategories: workCategoriesTable,
   comments: commentsTable,
   approvals: approvalsTable,
+  approvalFlows: approvalFlowsTable,
   audit_logs: auditLogsTable,
   schema_versions: schemaVersionsTable,
   workItems: workItemsTable,

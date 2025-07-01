@@ -74,7 +74,8 @@ export interface ReportDetail extends Report {
   >;
   approvals?: Array<
     Approval & {
-      manager: UserProfile;
+      manager?: UserProfile | null;
+      status: 'pending' | 'approved' | 'rejected';
     }
   >;
   stats: ReportStats;

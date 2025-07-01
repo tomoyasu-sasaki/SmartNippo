@@ -220,7 +220,7 @@ function DashboardContentInner() {
               recentReports.reports.map((report) => (
                 <div
                   key={report._id}
-                  className='flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50'
+                  className='flex items-center justify-between p-4 border rounded-lg hover:bg-[var(--hover)]'
                 >
                   <div className='flex-1'>
                     <div className='flex items-center gap-3'>

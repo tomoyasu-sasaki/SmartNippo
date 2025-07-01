@@ -82,7 +82,7 @@ export function Header() {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
-                    href='/admin/projects'
+                    href='/admin'
                     className={cn(
                       navigationMenuTriggerStyle(),
                       pathname.startsWith('/admin') && 'bg-accent'
@@ -159,7 +159,7 @@ export function Header() {
             </Link>
             {userProfile?.role === 'admin' && (
               <Link
-                href='/admin/projects'
+                href='/admin'
                 className={cn(
                   'text-muted-foreground hover:text-foreground',
                   pathname.startsWith('/admin') && 'text-foreground'

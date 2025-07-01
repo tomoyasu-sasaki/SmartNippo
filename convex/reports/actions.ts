@@ -20,6 +20,7 @@ export const saveReportWithWorkItems = action({
     reportId: v.optional(v.id('reports')),
     reportData: v.object({
       reportDate: v.string(),
+      projectId: v.optional(v.id('projects')),
       title: v.string(),
       content: v.string(),
       workingHours: v.optional(
@@ -69,29 +70,47 @@ export const saveReportWithWorkItems = action({
     if (reportData.metadata) {
       cleanReportData.metadata = reportData.metadata;
     }
+    if (reportData.projectId) {
+      cleanReportData.projectId = reportData.projectId;
+    }
 
+    // 1. 日報の作成または更新
     if (reportId) {
-      // レポートの更新
-      await ctx.runMutation(api.index.updateReport, {
+      // 既存レポートの更新
+      const updateArgs: any = {
         reportId,
-        expectedUpdatedAt: expectedUpdatedAt!,
         ...cleanReportData,
         status: status ?? 'draft',
-      });
+        expectedUpdatedAt,
+      };
+      if (reportData.projectId) {
+        updateArgs.projectId = reportData.projectId;
+      }
+      await ctx.runMutation(api.index.updateReport, updateArgs);
       currentReportId = reportId;
     } else {
       // レポートの新規作成
-      currentReportId = await ctx.runMutation(api.index.createReport, cleanReportData);
+      const createArgs: any = { ...cleanReportData };
+      if (reportData.projectId) {
+        createArgs.projectId = reportData.projectId;
+      }
+      currentReportId = await ctx.runMutation(api.index.createReport, createArgs);
+
+      // 新規作成後に 'submitted' にする場合
       if (status === 'submitted') {
         const newReport = await ctx.runQuery(api.index.getReportDetail, {
           reportId: currentReportId,
         });
         if (newReport) {
-          await ctx.runMutation(api.index.updateReport, {
-            reportId: currentReportId,
+          const updateArgs: any = {
+            reportId: newReport._id,
             expectedUpdatedAt: newReport.updated_at,
             status: 'submitted',
-          });
+          };
+          if (reportData.projectId) {
+            updateArgs.projectId = reportData.projectId;
+          }
+          await ctx.runMutation(api.index.updateReport, updateArgs);
         }
       }
     }

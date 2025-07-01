@@ -235,6 +235,11 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
   const statusInfo = getStatusBadge(report.status);
   const completedWorkItems = workItems?.filter((t) => (t as any).completed).length ?? 0;
   const isOwner = currentUser?._id === report.author?._id;
+  const canTakeAction =
+    !isOwner &&
+    report.approvals.some(
+      (approval) => approval.manager?._id === currentUser?._id && approval.status === 'pending'
+    );
 
   return (
     <div className='space-y-6'>
@@ -361,7 +366,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
             <CardTitle>{REPORTS_CONSTANTS.APPROVAL_HISTORY_CARD_TITLE}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='space-y-3'>
+            <div className='space-y-4'>
               {report.approvals.map((approval: any) => (
                 <div key={approval._id} className='flex items-center gap-3'>
                   <Avatar className='h-8 w-8'>
@@ -369,12 +374,25 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                     <AvatarFallback>{approval.manager?.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className='text-sm font-medium'>
-                      {REPORTS_CONSTANTS.APPROVAL_ACTION_TEXT(approval.manager?.name)}
+                    <p className='text-sm font-medium flex items-center gap-2'>
+                      {approval.manager?.name ?? '不明なユーザー'}
+                      {approval.status === 'approved' && (
+                        <span className='text-green-600 font-bold'>が承認しました</span>
+                      )}
+                      {approval.status === 'pending' && (
+                        <span className='text-gray-500 font-normal'>(承認待ち)</span>
+                      )}
+                      {approval.status === 'rejected' && (
+                        <span className='text-red-600 font-bold'>が却下しました</span>
+                      )}
                     </p>
-                    <p className='text-xs text-gray-500'>
-                      {format(new Date(approval.approved_at), 'yyyy/MM/dd HH:mm')}
-                    </p>
+                    {approval.status === 'approved' && approval.approved_at ? (
+                      <p className='text-xs text-gray-500'>
+                        {format(new Date(approval.approved_at), 'yyyy/MM/dd HH:mm')}
+                      </p>
+                    ) : (
+                      <p className='text-xs text-gray-400'>-</p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -457,7 +475,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
         </CardHeader>
         <CardContent>
           <div className='flex gap-3'>
-            {report.status === 'submitted' && (
+            {report.status === 'submitted' && canTakeAction && (
               <>
                 <Button variant='outline' onClick={handleApprove} disabled={isSubmittingAction}>
                   <Check className='h-4 w-4 mr-2' />
@@ -470,7 +488,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                       {REPORTS_CONSTANTS.ACTION_REJECT_BUTTON}
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className='bg-[var(--background)]'>
                     <AlertDialogHeader>
                       <AlertDialogTitle>{REPORTS_CONSTANTS.REJECT_DIALOG.TITLE}</AlertDialogTitle>
                       <AlertDialogDescription>
@@ -502,7 +520,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                 </AlertDialog>
               </>
             )}
-            {(report.status === 'draft' || report.status === 'rejected') && (
+            {(report.status === 'draft' || report.status === 'rejected') && isOwner && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant='outline' disabled={isSubmittingAction}>

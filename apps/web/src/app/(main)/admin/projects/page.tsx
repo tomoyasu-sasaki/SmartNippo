@@ -115,7 +115,7 @@ export default function ProjectsAdminPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          <Button onClick={handleCreate} disabled={isCreating}>
+          <Button onClick={handleCreate} disabled={isCreating} variant='outline'>
             作成
           </Button>
         </CardContent>

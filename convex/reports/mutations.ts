@@ -1,4 +1,5 @@
 import { v } from 'convex/values';
+import { internal } from '../_generated/api';
 import { mutation } from '../_generated/server';
 import {
   logAuditEvent,
@@ -17,18 +18,6 @@ import {
  *
  * @since 1.0.0
  */
-
-// ============================
-// Validators
-// ============================
-const taskInput = v.object({
-  _id: v.optional(v.id('tasks')),
-  projectId: v.id('projects'),
-  workCategoryId: v.id('workCategories'),
-  description: v.string(),
-  workDuration: v.number(),
-  _isDeleted: v.optional(v.boolean()),
-});
 
 // ============================
 // Mutations
@@ -57,6 +46,7 @@ const taskInput = v.object({
 export const createReport = mutation({
   args: {
     reportDate: v.string(), // YYYY-MM-DD形式
+    projectId: v.optional(v.id('projects')),
     title: v.string(),
     content: v.string(),
     workingHours: v.optional(
@@ -132,6 +122,7 @@ export const createReport = mutation({
     const reportInsert: any = {
       authorId: user._id,
       reportDate: args.reportDate,
+      projectId: args.projectId,
       title: args.title.trim(),
       content: args.content.trim(),
       status: 'draft',
@@ -196,6 +187,7 @@ export const updateReport = mutation({
   args: {
     reportId: v.id('reports'),
     expectedUpdatedAt: v.number(), // 楽観的ロックのための現在のupdated_at値
+    projectId: v.optional(v.id('projects')),
     reportDate: v.optional(v.string()),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
@@ -320,6 +312,9 @@ export const updateReport = mutation({
     if (updates.metadata !== undefined) {
       changedFields.push('metadata');
     }
+    if (updates.projectId !== undefined) {
+      changedFields.push('projectId');
+    }
 
     if (changedFields.length > 0) {
       editHistory.push({
@@ -336,6 +331,9 @@ export const updateReport = mutation({
       editHistory,
     };
 
+    if (updates.projectId !== undefined) {
+      updatedFields.projectId = updates.projectId;
+    }
     if (updates.reportDate !== undefined) {
       updatedFields.reportDate = updates.reportDate;
     }
@@ -352,6 +350,34 @@ export const updateReport = mutation({
       updatedFields.status = updates.status;
       if (updates.status === 'submitted') {
         updatedFields.submittedAt = Date.now();
+
+        // 承認依頼の作成
+        if (report.projectId) {
+          const approvers = await ctx.runQuery(internal.approvalFlows.queries.findApprovers, {
+            projectId: report.projectId,
+            applicantId: report.authorId,
+          });
+
+          // 既存の承認依頼をクリア
+          const existingApprovals = await ctx.db
+            .query('approvals')
+            .withIndex('by_report', (q) => q.eq('reportId', report._id))
+            .collect();
+          await Promise.all(existingApprovals.map((a) => ctx.db.delete(a._id)));
+
+          // 新しい承認依頼を作成
+          if (approvers.length > 0) {
+            await Promise.all(
+              approvers.map((approver) =>
+                ctx.db.insert('approvals', {
+                  reportId: report._id,
+                  managerId: approver._id,
+                  status: 'pending',
+                })
+              )
+            );
+          }
+        }
       } else if (updates.status === 'approved') {
         updatedFields.approvedAt = Date.now();
       } else if (updates.status === 'rejected') {
@@ -579,12 +605,27 @@ export const approveReport = mutation({
       updated_at: Date.now(),
     });
 
-    // 承認記録を作成
-    await ctx.db.insert('approvals', {
-      reportId: args.reportId,
-      managerId: user._id,
-      approved_at: Date.now(),
-    });
+    // 承認記録を更新または作成
+    const now = Date.now();
+    const existingApproval = await ctx.db
+      .query('approvals')
+      .withIndex('by_report_status', (q) => q.eq('reportId', args.reportId).eq('status', 'pending'))
+      .filter((q) => q.eq(q.field('managerId'), user._id))
+      .first();
+
+    if (existingApproval) {
+      await ctx.db.patch(existingApproval._id, {
+        status: 'approved',
+        approved_at: now,
+      });
+    } else {
+      await ctx.db.insert('approvals', {
+        reportId: args.reportId,
+        managerId: user._id,
+        status: 'approved',
+        approved_at: now,
+      });
+    }
 
     // 承認コメントがある場合は追加
     if (args.comment?.trim()) {
@@ -675,6 +716,20 @@ export const rejectReport = mutation({
       rejectionReason: args.reason.trim(),
       updated_at: Date.now(),
     });
+
+    // 関連する承認依頼のステータスを更新
+    const pendingApprovals = await ctx.db
+      .query('approvals')
+      .withIndex('by_report_status', (q) => q.eq('reportId', args.reportId).eq('status', 'pending'))
+      .collect();
+
+    await Promise.all(
+      pendingApprovals.map((approval) =>
+        ctx.db.patch(approval._id, {
+          status: 'rejected',
+        })
+      )
+    );
 
     // 却下理由をコメントとして追加
     await ctx.db.insert('comments', {

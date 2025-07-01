@@ -49,6 +49,53 @@ export const current = query({
 });
 
 /**
+ * 組織内の全ユーザーを取得する
+ * @returns {Promise<Array<Doc<'userProfiles'>>>}
+ */
+export const listByOrg = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user || !user.orgId) {
+      return [];
+    }
+
+    const users = await ctx.db
+      .query('userProfiles')
+      .withIndex('by_org', (q) => q.eq('orgId', user.orgId!))
+      .collect();
+
+    return users;
+  },
+});
+
+/**
+ * 組織内の承認者（manager/admin）を取得する
+ * @returns {Promise<Array<Doc<'userProfiles'>>>}
+ */
+export const listApproversByOrg = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user || !user.orgId) {
+      return [];
+    }
+
+    const managers = await ctx.db
+      .query('userProfiles')
+      .withIndex('by_org_role', (q) => q.eq('orgId', user.orgId!).eq('role', 'manager'))
+      .collect();
+
+    const admins = await ctx.db
+      .query('userProfiles')
+      .withIndex('by_org_role', (q) => q.eq('orgId', user.orgId!).eq('role', 'admin'))
+      .collect();
+
+    return [...managers, ...admins];
+  },
+});
+
+/**
  * ユーザープロファイル変更履歴取得
  *
  * @description 指定したユーザーのプロファイル変更履歴を監査ログから取得します。

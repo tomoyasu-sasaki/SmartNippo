@@ -24,7 +24,7 @@ export function ThemeToggle() {
           <span className='sr-only'>{LAYOUT_CONSTANTS.TOGGLE_THEME_SR}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='end'>
+      <DropdownMenuContent align='end' className='bg-[var(--background)]'>
         <DropdownMenuItem onClick={() => setTheme('light')}>
           {LAYOUT_CONSTANTS.THEME.LIGHT}
         </DropdownMenuItem>
