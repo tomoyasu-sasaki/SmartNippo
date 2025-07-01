@@ -1,4 +1,4 @@
-import { REPORTS_CONSTANTS, REPORT_METADATA_SECTIONS } from '@smartnippo/lib';
+import { REPORT_DIFFICULTY_LABELS, REPORT_METADATA_SECTIONS } from '@smartnippo/lib';
 import type { ReportFormData } from '@smartnippo/types';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -9,7 +9,7 @@ interface MetadataStepProps {
   onUpdateFormData: (updates: Partial<ReportFormData>) => void;
 }
 
-const difficultyLabels = REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN;
+const difficultyLabels = REPORT_DIFFICULTY_LABELS;
 
 export const MetadataStep: React.FC<MetadataStepProps> = ({ formData, onUpdateFormData }) => {
   // metadataが未定義の場合のデフォルト値

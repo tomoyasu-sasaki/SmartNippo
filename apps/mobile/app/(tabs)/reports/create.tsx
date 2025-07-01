@@ -129,9 +129,19 @@ export default function CreateReportScreen() {
 
   // フォーム送信（楽観的更新対応）
   const handleSubmit = async () => {
-    if (!validateStep(currentStep)) {
-      return;
+    // 全ステップのバリデーションを実行
+    for (let i = 0; i < STEPS.length; i++) {
+      if (!validateStep(i)) {
+        setCurrentStep(i);
+        Toast.show({
+          type: 'error',
+          text1: '入力内容に不備があります',
+          text2: `${STEPS[i]}の項目を確認してください。`,
+        });
+        return;
+      }
     }
+
     if (isConnected === false) {
       Alert.alert('オフラインです', 'オンラインのときに再試行してください。');
       return;
@@ -141,13 +151,14 @@ export default function CreateReportScreen() {
     Toast.show({ type: 'info', text1: '日報を作成中...' });
 
     try {
-      const workItemsForBackend = formData.workItems.map(
-        ({ _id: __id, isNew: _isNew, ...rest }) => ({
+      const workItemsForBackend = formData.workItems
+        .filter((item) => item.projectId && item.workCategoryId)
+        .map(({ _id: __id, isNew: _isNew, ...rest }) => ({
           ...rest,
+          // バリデーションにより、projectIdとworkCategoryIdがnullでないことが保証される
           projectId: rest.projectId as Id<'projects'>,
           workCategoryId: rest.workCategoryId as Id<'workCategories'>,
-        })
-      );
+        }));
 
       await saveReport({
         reportData: {

@@ -25,7 +25,7 @@ export function Header() {
   const userProfile = useQuery(api.index.current);
 
   return (
-    <header className='sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-[var(--popover)] px-4 md:px-6'>
+    <header className='sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-[var(--background)] px-4 md:px-6'>
       <div className='flex items-center gap-6'>
         <Link
           href='/dashboard'
@@ -34,7 +34,7 @@ export function Header() {
           <Package2 className='h-6 w-6' />
           <span className='hidden sm:inline-block'>{LAYOUT_CONSTANTS.APP_NAME}</span>
         </Link>
-        <NavigationMenu className='hidden md:flex'>
+        <NavigationMenu className='hidden md:flex items-center'>
           <NavigationMenuList>
             <NavigationMenuItem>
               <NavigationMenuLink asChild>
