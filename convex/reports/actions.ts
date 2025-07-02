@@ -90,29 +90,11 @@ export const saveReportWithWorkItems = action({
       currentReportId = reportId;
     } else {
       // レポートの新規作成
-      const createArgs: any = { ...cleanReportData };
+      const createArgs: any = { ...cleanReportData, status: status ?? 'draft' };
       if (reportData.projectId) {
         createArgs.projectId = reportData.projectId;
       }
       currentReportId = await ctx.runMutation(api.index.createReport, createArgs);
-
-      // 新規作成後に 'submitted' にする場合
-      if (status === 'submitted') {
-        const newReport = await ctx.runQuery(api.index.getReportDetail, {
-          reportId: currentReportId,
-        });
-        if (newReport) {
-          const updateArgs: any = {
-            reportId: newReport._id,
-            expectedUpdatedAt: newReport.updated_at,
-            status: 'submitted',
-          };
-          if (reportData.projectId) {
-            updateArgs.projectId = reportData.projectId;
-          }
-          await ctx.runMutation(api.index.updateReport, updateArgs);
-        }
-      }
     }
 
     // 作業項目の処理

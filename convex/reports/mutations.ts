@@ -82,6 +82,7 @@ export const createReport = mutation({
         nextActionItems: v.optional(v.array(v.string())),
       })
     ),
+    status: v.optional(v.union(v.literal('draft'), v.literal('submitted'))),
   },
   handler: async (ctx, args) => {
     // 認証チェック
@@ -125,7 +126,7 @@ export const createReport = mutation({
       projectId: args.projectId,
       title: args.title.trim(),
       content: args.content.trim(),
-      status: 'draft',
+      status: args.status ?? 'draft',
       attachments: args.attachments ?? [],
       metadata: {
         ...args.metadata,
