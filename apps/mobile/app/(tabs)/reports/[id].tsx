@@ -9,6 +9,7 @@ import {
   CheckCircle,
   Clock,
   Edit,
+  Hourglass,
   MessageSquare,
   Send,
   Share2,
@@ -102,11 +103,14 @@ export default function ReportDetailScreen() {
               });
               Alert.alert('成功', REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.APPROVE_SUCCESS);
             } catch (error) {
+              const errorMessage = (error as Error).message;
+              const isPermissionError =
+                errorMessage.includes('permission') || errorMessage.includes('権限');
               Alert.alert(
                 'エラー',
-                REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.APPROVE_ERROR(
-                  (error as Error).message
-                )
+                isPermissionError
+                  ? REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.PERMISSION_ERROR
+                  : REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.APPROVE_ERROR(errorMessage)
               );
             } finally {
               setIsSubmittingAction(false);
@@ -142,9 +146,14 @@ export default function ReportDetailScreen() {
               });
               Alert.alert('成功', REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.REJECT_SUCCESS);
             } catch (error) {
+              const errorMessage = (error as Error).message;
+              const isPermissionError =
+                errorMessage.includes('permission') || errorMessage.includes('権限');
               Alert.alert(
                 'エラー',
-                REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.REJECT_ERROR((error as Error).message)
+                isPermissionError
+                  ? REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.PERMISSION_ERROR
+                  : REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.REJECT_ERROR(errorMessage)
               );
             } finally {
               setIsSubmittingAction(false);
@@ -225,9 +234,8 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
 
   // 自分のレポートかどうか判定（Web版と同様の方法）
   const isOwner = currentUser?._id === report.author?._id;
-  const canEdit = isOwner && report.status === 'draft';
-  const canModerate =
-    !isOwner && (currentUser?.role === 'manager' || currentUser?.role === 'admin');
+  const canEdit = isOwner && (report.status === 'draft' || report.status === 'rejected');
+  const canTakeAction = currentUser?.role === 'manager' || currentUser?.role === 'admin';
 
   return (
     <SafeAreaView className='flex-1 bg-gray-50'>
@@ -389,41 +397,68 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
               <Text className='mb-3 text-lg font-semibold text-gray-900'>
                 {REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.SECTIONS.APPROVAL_HISTORY}
               </Text>
-              {report.approvals.map((approval) => (
-                <View key={approval._id} className='mb-2 flex-row items-center'>
-                  <CheckCircle size={16} color='#16A34A' />
-                  <Text className='ml-2 text-sm text-gray-700'>
-                    {REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.APPROVAL_HISTORY.APPROVED_BY(
-                      approval.manager.name
-                    )}
-                    <Text className='text-gray-500'>
-                      {' '}
-                      (
-                      {new Date(approval.approved_at).toLocaleDateString('ja-JP', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                      )
+              {report.approvals.map((approval) => {
+                // approvalオブジェクトがstatusプロパティを持っていることを確認
+                const status =
+                  'status' in approval && approval.status ? approval.status : 'approved';
+                return (
+                  <View key={approval._id} className='mb-2 flex-row items-center'>
+                    {status === 'approved' && <CheckCircle size={16} color='#16A34A' />}
+                    {status === 'rejected' && <AlertCircle size={16} color='#D97706' />}
+                    {status === 'pending' && <Hourglass size={16} color='#6B7280' />}
+                    <Text className='ml-2 text-sm text-gray-700'>
+                      {status === 'approved' && (
+                        <>
+                          {REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.APPROVAL_HISTORY.APPROVED_BY(
+                            approval.manager.name
+                          )}
+                          {approval.approved_at && (
+                            <Text className='text-gray-500'>
+                              {' '}
+                              (
+                              {new Date(approval.approved_at).toLocaleDateString('ja-JP', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                              )
+                            </Text>
+                          )}
+                        </>
+                      )}
+                      {status === 'rejected' && (
+                        <Text className='text-yellow-700 font-medium'>
+                          {REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.APPROVAL_HISTORY.REJECTED_BY(
+                            approval.manager.name
+                          )}
+                        </Text>
+                      )}
+                      {status === 'pending' && (
+                        <Text className='text-gray-500'>
+                          {REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.APPROVAL_HISTORY.PENDING(
+                            approval.manager.name
+                          )}
+                        </Text>
+                      )}
                     </Text>
-                  </Text>
-                </View>
-              ))}
+                  </View>
+                );
+              })}
             </View>
           )}
 
-          {/* 却下理由 */}
+          {/* 差戻し理由 */}
           {report.status === 'rejected' && report.rejectionReason && (
-            <View className='mt-2 bg-red-50 p-4'>
+            <View className='mt-2 bg-yellow-50 p-4'>
               <View className='flex-row items-start'>
-                <AlertCircle size={20} color='#DC2626' />
+                <AlertCircle size={20} color='#D97706' />
                 <View className='ml-2 flex-1'>
-                  <Text className='mb-1 font-medium text-red-900'>
+                  <Text className='mb-1 font-medium text-yellow-900'>
                     {REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.REJECTION.TITLE}
                   </Text>
-                  <Text className='text-sm text-red-700'>{report.rejectionReason}</Text>
+                  <Text className='text-sm text-yellow-700'>{report.rejectionReason}</Text>
                   {report.rejectedAt && (
-                    <Text className='mt-1 text-xs text-red-600'>
+                    <Text className='mt-1 text-xs text-yellow-600'>
                       {new Date(report.rejectedAt).toLocaleDateString('ja-JP', {
                         year: 'numeric',
                         month: 'short',
@@ -501,7 +536,7 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
             </View>
           )}
 
-          {report.status === 'submitted' && canModerate && (
+          {report.status === 'submitted' && canTakeAction && (
             <View className='mt-2 flex-row justify-around'>
               <Pressable
                 onPress={handleApprove}
@@ -516,7 +551,7 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
               <Pressable
                 onPress={handleReject}
                 disabled={isSubmittingAction}
-                className='flex-1 rounded-lg bg-red-500 py-3 active:bg-red-600'
+                className='flex-1 rounded-lg bg-yellow-500 py-3 active:bg-yellow-600'
               >
                 <Text className='text-center font-semibold text-white'>
                   {REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ACTIONS.REJECT}

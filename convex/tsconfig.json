@@ -5,6 +5,10 @@
    */
   "compilerOptions": {
     /* These settings are not required by Convex and can be modified. */
+    "baseUrl": "..",
+    "paths": {
+      "@smartnippo/lib": ["packages/lib/src"]
+    },
     "allowJs": true,
     "strict": true,
     "moduleResolution": "Bundler",

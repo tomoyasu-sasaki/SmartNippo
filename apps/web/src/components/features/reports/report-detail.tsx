@@ -235,11 +235,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
   const statusInfo = getStatusBadge(report.status);
   const completedWorkItems = workItems?.filter((t) => (t as any).completed).length ?? 0;
   const isOwner = currentUser?._id === report.author?._id;
-  const canTakeAction =
-    !isOwner &&
-    report.approvals.some(
-      (approval) => approval.manager?._id === currentUser?._id && approval.status === 'pending'
-    );
+  const canTakeAction = currentUser?.role === 'manager' || currentUser?.role === 'admin';
 
   return (
     <div className='space-y-6'>
@@ -261,24 +257,24 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
         </div>
         <div className='flex items-center gap-3'>
           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-          {isOwner && report.status === 'draft' && (
-            <>
-              <Link href={`/reports/${reportId}/edit`}>
-                <Button variant='outline' size='sm'>
-                  <Edit className='h-4 w-4 mr-2' />
-                  {REPORTS_CONSTANTS.EDIT_BUTTON}
-                </Button>
-              </Link>
-              <Button
-                size='sm'
-                onClick={handleSubmit}
-                disabled={isSubmittingAction}
-                variant='outline'
-              >
-                <Send className='h-4 w-4 mr-2' />
-                {REPORTS_CONSTANTS.SUBMIT_BUTTON}
+          {isOwner && (report.status === 'draft' || report.status === 'rejected') && (
+            <Link href={`/reports/${reportId}/edit`}>
+              <Button variant='outline' size='sm'>
+                <Edit className='h-4 w-4 mr-2' />
+                {REPORTS_CONSTANTS.EDIT_BUTTON}
               </Button>
-            </>
+            </Link>
+          )}
+          {isOwner && report.status === 'draft' && (
+            <Button
+              size='sm'
+              onClick={handleSubmit}
+              disabled={isSubmittingAction}
+              variant='outline'
+            >
+              <Send className='h-4 w-4 mr-2' />
+              {REPORTS_CONSTANTS.SUBMIT_BUTTON}
+            </Button>
           )}
         </div>
       </div>
@@ -317,7 +313,14 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
       {workItems && workItems.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>作業内容</CardTitle>
+            <div className='flex items-center justify-between'>
+              <CardTitle>作業内容</CardTitle>
+              {report.totalWorkDuration > 0 && (
+                <div className='text-right text-lg font-bold text-gray-700'>
+                  {`合計 ${formatDuration(report.totalWorkDuration)}`}
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className='space-y-6 pt-4'>
             {workItems.map((workItem) => (
@@ -383,7 +386,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                         <span className='text-gray-500 font-normal'>(承認待ち)</span>
                       )}
                       {approval.status === 'rejected' && (
-                        <span className='text-red-600 font-bold'>が却下しました</span>
+                        <span className='text-yellow-600 font-bold'>が差し戻しました</span>
                       )}
                     </p>
                     {approval.status === 'approved' && approval.approved_at ? (
@@ -498,19 +501,20 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
                     <Textarea
                       placeholder={REPORTS_CONSTANTS.REJECT_DIALOG.PLACEHOLDER}
                       className='min-h-[100px]'
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
                     />
                     <AlertDialogFooter>
-                      <AlertDialogCancel>
+                      <AlertDialogCancel onClick={() => setRejectionReason('')}>
                         {REPORTS_CONSTANTS.REJECT_DIALOG.CANCEL_BUTTON}
                       </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => {
-                          const textarea = document.querySelector(
-                            'textarea'
-                          ) as HTMLTextAreaElement;
-                          if (textarea?.value) {
-                            handleReject(textarea.value);
+                          if (!rejectionReason.trim()) {
+                            toast.error('差戻し理由は必須です');
+                            return;
                           }
+                          handleReject(rejectionReason);
                         }}
                       >
                         {REPORTS_CONSTANTS.REJECT_DIALOG.CONFIRM_BUTTON}

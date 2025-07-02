@@ -132,35 +132,57 @@ export function ApprovalFlowContent() {
         </div>
 
         <div className='rounded-md border'>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>承認者</TableHead>
-                <TableHead>申請者 (指定時)</TableHead>
-                <TableHead>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {approvalFlows?.map((flow) => (
-                <TableRow key={flow._id}>
-                  <TableCell>{flow.approver?.name ?? 'N/A'}</TableCell>
-                  <TableCell>{flow.applicant?.name ?? '全員'}</TableCell>
-                  <TableCell>
-                    <Button variant='ghost' size='icon' onClick={() => handleRemove(flow._id)}>
-                      <Trash2 className='h-4 w-4' />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {selectedProjectId && approvalFlows?.length === 0 && (
+          <div className='hidden md:block'>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={3} className='text-center'>
-                    承認ルールが設定されていません。
-                  </TableCell>
+                  <TableHead>承認者</TableHead>
+                  <TableHead>申請者 (指定時)</TableHead>
+                  <TableHead>操作</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {approvalFlows?.map((flow) => (
+                  <TableRow key={flow._id}>
+                    <TableCell>{flow.approver?.name ?? 'N/A'}</TableCell>
+                    <TableCell>{flow.applicant?.name ?? '全員'}</TableCell>
+                    <TableCell>
+                      <Button variant='ghost' size='icon' onClick={() => handleRemove(flow._id)}>
+                        <Trash2 className='h-4 w-4' />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {selectedProjectId && approvalFlows?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className='text-center'>
+                      承認ルールが設定されていません。
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <div className='md:hidden divide-y'>
+            {approvalFlows?.map((flow) => (
+              <div key={flow._id} className='p-4 flex justify-between items-center'>
+                <div>
+                  <p className='font-semibold'>{flow.approver?.name ?? 'N/A'}</p>
+                  <p className='text-sm text-muted-foreground'>
+                    申請者: {flow.applicant?.name ?? '全員'}
+                  </p>
+                </div>
+                <Button variant='ghost' size='icon' onClick={() => handleRemove(flow._id)}>
+                  <Trash2 className='h-4 w-4' />
+                </Button>
+              </div>
+            ))}
+            {selectedProjectId && approvalFlows?.length === 0 && (
+              <p className='text-center py-4 text-sm text-muted-foreground'>
+                承認ルールが設定されていません。
+              </p>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

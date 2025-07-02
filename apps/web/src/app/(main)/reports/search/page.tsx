@@ -68,7 +68,7 @@ function ReportSearchContent() {
   }, [open, router]);
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog open={open} onOpenChange={setOpen} className='bg-[var(--background)]'>
       <CommandInput
         placeholder={REPORTS_CONSTANTS.SEARCH_PLACEHOLDER_MODAL}
         value={query}

@@ -1,124 +1,65 @@
 'use client';
 
+import { CustomActivityCalendar } from '@/components/ui/activity-calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { ReportsChartProps } from '@/components/ui/reports-chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorBoundaryProvider } from '@/providers/error-boundary-provider';
-import { useAuth } from '@clerk/nextjs';
+import { DASHBOARD_CONSTANTS, REPORTS_CONSTANTS } from '@smartnippo/lib';
 import { api } from 'convex/_generated/api';
-import type { Doc } from 'convex/_generated/dataModel';
-import { useConvexAuth, useQuery } from 'convex/react';
-import { endOfMonth, format, startOfMonth, subDays } from 'date-fns';
+import { useQuery } from 'convex/react';
+import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import {
-  AlertCircle,
   BarChart3,
   Calendar,
   CheckCircle,
-  Clock,
+  Edit,
   FileText,
+  Hourglass,
   TrendingUp,
-  Users,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-
-import { DASHBOARD_CONSTANTS, REPORTS_CONSTANTS } from '@smartnippo/lib';
+import type { ReactElement } from 'react';
 
 const ReportsChart = dynamic(
   () => import('@/components/ui/reports-chart').then((mod) => mod.ReportsChart),
   {
     ssr: false,
-    loading: () => <Skeleton className='h-[200px] w-full' />,
+    loading: () => <Skeleton className='h-[250px] w-full' />,
   }
-);
-
-// No longer need manual type definitions, they will be inferred from `api`
-// interface Report { ... }
-// interface QueryResult { ... }
+) as <T extends object>(props: ReportsChartProps<T>) => ReactElement;
 
 function DashboardContentInner() {
-  const { userId } = useAuth();
-  const { isLoading: isAuthLoading } = useConvexAuth();
-  const router = useRouter();
+  const data = useQuery(api.reports.dashboard.getMyDashboardData, { days: 30 });
 
-  // クライアント側でセッションが無効になった場合、/login へリダイレクト
-  useEffect(() => {
-    if (!isAuthLoading && !userId) {
-      router.replace('/login');
-    }
-  }, [isAuthLoading, userId, router]);
+  if (data === undefined) {
+    // スケルトンは page.tsx 側で Suspense fallback として表示
+    return null;
+  }
 
-  // 今月の日報データを取得
-  const startDate = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-  const endDate = format(endOfMonth(new Date()), 'yyyy-MM-dd');
-
-  const myReports = useQuery(api.index.getMyReports, {
-    startDate,
-    endDate,
-  });
-
-  const allReports = useQuery(api.index.listReports, {
-    startDate,
-    endDate,
-    limit: 100,
-  });
-
-  // 最近の日報を取得（過去7日間）
-  const recentStartDate = format(subDays(new Date(), 7), 'yyyy-MM-dd');
-  const recentReports = useQuery(api.index.listReports, {
-    startDate: recentStartDate,
-    endDate: format(new Date(), 'yyyy-MM-dd'),
-    limit: 5,
-    sortBy: 'reportDate',
-    sortOrder: 'desc',
-  });
-
-  const chartData = useQuery(api.index.getDashboardStats);
-
-  // ローディング状態
-  if (
-    isAuthLoading ||
-    myReports === undefined ||
-    allReports === undefined ||
-    recentReports === undefined ||
-    chartData === undefined
-  ) {
+  if (data === null) {
     return (
       <div className='flex items-center justify-center h-full'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto' />
-          <p className='mt-2 text-gray-600'>{DASHBOARD_CONSTANTS.LOADING_MESSAGE}</p>
-        </div>
+        <p className='text-red-500'>ダッシュボードデータの読み込み中にエラーが発生しました。</p>
       </div>
     );
   }
 
-  // null チェック (isAuthLoading 後は null になりうる)
-  if (!myReports || !allReports || !recentReports) {
-    return (
-      <div className='flex items-center justify-center h-full'>
-        <p className='text-red-500'>データの読み込み中にエラーが発生しました。</p>
-      </div>
-    );
-  }
+  const { stats, activityTrend, workingHoursTrend, recentReports, cumulativeWorkingHoursTrend } =
+    data;
 
-  // 統計情報の計算
-  const stats = {
-    total: myReports.reports.length,
-    draft: myReports.reports.filter((r: Doc<'reports'>) => r.status === 'draft').length,
-    submitted: myReports.reports.filter((r: Doc<'reports'>) => r.status === 'submitted').length,
-    approved: myReports.reports.filter((r: Doc<'reports'>) => r.status === 'approved').length,
-    rejected: myReports.reports.filter((r: Doc<'reports'>) => r.status === 'rejected').length,
-  };
+  const calendarData = activityTrend.map((day) => ({
+    date: day.date,
+    count: day.submitted,
+    level: day.submitted > 0 ? 1 : 0,
+  }));
 
-  const teamStats = {
-    total: allReports.reports.length,
-    pendingApproval: allReports.reports.filter((r: Doc<'reports'>) => r.status === 'submitted')
-      .length,
+  const getStatusInfo = (status: (typeof recentReports)[number]['status']) => {
+    return REPORTS_CONSTANTS.STATUS[status] ?? { variant: 'default', label: '不明' };
   };
 
   return (
@@ -128,10 +69,10 @@ function DashboardContentInner() {
         <div>
           <h1 className='text-3xl font-bold'>{DASHBOARD_CONSTANTS.PAGE_TITLE}</h1>
           <p className='text-gray-600 mt-1'>
-            {format(new Date(), 'yyyy年M月d日（E）', { locale: ja })}
+            {format(new Date(), 'yyyy年M月d日 (E)', { locale: ja })}
           </p>
         </div>
-        <Link href='/reports/new'>
+        <Link href='/reports/new' passHref>
           <Button variant='outline'>
             <FileText className='mr-2 h-4 w-4' />
             {DASHBOARD_CONSTANTS.CREATE_REPORT_BUTTON}
@@ -143,63 +84,42 @@ function DashboardContentInner() {
       <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>
-              {DASHBOARD_CONSTANTS.STATS_CARD.THIS_MONTH_REPORTS_TITLE}
-            </CardTitle>
-            <FileText className='h-4 w-4 text-muted-foreground' />
+            <CardTitle className='text-sm font-medium'>今月の日報</CardTitle>
+            <Calendar className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{stats.total}</div>
-            <p className='text-xs text-muted-foreground'>
-              {DASHBOARD_CONSTANTS.STATS_CARD.THIS_MONTH_REPORTS_DESC}
-            </p>
+            <div className='text-2xl font-bold'>{stats.reportsThisMonth}</div>
+            <p className='text-xs text-muted-foreground'>作成済み</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>
-              {DASHBOARD_CONSTANTS.STATS_CARD.APPROVED_TITLE}
-            </CardTitle>
-            <CheckCircle className='h-4 w-4 text-green-600' />
+            <CardTitle className='text-sm font-medium'>承認済み</CardTitle>
+            <CheckCircle className='h-4 w-4 text-green-500' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{stats.approved}</div>
-            <p className='text-xs text-muted-foreground'>
-              {DASHBOARD_CONSTANTS.STATS_CARD.APPROVAL_RATE(
-                stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0
-              )}
-            </p>
+            <div className='text-2xl font-bold'>{stats.approvedThisMonth}</div>
+            <p className='text-xs text-muted-foreground'>今月承認された日報</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>
-              {DASHBOARD_CONSTANTS.STATS_CARD.PENDING_SUBMISSION_TITLE}
-            </CardTitle>
-            <Clock className='h-4 w-4 text-yellow-600' />
+            <CardTitle className='text-sm font-medium'>承認待ち</CardTitle>
+            <Hourglass className='h-4 w-4 text-yellow-500' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{stats.draft}</div>
-            <p className='text-xs text-muted-foreground'>
-              {DASHBOARD_CONSTANTS.STATS_CARD.PENDING_SUBMISSION_DESC}
-            </p>
+            <div className='text-2xl font-bold'>{stats.pendingApproval}</div>
+            <p className='text-xs text-muted-foreground'>承認を待っている日報</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>
-              {DASHBOARD_CONSTANTS.STATS_CARD.PENDING_APPROVAL_TITLE}
-            </CardTitle>
-            <AlertCircle className='h-4 w-4 text-blue-600' />
+            <CardTitle className='text-sm font-medium'>下書き</CardTitle>
+            <Edit className='h-4 w-4 text-gray-500' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{teamStats.pendingApproval}</div>
-            <p className='text-xs text-muted-foreground'>
-              {DASHBOARD_CONSTANTS.STATS_CARD.PENDING_APPROVAL_DESC}
-            </p>
+            <div className='text-2xl font-bold'>{stats.drafts}</div>
+            <p className='text-xs text-muted-foreground'>保存されている下書き</p>
           </CardContent>
         </Card>
       </div>
@@ -207,153 +127,108 @@ function DashboardContentInner() {
       {/* 最近の日報 */}
       <Card>
         <CardHeader>
-          <CardTitle>{DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.TITLE}</CardTitle>
-          <CardDescription>{DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.DESCRIPTION}</CardDescription>
+          <CardTitle>最近の日報</CardTitle>
+          <CardDescription>過去7日間に作成または更新されたあなたの日報</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className='space-y-4'>
-            {recentReports.reports.length === 0 ? (
-              <p className='text-center text-gray-500 py-8'>
-                {DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.NO_REPORTS}
-              </p>
+          <div className='space-y-3'>
+            {recentReports.length === 0 ? (
+              <p className='text-center text-gray-500 py-6'>最近の日報はありません。</p>
             ) : (
-              recentReports.reports.map((report) => (
-                <div
-                  key={report._id}
-                  className='flex items-center justify-between p-4 border rounded-lg hover:bg-[var(--hover)]'
-                >
-                  <div className='flex-1'>
-                    <div className='flex items-center gap-3'>
-                      <h3 className='font-medium'>
-                        <Link href={`/reports/${report._id}`} className='hover:underline'>
-                          {report.title}
-                        </Link>
-                      </h3>
-                      <Badge
-                        variant={
-                          REPORTS_CONSTANTS.STATUS[
-                            report.status as keyof typeof REPORTS_CONSTANTS.STATUS
-                          ].variant
-                        }
+              recentReports.map((report) => {
+                const statusInfo = getStatusInfo(report.status);
+                return (
+                  <div
+                    key={report._id}
+                    className='flex items-center justify-between p-3 border rounded-md hover:bg-muted/50 transition-colors'
+                  >
+                    <div className='flex-1 truncate'>
+                      <Link
+                        href={`/reports/${report._id}`}
+                        className='font-medium hover:underline truncate block'
                       >
-                        {
-                          REPORTS_CONSTANTS.STATUS[
-                            report.status as keyof typeof REPORTS_CONSTANTS.STATUS
-                          ].label
-                        }
-                      </Badge>
+                        {report.title}
+                      </Link>
+                      <div className='flex items-center gap-3 mt-1 text-sm text-muted-foreground'>
+                        <span className='flex items-center gap-1.5'>
+                          <Calendar className='h-3.5 w-3.5' />
+                          {format(parseISO(report.reportDate), 'M月d日')}
+                        </span>
+                        <Badge variant={statusInfo.variant as any}>{statusInfo.label}</Badge>
+                      </div>
                     </div>
-                    <div className='flex items-center gap-4 mt-1 text-sm text-gray-500'>
-                      <span className='flex items-center gap-1'>
-                        <Calendar className='h-3 w-3' />
-                        {format(new Date(report.reportDate), 'M月d日（E）', { locale: ja })}
-                      </span>
-                      <span>
-                        {DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.AUTHOR_PREFIX}
-                        {report.author?.name ?? REPORTS_CONSTANTS.UNKNOWN_AUTHOR}
-                      </span>
-                    </div>
+                    <Link href={`/reports/${report._id}`} passHref>
+                      <Button variant='ghost' size='sm'>
+                        詳細を見る
+                      </Button>
+                    </Link>
                   </div>
-                  <Link href={`/reports/${report._id}`}>
-                    <Button variant='ghost' size='sm'>
-                      {DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.VIEW_DETAILS_BUTTON}
-                    </Button>
-                  </Link>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
-          {recentReports.reports.length > 0 && (
+          {recentReports.length > 0 && (
             <div className='mt-4 text-center'>
-              <Link href='/reports'>
-                <Button variant='outline'>
-                  {DASHBOARD_CONSTANTS.RECENT_REPORTS_CARD.VIEW_ALL_REPORTS_BUTTON}
-                </Button>
+              <Link href='/reports' passHref>
+                <Button variant='outline'>すべての日報を見る</Button>
               </Link>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* クイックアクション */}
-      <div className='grid gap-4 md:grid-cols-3'>
+      {/* チャートエリア */}
+      <div className='grid gap-6 md:grid-cols-1 lg:grid-cols-3'>
         <Card>
           <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
+            <CardTitle className='flex-row items-center gap-2'>
               <TrendingUp className='h-5 w-5' />
-              {DASHBOARD_CONSTANTS.QUICK_ACTIONS.MONTHLY_ACTIVITY_TITLE}
+              業務時間の推移
             </CardTitle>
+            <CardDescription>過去30日間の日別業務時間</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className='space-y-2'>
-              <div className='flex justify-between'>
-                <span className='text-sm'>
-                  {DASHBOARD_CONSTANTS.QUICK_ACTIONS.SUBMISSION_RATE_LABEL}
-                </span>
-                <span className='font-medium'>
-                  {stats.total > 0
-                    ? Math.round(((stats.submitted + stats.approved) / stats.total) * 100)
-                    : 0}
-                  %
-                </span>
-              </div>
-              <div className='flex justify-between'>
-                <span className='text-sm'>
-                  {DASHBOARD_CONSTANTS.QUICK_ACTIONS.APPROVAL_RATE_LABEL}
-                </span>
-                <span className='font-medium'>
-                  {stats.submitted + stats.approved > 0
-                    ? Math.round((stats.approved / (stats.submitted + stats.approved)) * 100)
-                    : 0}
-                  %
-                </span>
-              </div>
-            </div>
+          <CardContent className='pl-2'>
+            <ReportsChart
+              data={workingHoursTrend}
+              dataKey='hours'
+              xAxisKey='date'
+              chartType='bar'
+              tooltipLabel='労働時間'
+              unit='時間'
+            />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
-              <Users className='h-5 w-5' />
-              {DASHBOARD_CONSTANTS.QUICK_ACTIONS.TEAM_STATUS_TITLE}
+            <CardTitle className='flex-row items-center gap-2'>
+              <TrendingUp className='h-5 w-5' />
+              30日間累積時間
             </CardTitle>
+            <CardDescription>過去30日間の累積業務時間</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className='space-y-2'>
-              <div className='flex justify-between'>
-                <span className='text-sm'>
-                  {DASHBOARD_CONSTANTS.QUICK_ACTIONS.TEAM_TOTAL_REPORTS_LABEL}
-                </span>
-                <span className='font-medium'>{teamStats.total}</span>
-              </div>
-              <div className='flex justify-between'>
-                <span className='text-sm'>
-                  {DASHBOARD_CONSTANTS.QUICK_ACTIONS.TEAM_PENDING_APPROVAL_LABEL}
-                </span>
-                <span className='font-medium'>{teamStats.pendingApproval}</span>
-              </div>
-            </div>
+          <CardContent className='pl-2'>
+            <ReportsChart
+              data={cumulativeWorkingHoursTrend}
+              dataKey='cumulativeHours'
+              xAxisKey='date'
+              chartType='line'
+              tooltipLabel='累積時間'
+              unit='時間'
+            />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
+            <CardTitle className='flex-row items-center gap-2'>
               <BarChart3 className='h-5 w-5' />
-              {DASHBOARD_CONSTANTS.QUICK_ACTIONS.ACTIVITY_TREND_TITLE}
+              日報提出状況
             </CardTitle>
+            <CardDescription>過去30日間の提出記録</CardDescription>
           </CardHeader>
-          <CardContent>
-            {chartData.length > 0 ? (
-              <ErrorBoundaryProvider>
-                <ReportsChart data={chartData} />
-              </ErrorBoundaryProvider>
-            ) : (
-              <p className='text-sm text-gray-600 text-center py-10'>
-                {DASHBOARD_CONSTANTS.QUICK_ACTIONS.CHART_NO_DATA}
-              </p>
-            )}
+          <CardContent className='flex justify-center items-center'>
+            <CustomActivityCalendar data={calendarData} />
           </CardContent>
         </Card>
       </div>

@@ -4,64 +4,85 @@ import {
   BarElement,
   CategoryScale,
   Chart as ChartJS,
+  Filler,
   Legend,
   LinearScale,
+  LineElement,
+  PointElement,
   Title,
   Tooltip,
   type ChartData,
   type ChartOptions,
 } from 'chart.js';
-import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { format, parseISO } from 'date-fns';
 import { useTheme } from 'next-themes';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
-interface ChartDataPoint {
-  date: string;
-  submitted: number;
-  approved: number;
+export interface ReportsChartProps<T extends object> {
+  data: T[];
+  chartType: 'bar' | 'line';
+  dataKey: keyof T;
+  xAxisKey: keyof T;
+  tooltipLabel: string;
+  unit?: string;
+  yAxisTicks?: number[];
+  yAxisTickFormatter?: (value: string | number) => string;
 }
 
-interface ReportsChartProps {
-  data: ChartDataPoint[];
-}
-
-export function ReportsChart({ data }: ReportsChartProps) {
+export function ReportsChart<T extends object>({
+  data,
+  chartType,
+  dataKey,
+  xAxisKey,
+  tooltipLabel,
+  unit = '',
+  yAxisTicks,
+  yAxisTickFormatter,
+}: ReportsChartProps<T>) {
   const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  const textColor = isDark ? '#fff' : '#000';
+  const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+  const primaryColor = 'rgba(59, 130, 246, 1)';
+  const primaryColorBg = 'rgba(59, 130, 246, 0.5)';
 
-  const chartData: ChartData<'bar'> = {
-    labels: data.map((d) => format(new Date(d.date), 'M/d', { locale: ja })),
+  const chartData: ChartData<typeof chartType> = {
+    labels: data.map((d) => format(parseISO(d[xAxisKey] as string), 'M/d')),
     datasets: [
       {
-        label: '提出済み',
-        data: data.map((d) => d.submitted),
-        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-        borderColor: 'rgba(59, 130, 246, 1)',
-        borderWidth: 1,
-        stack: 'Stack 0',
-      },
-      {
-        label: '承認済み',
-        data: data.map((d) => d.approved),
-        backgroundColor: 'rgba(22, 163, 74, 0.5)',
-        borderColor: 'rgba(22, 163, 74, 1)',
-        borderWidth: 1,
-        stack: 'Stack 0',
+        label: tooltipLabel,
+        data: data.map((d) => d[dataKey] as number),
+        backgroundColor: chartType === 'line' ? primaryColorBg : primaryColor,
+        borderColor: primaryColor,
+        borderWidth: chartType === 'line' ? 2 : 1,
+        fill: chartType === 'line' ? 'start' : false,
+        tension: 0.3,
+        pointBackgroundColor: primaryColor,
+        pointBorderColor: '#fff',
+        pointHoverRadius: 6,
+        pointHoverBorderWidth: 2,
       },
     ],
   };
 
-  const options: ChartOptions<'bar'> = {
+  const options: ChartOptions<typeof chartType> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'bottom' as const,
-        labels: {
-          color: resolvedTheme === 'dark' ? '#fff' : '#000',
-        },
+        display: false, // シンプルにするため凡例は非表示
       },
       title: {
         display: false,
@@ -69,35 +90,44 @@ export function ReportsChart({ data }: ReportsChartProps) {
       tooltip: {
         mode: 'index',
         intersect: false,
+        callbacks: {
+          label: (context) => {
+            let label = context.dataset.label ?? '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              label += `${context.parsed.y}${unit}`;
+            }
+            return label;
+          },
+        },
       },
     },
     scales: {
       x: {
-        stacked: true,
-        ticks: {
-          color: resolvedTheme === 'dark' ? '#fff' : '#000',
-        },
-        grid: {
-          color: resolvedTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-        },
+        ticks: { color: textColor },
+        grid: { color: gridColor },
       },
       y: {
-        stacked: true,
         beginAtZero: true,
         ticks: {
-          color: resolvedTheme === 'dark' ? '#fff' : '#000',
-          stepSize: 1,
+          color: textColor,
+          ...(yAxisTicks && { stepSize: yAxisTicks[1] - yAxisTicks[0] }),
+          ...(yAxisTickFormatter && {
+            callback: (tickValue) => yAxisTickFormatter(tickValue),
+          }),
         },
-        grid: {
-          color: resolvedTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-        },
+        grid: { color: gridColor },
       },
     },
   };
 
+  const ChartComponent = chartType === 'line' ? Line : Bar;
+
   return (
-    <div style={{ height: '300px' }}>
-      <Bar options={options} data={chartData} />
+    <div style={{ height: '250px' }}>
+      <ChartComponent options={options} data={chartData as any} />
     </div>
   );
 }

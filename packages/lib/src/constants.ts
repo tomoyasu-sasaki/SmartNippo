@@ -25,7 +25,7 @@ export const REPORT_STATUS_LABELS = {
   [REPORT_STATUS.DRAFT]: '下書き',
   [REPORT_STATUS.SUBMITTED]: '提出済み',
   [REPORT_STATUS.APPROVED]: '承認済み',
-  [REPORT_STATUS.REJECTED]: '却下',
+  [REPORT_STATUS.REJECTED]: '差戻し',
 } as const;
 
 export const REPORT_PRIORITY = {
@@ -497,7 +497,7 @@ export const DASHBOARD_CONSTANTS = {
     THIS_MONTH_REPORTS_DESC: '作成済み',
     APPROVED_TITLE: '承認済み',
     APPROVAL_RATE: (rate: number) => `承認率 ${rate}%`,
-    PENDING_SUBMISSION_TITLE: '提出待ち',
+    PENDING_SUBMISSION_TITLE: '承認待ち',
     PENDING_SUBMISSION_DESC: '下書き',
     PENDING_APPROVAL_TITLE: '承認待ち',
     PENDING_APPROVAL_DESC: 'チーム全体',
@@ -701,16 +701,16 @@ export const REPORTS_CONSTANTS = {
 
   ACTIONS_CARD_TITLE: 'アクション',
   ACTION_APPROVE_BUTTON: '承認',
-  ACTION_REJECT_BUTTON: '却下',
+  ACTION_REJECT_BUTTON: '差戻し',
   ACTION_DELETE_BUTTON: '削除',
 
   // Dialogs
   REJECT_DIALOG: {
-    TITLE: '日報を却下しますか？',
-    DESCRIPTION: '却下理由を入力してください',
-    PLACEHOLDER: '却下理由...',
+    TITLE: '日報を差し戻しますか？',
+    DESCRIPTION: '差戻し理由を入力してください',
+    PLACEHOLDER: '差戻し理由...',
     CANCEL_BUTTON: 'キャンセル',
-    CONFIRM_BUTTON: '却下する',
+    CONFIRM_BUTTON: '差し戻す',
   },
   DELETE_DIALOG: {
     TITLE: '日報を削除しますか？',
@@ -729,10 +729,10 @@ export const REPORTS_CONSTANTS = {
   APPROVE_SUCCESS_DESC: '作成者に通知されました。',
   APPROVE_ERROR: '日報の承認に失敗しました',
 
-  REJECT_SUBMITTING: '日報を却下しています...',
-  REJECT_SUCCESS: '日報を却下しました',
+  REJECT_SUBMITTING: '日報を差し戻しています...',
+  REJECT_SUCCESS: '日報を差し戻しました',
   REJECT_SUCCESS_DESC: '作成者に理由が通知されました。',
-  REJECT_ERROR: '日報の却下に失敗しました',
+  REJECT_ERROR: '日報の差戻しに失敗しました',
 
   DELETE_SUBMITTING: '日報を削除しています...',
   DELETE_SUCCESS: '削除しました',
@@ -863,12 +863,14 @@ export const REPORTS_CONSTANTS = {
     },
     FORM_LABELS: {
       DATE: '日付',
+      PROJECT_MAIN: 'メインプロジェクト',
       TITLE: 'タイトル',
       CONTENT: '内容',
       REQUIRED_MARKER: ' *',
       WORK_ITEM_NAME: '作業項目名',
     },
     PLACEHOLDERS: {
+      PROJECT_MAIN: 'プロジェクトを選択してください',
       TITLE: '今日の作業内容を簡潔に',
       CONTENT: '今日の作業内容を詳しく記入してください',
       TASK_NAME: 'タスク名',
@@ -935,7 +937,7 @@ export const REPORTS_CONSTANTS = {
       COMPLETED_WORK_ITEMS: (completed: number, total: number) => `${completed}/${total} 完了`,
     },
     REJECTION: {
-      TITLE: '却下理由',
+      TITLE: '差戻し理由',
     },
     COMMENTS: {
       SYSTEM_AUTHOR: 'システム',
@@ -946,28 +948,31 @@ export const REPORTS_CONSTANTS = {
     ACTIONS: {
       SUBMIT: '送信',
       APPROVE: '承認',
-      REJECT: '却下',
+      REJECT: '差戻し',
       PROCESSING: '処理中...',
     },
     ALERTS: {
-      APPROVE_TITLE: '確認',
+      COMMENT_ERROR: 'コメントの追加に失敗しました',
+      APPROVE_TITLE: '承認確認',
       APPROVE_MESSAGE: 'この日報を承認しますか？',
       APPROVE_SUCCESS: '日報を承認しました',
-      APPROVE_ERROR: (error: string) => `承認に失敗しました: ${error}`,
-      REJECT_TITLE: '確認',
-      REJECT_MESSAGE: 'この日報を却下しますか？理由を入力してください。',
-      REJECT_REASON_ERROR: '却下理由を入力してください',
-      REJECT_SUCCESS: '日報を却下しました',
-      REJECT_ERROR: (error: string) => `却下に失敗しました: ${error}`,
-      SUBMIT_TITLE: '確認',
+      APPROVE_ERROR: (message: string) => `承認に失敗しました: ${message}`,
+      PERMISSION_ERROR: '権限がありません',
+      REJECT_TITLE: '差戻し確認',
+      REJECT_MESSAGE: '差戻し理由を入力してください',
+      REJECT_SUCCESS: '日報を差し戻しました',
+      REJECT_ERROR: (message: string) => `差戻しに失敗しました: ${message}`,
+      REJECT_REASON_ERROR: '差戻し理由を入力してください',
+      SUBMIT_TITLE: '提出確認',
       SUBMIT_MESSAGE: 'この日報を提出しますか？',
       SUBMIT_SUCCESS: '日報を提出しました',
-      SUBMIT_ERROR: (error: string) => `提出に失敗しました: ${error}`,
-      COMMENT_ERROR: 'コメントの送信に失敗しました',
+      SUBMIT_ERROR: (message: string) => `提出に失敗しました: ${message}`,
       CANCEL: 'キャンセル',
     },
     APPROVAL_HISTORY: {
       APPROVED_BY: (name: string) => `${name}が承認`,
+      REJECTED_BY: (name: string) => `${name}が差し戻しました`,
+      PENDING: (name: string) => `${name} (承認待ち)`,
     },
   },
 } as const;

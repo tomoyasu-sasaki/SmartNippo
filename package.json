@@ -58,7 +58,7 @@
     "dev": "pnpm --filter=!@smartnippo/docs dev",
     "dev:convex": "npx convex dev",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "lint": "pnpm --filter=!@smartnippo/docs lint",
+    "lint": "pnpm eslint \"**/*.{ts,tsx}\" --fix",
     "lint:packages": "pnpm syncpack list-mismatches",
     "prepare": "husky install",
     "release": "turbo run build lint test && changeset publish",
