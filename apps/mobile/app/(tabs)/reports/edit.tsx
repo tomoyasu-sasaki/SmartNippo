@@ -3,7 +3,7 @@ import { REPORTS_CONSTANTS } from '@smartnippo/lib';
 import type { ReportFormData } from '@smartnippo/types';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
-import { useAction, useQuery } from 'convex/react';
+import { useAction, useConvex, useQuery } from 'convex/react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, ChevronRight, Wifi, WifiOff } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -42,14 +42,14 @@ export default function EditReportScreen() {
   // 競合解決用の状態
   const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<ReportFormData | null>(null);
+  const [conflictingReport, setConflictingReport] = useState<typeof report | null>(null);
 
   const reportId = id as Id<'reports'>;
   const report = useQuery(api.index.getReportDetail, { reportId });
   const workItems = useQuery(api.index.listWorkItemsForReport, { reportId });
   const projects = useQuery(api.index.listProjects);
   const saveReport = useAction(api.index.saveReportWithWorkItems);
-  // 最新のレポートデータを取得（競合解決用）
-  const latestReport = useQuery(api.index.getReportDetail, { reportId });
+  const convex = useConvex();
 
   // ネットワーク状態の監視
   useEffect(() => {
@@ -204,6 +204,8 @@ export default function EditReportScreen() {
       if (error instanceof Error) {
         if (error.message.includes('conflict') || error.message.includes('concurrency')) {
           // データ競合が発生した場合
+          const latest = await convex.query(api.index.getReportDetail, { reportId });
+          setConflictingReport(latest);
           setPendingValues(formData);
           setConflictDialogOpen(true);
           return; // トーストは表示しない
@@ -223,7 +225,7 @@ export default function EditReportScreen() {
 
   // 競合解決の処理
   const handleConflictResolution = async (forceUpdate: boolean) => {
-    if (!pendingValues || !latestReport) {
+    if (!pendingValues || !conflictingReport) {
       return;
     }
 
@@ -272,7 +274,7 @@ export default function EditReportScreen() {
 
         await saveReport({
           reportId,
-          expectedUpdatedAt: latestReport.updated_at,
+          expectedUpdatedAt: conflictingReport.updated_at,
           reportData: {
             reportDate: pendingValues.reportDate,
             projectId: pendingValues.projectId as Id<'projects'>,
@@ -303,10 +305,11 @@ export default function EditReportScreen() {
       }
     } else {
       // 編集を破棄してリロード
-      router.replace(`/reports/${reportId}/edit`);
+      router.replace(`/(tabs)/reports/edit?id=${reportId}`);
     }
 
     setPendingValues(null);
+    setConflictingReport(null);
   };
 
   // フォームデータ更新
