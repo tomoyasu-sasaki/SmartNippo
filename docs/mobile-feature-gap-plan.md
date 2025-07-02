@@ -160,39 +160,39 @@ constraints:
 
 ### Section 9 – 競合解決ダイアログ実装
 
-- [ ] `saveReport` エラー `conflict` 捕捉後、Modal を表示し上書き or 破棄を選択
-- [ ] `pendingValues` 保持し UI 上で差分 Highlight
-- [ ] 上書き時 `expectedUpdatedAt` を最新へ置換して再送
-- [ ] 破棄時は最新データを再読込してフォーム更新
-- [ ] UX 文言を Web と共通化
-- [ ] UnitTest: conflict → overwrite / discard 両経路
-- [ ] Hook `useReportConflict` を共通化し Web へも流用検証
-- [ ] 実装の冗長・整合性確認
-- [ ] pnpm lintの実行と発生した警告とエラーの修正
-- [ ] 実装漏れチェック
+- [x] `saveReport` エラー `conflict` 捕捉後、Modal を表示し上書き or 破棄を選択
+- [x] `pendingValues` 保持し UI 上で差分 Highlight
+- [x] 上書き時 `expectedUpdatedAt` を最新へ置換して再送
+- [x] 破棄時は最新データを再読込してフォーム更新
+- [x] UX 文言を Web と共通化
+- [x] UnitTest: conflict → overwrite / discard 両経路
+- [x] Hook `useReportConflict` を共通化し Web へも流用検証
+- [x] 実装の冗長・整合性確認
+- [x] pnpm lintの実行と発生した警告とエラーの修正
+- [x] 実装漏れチェック
 
 ### Section 10 – AI 要約カード表示
 
-- [ ] `report.summary` が null で無い場合に Card を表示
-- [ ] `LoadingSkeleton` を追加し fetch 状態を可視化
-- [ ] 文字数オーバーフロー時に `numberOfLines` 制御
-- [ ] Constants 文言(`AI_SUMMARY_TITLE` など)を再利用
-- [ ] Server で要約生成失敗時 fallback 表示を Web と合わせる
-- [ ] QA: summary=長文/短文/null ケース確認
-- [ ] DarkMode テキストコントラストチェック
-- [ ] 実装の冗長・整合性確認
-- [ ] pnpm lintの実行と発生した警告とエラーの修正
-- [ ] 実装漏れチェック
+- [x] `report.summary` が null で無い場合に Card を表示
+- [x] `LoadingSkeleton` を追加し fetch 状態を可視化
+- [x] 文字数オーバーフロー時に `numberOfLines` 制御
+- [x] Constants 文言(`AI_SUMMARY_TITLE` など)を再利用
+- [x] Server で要約生成失敗時 fallback 表示を Web と合わせる
+- [x] QA: summary=長文/短文/null ケース確認
+- [x] DarkMode テキストコントラストチェック
+- [x] 実装の冗長・整合性確認
+- [x] pnpm lintの実行と発生した警告とエラーの修正
+- [x] 実装漏れチェック
 
 ### Section 11 – UX 統一改善
 
-- [ ] Toast メッセージの文言・色を Web と共通ファイルへ移動
-- [ ] LoadingScreen と ActivityIndicator サイズ一貫性を確認
-- [ ] 成功/失敗アニメーションを `react-native-reanimated` へ置換検討
-- [ ] Vibration フィードバック(短) をアクション完了時に追加 (アクセシビリティ向上)
-- [ ] ページ遷移時に `router.replace` へ統一し戻る履歴を最適化
-- [ ] Crashlytics ログ追加でエラー捕捉率向上
-- [ ] カラーパレット Token を `global.css` と共有
-- [ ] 実装の冗長・整合性確認
-- [ ] pnpm lintの実行と発生した警告とエラーの修正
-- [ ] 実装漏れチェック
+- [x] Toast メッセージの文言・色を Web と共通ファイルへ移動
+- [x] LoadingScreen と ActivityIndicator サイズ一貫性を確認
+- [x] 成功/失敗アニメーションを `react-native-reanimated` へ置換検討
+- [x] Vibration フィードバック(短) をアクション完了時に追加 (アクセシビリティ向上)
+- [x] ページ遷移時に `router.replace` へ統一し戻る履歴を最適化
+- [x] Crashlytics ログ追加でエラー捕捉率向上
+- [x] カラーパレット Token を `global.css` と共有
+- [x] 実装の冗長・整合性確認
+- [x] pnpm lintの実行と発生した警告とエラーの修正
+- [x] 実装漏れチェック
