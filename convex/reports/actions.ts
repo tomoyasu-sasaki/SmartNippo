@@ -101,21 +101,35 @@ export const saveReportWithWorkItems = action({
       if (status === 'submitted') {
         // status を submitted に更新して、承認フローを開始する
         // 新規作成直後のため、作成されたドキュメントを取得してタイムスタンプを渡す
-        // 正しいAPIパスを使用してeventual consistencyの問題を回避
-        const newReport = await ctx.runQuery(api.index.getReportForEdit, {
-          reportId: currentReportId,
-        });
-        if (!newReport) {
-          // 作成直後のため、この状況が発生した場合は現在時刻を使用
-          console.warn(
-            `Created report ${currentReportId} not found immediately, using current timestamp`
-          );
-          const fallbackTimestamp = Date.now();
-          await ctx.runMutation(api.index.updateReport, {
+        // eventual consistency問題に対処するため、短時間のリトライロジックを実装
+        let newReport = null;
+        let retryCount = 0;
+        const maxRetries = 5;
+        const retryDelay = 50; // 50ms
+
+        while (!newReport && retryCount < maxRetries) {
+          newReport = await ctx.runQuery(api.index.getReportForEdit, {
             reportId: currentReportId,
-            status: 'submitted',
-            expectedUpdatedAt: fallbackTimestamp,
           });
+
+          if (!newReport) {
+            retryCount++;
+            if (retryCount < maxRetries) {
+              // 短時間待機してからリトライ
+              await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            }
+          }
+        }
+
+        if (!newReport) {
+          // 最大リトライ回数に達してもレポートが見つからない場合
+          // eventual consistency問題により、作成されたレポートの更新ができない状況
+          console.error(
+            `Created report ${currentReportId} not found after ${maxRetries} retries, cannot submit without timestamp validation`
+          );
+          throw new Error(
+            `レポートの作成は完了しましたが、システムの同期処理により一時的に更新ができません。しばらく待ってから手動で提出してください。`
+          );
         } else {
           await ctx.runMutation(api.index.updateReport, {
             reportId: currentReportId,
