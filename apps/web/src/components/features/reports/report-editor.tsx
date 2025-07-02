@@ -222,7 +222,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
           workingHours: values.workingHours,
         },
         workItems: finalWorkItems as any,
-        ...(latestReport && { expectedUpdatedAt: latestReport.updated_at }),
+        ...(reportId && { expectedUpdatedAt }),
         status: submitType,
       });
 
