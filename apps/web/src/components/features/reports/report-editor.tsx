@@ -121,7 +121,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
     resolver: zodResolver(reportFormSchema),
     defaultValues: {
       reportDate: initialData?.reportDate ? new Date(initialData.reportDate) : new Date(),
-      projectId: initialData?._id as Id<'projects'>,
+      projectId: initialData?.projectId ?? '',
       title: initialData?.title ?? '',
       content: initialData?.content ?? '',
       workItems: [], // workItemsは別途読み込むため、ここでは空で初期化
@@ -222,7 +222,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
           workingHours: values.workingHours,
         },
         workItems: finalWorkItems as any,
-        ...(expectedUpdatedAt && { expectedUpdatedAt }),
+        ...(reportId && { expectedUpdatedAt }),
         status: submitType,
       });
 
@@ -303,7 +303,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
               戻る
             </Button>
             <div>
-              <h1 className='text-3xl font-bold'>
+              <h1 className='text-2xl font-bold md:text-3xl'>
                 {reportId ? REPORTS_CONSTANTS.EDIT_PAGE_TITLE : REPORTS_CONSTANTS.CREATE_PAGE_TITLE}
               </h1>
               <p className='text-gray-600 mt-1'>
@@ -375,11 +375,11 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
                   control={form.control}
                   name='projectId'
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className='flex flex-col'>
                       <FormLabel>メインプロジェクト</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className='w-full'>
                             <SelectValue placeholder='日報のメインプロジェクトを選択してください' />
                           </SelectTrigger>
                         </FormControl>
@@ -542,7 +542,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
             </Card>
 
             {/* アクションボタン */}
-            <div className='flex gap-3 justify-end'>
+            <div className='flex flex-col sm:flex-row gap-3 sm:justify-end'>
               <Button
                 type='button'
                 variant='outline'
@@ -616,103 +616,108 @@ function WorkingTimePicker({ form }: { form: UseFormReturn<ReportFormValues> }) 
       render={() => (
         <FormItem>
           <FormLabel>勤務時間</FormLabel>
-          <div className='flex items-center gap-2'>
-            <FormField
-              control={form.control}
-              name='workingHours.startHour'
-              render={({ field }) => (
-                <Select
-                  onValueChange={(v) => field.onChange(Number(v))}
-                  value={String(field.value)}
-                >
-                  <FormControl>
-                    <SelectTrigger className='w-20'>
-                      <SelectValue>{field.value}</SelectValue>
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {hours.map((h) => (
-                      <SelectItem key={h} value={String(h)}>
-                        {h}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <span>時</span>
-            <FormField
-              control={form.control}
-              name='workingHours.startMinute'
-              render={({ field }) => (
-                <Select
-                  onValueChange={(v) => field.onChange(Number(v))}
-                  value={String(field.value)}
-                >
-                  <FormControl>
-                    <SelectTrigger className='w-20'>
-                      <SelectValue>{field.value}</SelectValue>
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {minutes.map((m) => (
-                      <SelectItem key={m} value={String(m)}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <span>分 〜</span>
-            <FormField
-              control={form.control}
-              name='workingHours.endHour'
-              render={({ field }) => (
-                <Select
-                  onValueChange={(v) => field.onChange(Number(v))}
-                  value={String(field.value)}
-                >
-                  <FormControl>
-                    <SelectTrigger className='w-20'>
-                      <SelectValue>{field.value}</SelectValue>
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {hours.map((h) => (
-                      <SelectItem key={h} value={String(h)}>
-                        {h}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <span>時</span>
-            <FormField
-              control={form.control}
-              name='workingHours.endMinute'
-              render={({ field }) => (
-                <Select
-                  onValueChange={(v) => field.onChange(Number(v))}
-                  value={String(field.value)}
-                >
-                  <FormControl>
-                    <SelectTrigger className='w-20'>
-                      <SelectValue>{field.value}</SelectValue>
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {minutes.map((m) => (
-                      <SelectItem key={m} value={String(m)}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <span>分</span>
+          <div className='grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] sm:gap-x-2 items-center gap-y-2'>
+            <div className='grid grid-cols-[1fr_auto_1fr_auto] gap-x-2 items-center'>
+              <FormField
+                control={form.control}
+                name='workingHours.startHour'
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(v) => field.onChange(Number(v))}
+                    value={String(field.value)}
+                  >
+                    <FormControl>
+                      <SelectTrigger className='w-full'>
+                        <SelectValue>{field.value}</SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {hours.map((h) => (
+                        <SelectItem key={h} value={String(h)}>
+                          {h}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <span>時</span>
+              <FormField
+                control={form.control}
+                name='workingHours.startMinute'
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(v) => field.onChange(Number(v))}
+                    value={String(field.value)}
+                  >
+                    <FormControl>
+                      <SelectTrigger className='w-full'>
+                        <SelectValue>{field.value}</SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {minutes.map((m) => (
+                        <SelectItem key={m} value={String(m)}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <span>分</span>
+            </div>
+            <div className='text-center'>〜</div>
+            <div className='grid grid-cols-[1fr_auto_1fr_auto] gap-x-2 items-center'>
+              <FormField
+                control={form.control}
+                name='workingHours.endHour'
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(v) => field.onChange(Number(v))}
+                    value={String(field.value)}
+                  >
+                    <FormControl>
+                      <SelectTrigger className='w-full'>
+                        <SelectValue>{field.value}</SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {hours.map((h) => (
+                        <SelectItem key={h} value={String(h)}>
+                          {h}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <span>時</span>
+              <FormField
+                control={form.control}
+                name='workingHours.endMinute'
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(v) => field.onChange(Number(v))}
+                    value={String(field.value)}
+                  >
+                    <FormControl>
+                      <SelectTrigger className='w-full'>
+                        <SelectValue>{field.value}</SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {minutes.map((m) => (
+                        <SelectItem key={m} value={String(m)}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <span>分</span>
+            </div>
           </div>
           <FormMessage />
         </FormItem>

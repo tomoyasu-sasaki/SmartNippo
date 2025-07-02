@@ -46,6 +46,7 @@ import type { PrivacySettings, SocialLinks, WorkingHours, WorkItem } from '../co
 // レポート作成フォームデータの型定義
 export interface ReportFormData {
   reportDate: string;
+  projectId?: string;
   title: string;
   content: string;
   workingHours: WorkingHours;

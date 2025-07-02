@@ -45,7 +45,7 @@ export default [
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
-      parser: parser,
+      parser,
       parserOptions: {
         projectService: true,
         ecmaFeatures: {

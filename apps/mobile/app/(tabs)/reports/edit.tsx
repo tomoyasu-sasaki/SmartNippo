@@ -60,6 +60,7 @@ export default function EditReportScreen() {
     if (report && workItems && !formData) {
       setFormData({
         reportDate: report.reportDate,
+        projectId: report.projectId,
         title: report.title,
         content: report.content,
         workItems: workItems.map((item) => ({
@@ -92,6 +93,9 @@ export default function EditReportScreen() {
 
     switch (step) {
       case 0: // 基本情報
+        if (!formData.projectId) {
+          newErrors.projectId = 'メインプロジェクトを選択してください';
+        }
         if (!formData.title.trim()) {
           newErrors.title = REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.TITLE_REQUIRED;
         } else if (formData.title.length > 200) {
@@ -178,6 +182,7 @@ export default function EditReportScreen() {
         expectedUpdatedAt: report.updated_at,
         reportData: {
           reportDate: formData.reportDate,
+          projectId: formData.projectId as Id<'projects'>,
           title: formData.title,
           content: formData.content,
           workingHours: formData.workingHours,
@@ -264,6 +269,7 @@ export default function EditReportScreen() {
             errors={errors}
             onUpdateFormData={updateFormData}
             isEditMode={true}
+            projects={projects}
           />
         );
 

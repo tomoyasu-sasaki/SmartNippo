@@ -407,6 +407,7 @@ export const getReportDetail = query({
       deletedBy: deletedByUser,
       stats,
       workItems,
+      totalWorkDuration: totalWorkDurationMinutes,
     };
   },
 });

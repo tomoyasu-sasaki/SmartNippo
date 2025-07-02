@@ -27,6 +27,12 @@ export default function TabLayout() {
         <Tabs.Screen
           name='index'
           options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name='dashboard'
+          options={{
             title: LAYOUT_CONSTANTS.NAV_LINKS.DASHBOARD,
             tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
           }}
@@ -48,10 +54,4 @@ export default function TabLayout() {
       </Tabs>
     </AuthGuard>
   );
-}
-
-// Placeholder icon component
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function TabBarIcon({ name, color }: { name: string; color: string }) {
-  return null; // Will be replaced with actual icons later
 }

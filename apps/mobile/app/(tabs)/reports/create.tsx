@@ -32,6 +32,7 @@ const { STEPS } = REPORTS_CONSTANTS.MOBILE_STEPS;
 // 初期フォームデータ
 const initialFormData: ReportFormData = {
   reportDate: new Date().toISOString().split('T')[0],
+  projectId: undefined,
   title: '',
   content: '',
   workItems: [],
@@ -74,6 +75,9 @@ export default function CreateReportScreen() {
 
     switch (step) {
       case 0: // 基本情報
+        if (!formData.projectId) {
+          newErrors.projectId = 'メインプロジェクトを選択してください';
+        }
         if (!formData.title.trim()) {
           newErrors.title = REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.VALIDATION_ERRORS.TITLE_REQUIRED;
         } else if (formData.title.length > 200) {
@@ -163,6 +167,7 @@ export default function CreateReportScreen() {
       await saveReport({
         reportData: {
           reportDate: formData.reportDate,
+          projectId: formData.projectId as Id<'projects'>,
           title: formData.title,
           content: formData.content,
           workingHours: formData.workingHours,
@@ -222,7 +227,12 @@ export default function CreateReportScreen() {
     switch (currentStep) {
       case 0: // 基本情報
         return (
-          <BasicInfoStep formData={formData} errors={errors} onUpdateFormData={updateFormData} />
+          <BasicInfoStep
+            formData={formData}
+            errors={errors}
+            onUpdateFormData={updateFormData}
+            projects={projects}
+          />
         );
 
       case 1: // 作業内容

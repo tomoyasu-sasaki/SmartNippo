@@ -1,5 +1,6 @@
 'use client';
 
+import { REPORT_STATUS_LABELS } from '@smartnippo/lib';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Doc } from 'convex/_generated/dataModel';
 import { ArrowUpDown, MoreHorizontal } from 'lucide-react';
@@ -26,7 +27,7 @@ const statusVariant = (status: string) => {
     case 'approved':
       return 'default';
     case 'rejected':
-      return 'destructive';
+      return 'secondary';
     case 'submitted':
       return 'secondary';
     default:
@@ -102,7 +103,7 @@ export const columns: ColumnDef<Report>[] = [
     header: 'ステータス',
     cell: ({ row }) => (
       <Badge variant={statusVariant(row.getValue('status'))} className='capitalize'>
-        {row.getValue('status')}
+        {REPORT_STATUS_LABELS[row.getValue('status') as keyof typeof REPORT_STATUS_LABELS]}
       </Badge>
     ),
   },

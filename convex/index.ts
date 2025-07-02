@@ -45,7 +45,7 @@ export {
 } from './reports/queries';
 
 // ダッシュボード機能
-export { getDashboardStats } from './reports/dashboard';
+export { getMyDashboardData } from './reports/dashboard';
 
 // ============================================================================
 // 🏢 組織管理

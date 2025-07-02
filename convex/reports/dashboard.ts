@@ -1,129 +1,153 @@
 /**
- * @fileoverview ダッシュボード統計機能
+ * @fileoverview 個人ダッシュボードの統計機能
  *
- * @description ダッシュボード表示用の統計情報を集計するクエリを提供します。
- * 直近30日間の日報提出状況と承認状況を日別に集計し、グラフ表示用のデータソースとして利用されます。
+ * @description 個人ダッシュボード表示用の統計情報を集計するクエリを提供します。
  *
- * @since 1.0.0
+ * @since 2.0.0
  */
-
+import { calculateBreakTimeInMinutes } from '@smartnippo/lib';
+import { v } from 'convex/values';
 import { query } from '../_generated/server';
 import { requireAuthentication } from '../auth/auth';
 
 /**
- * ダッシュボード統計データの構造
- *
- * @description 日別の提出数と承認数を格納するインターフェース。
- * グラフ表示ライブラリで利用しやすい形式になっています。
- *
- * @interface
- * @since 1.0.0
+ * 勤務時間を分単位で計算するヘルパー関数
  */
-interface DashboardStatsData {
-  /** 日付 (YYYY-MM-DD形式) */
-  date: string;
-  /** 提出済み日報数 */
-  submitted: number;
-  /** 承認済み日報数 */
-  approved: number;
-}
+const calculateTotalMinutes = (wh: {
+  startHour: number;
+  startMinute: number;
+  endHour: number;
+  endMinute: number;
+}) => {
+  const start = wh.startHour * 60 + wh.startMinute;
+  const end = wh.endHour * 60 + wh.endMinute;
+  return end > start ? end - start : 0;
+};
 
 /**
- * ダッシュボード用統計情報の取得
+ * 個人ダッシュボード用データの取得
  *
- * @description 直近30日間の日報提出状況と承認状況を日別に集計します。
- * 組織メンバーであれば誰でも閲覧可能です。データが存在しない日付は0埋めされ、
- * 連続した30日分のデータセットを返します。
+ * @description ログインユーザーのダッシュボードに必要なデータをまとめて取得します。
+ * - 今月の統計サマリー
+ * - 直近30日間の活動推移（提出状況）
+ * - 直近30日間の業務時間推移
+ * - 最近の日報（最大5件）
  *
  * @query
- * @returns {Promise<DashboardStatsData[]>} 30日分の日別統計データの配列
- * @throws {Error} 認証失敗またはユーザーが組織に所属していない場合
- * @example
- * ```typescript
- * const stats = await getDashboardStats();
- * // stats は30日分の DashboardStatsData 配列
- * stats.forEach(day => {
- *   console.log(`${day.date}: Submitted ${day.submitted}, Approved ${day.approved}`);
- * });
- * ```
- * @since 1.0.0
+ * @returns {Promise<object>} ダッシュボード用データのオブジェクト
+ * @throws {Error} 認証失敗時
  */
-export const getDashboardStats = query({
-  args: {},
-  handler: async (ctx): Promise<DashboardStatsData[]> => {
+export const getMyDashboardData = query({
+  args: {
+    days: v.optional(v.number()),
+  },
+  handler: async (ctx, { days = 30 }) => {
     const user = await requireAuthentication(ctx);
-    if (!user.orgId) {
-      // 組織がまだない場合は空の統計データを返す
-      const today = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(today.getDate() - 30);
-      const filledResult: DashboardStatsData[] = [];
-      const currentDate = new Date(thirtyDaysAgo);
-      while (currentDate <= today) {
-        const [dateStr] = currentDate.toISOString().split('T');
-        filledResult.push({ date: dateStr, submitted: 0, approved: 0 });
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-      return filledResult;
-    }
+    const userId = user._id;
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const thirtyDaysAgoTimestamp = thirtyDaysAgo.getTime();
-    const { orgId } = user;
+    // --- 1. 必要な期間の定義 ---
+    const today = new Date();
+    const targetDate = new Date();
+    targetDate.setDate(today.getDate() - days);
 
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    // --- 2. ユーザーの直近[days]日分の日報を一括取得 ---
     const reports = await ctx.db
       .query('reports')
-      .withIndex('by_org_created_status', (q) => q.eq('orgId', orgId))
-      .filter((q) => q.gt(q.field('created_at'), thirtyDaysAgoTimestamp))
+      .withIndex('by_author_date', (q) =>
+        q.eq('authorId', userId).gte('reportDate', targetDate.toISOString().split('T')[0])
+      )
       .filter((q) => q.eq(q.field('isDeleted'), false))
-      .order('asc')
+      .order('desc')
       .collect();
 
-    // 日付ごとに集計
-    const statsByDate = new Map<string, { submitted: number; approved: number }>();
+    // --- 3. 統計データの集計 ---
+    const stats = {
+      reportsThisMonth: 0,
+      approvedThisMonth: 0,
+      pendingApproval: 0,
+      drafts: 0,
+    };
 
-    reports.forEach((report) => {
-      const dateStr = report.reportDate;
-      if (!statsByDate.has(dateStr)) {
-        statsByDate.set(dateStr, { submitted: 0, approved: 0 });
-      }
-      const stats = statsByDate.get(dateStr) ?? { submitted: 0, approved: 0 };
-      if (report.status === 'submitted' || report.status === 'approved') {
-        stats.submitted++;
-      }
+    const monthlyReports = reports.filter((r) => new Date(r.reportDate) >= firstDayOfMonth);
+
+    monthlyReports.forEach((report) => {
+      stats.reportsThisMonth++;
       if (report.status === 'approved') {
-        stats.approved++;
+        stats.approvedThisMonth++;
       }
     });
 
-    // 結果を配列に変換
-    const result: DashboardStatsData[] = Array.from(statsByDate.entries())
-      .map(([date, stats]) => ({
-        date,
-        submitted: stats.submitted,
-        approved: stats.approved,
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    // 全期間（30日内）でのステータス集計
+    reports.forEach((report) => {
+      if (report.status === 'submitted') {
+        stats.pendingApproval++;
+      }
+      if (report.status === 'draft') {
+        stats.drafts++;
+      }
+    });
 
-    // 30日分の連続したデータを生成（データがない日も0で埋める）
-    const filledResult: DashboardStatsData[] = [];
-    const currentDate = new Date(thirtyDaysAgo);
-    const today = new Date();
+    // --- 4. チャート用データの生成 ---
+    const activityTrend: { date: string; submitted: number }[] = [];
+    const workingHoursTrend: { date: string; hours: number }[] = [];
+    const dailyData = new Map<string, { submitted: boolean; totalMinutes: number }>();
 
-    while (currentDate <= today) {
-      const [dateStr] = currentDate.toISOString().split('T');
-      const existing = result.find((r) => r.date === dateStr);
-      filledResult.push(
-        existing ?? {
-          date: dateStr,
-          submitted: 0,
-          approved: 0,
-        }
-      );
-      currentDate.setDate(currentDate.getDate() + 1);
+    reports.forEach((report) => {
+      const dateStr = report.reportDate;
+      const existing = dailyData.get(dateStr) ?? { submitted: false, totalMinutes: 0 };
+      existing.submitted = true;
+      if (report.workingHours) {
+        const duration = calculateTotalMinutes(report.workingHours);
+        const breakTime = calculateBreakTimeInMinutes(duration);
+        existing.totalMinutes += duration - breakTime;
+      }
+      dailyData.set(dateStr, existing);
+    });
+
+    // 過去[days]日間の日付をループしてデータを埋める
+    for (let i = 0; i < days; i++) {
+      const date = new Date();
+      date.setDate(today.getDate() - i);
+      const [dateStr] = date.toISOString().split('T');
+
+      const data = dailyData.get(dateStr);
+      activityTrend.push({ date: dateStr, submitted: data?.submitted ? 1 : 0 });
+      workingHoursTrend.push({
+        date: dateStr,
+        hours: data ? parseFloat((data.totalMinutes / 60).toFixed(2)) : 0,
+      });
     }
 
-    return filledResult;
+    // --- 5. 累積時間の計算 ---
+    const ascendingWorkingHours = workingHoursTrend.slice().reverse();
+    const cumulativeWorkingHoursTrend: { date: string; cumulativeHours: number }[] = [];
+    let cumulativeSum = 0;
+    for (const day of ascendingWorkingHours) {
+      cumulativeSum += day.hours;
+      cumulativeWorkingHoursTrend.push({
+        date: day.date,
+        cumulativeHours: parseFloat(cumulativeSum.toFixed(2)),
+      });
+    }
+
+    // --- 6. 最近の日報リスト ---
+    const recentReports = reports.slice(0, 5).map((r) => ({
+      _id: r._id,
+      title: r.title,
+      status: r.status,
+      reportDate: r.reportDate,
+      authorName: user.name, // 自身の名前
+    }));
+
+    // --- 7. 結果を返す ---
+    return {
+      stats,
+      activityTrend: activityTrend.reverse(),
+      workingHoursTrend: ascendingWorkingHours,
+      cumulativeWorkingHoursTrend,
+      recentReports,
+    };
   },
 });

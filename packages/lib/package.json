@@ -29,7 +29,7 @@
     "build": "tsup",
     "clean": "rm -rf dist",
     "dev": "tsup --watch",
-    "lint": "eslint src/**/*.ts",
+    "lint": "pnpm eslint \"**/*.{ts,tsx}\" --fix",
     "test": "jest --passWithNoTests",
     "type-check": "tsc --noEmit"
   },

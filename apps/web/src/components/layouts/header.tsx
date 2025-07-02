@@ -25,8 +25,8 @@ export function Header() {
   const userProfile = useQuery(api.index.current);
 
   return (
-    <header className='sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-[var(--background)] px-4 md:px-6'>
-      <div className='flex items-center gap-6'>
+    <header className='sticky top-0 z-50 flex h-16 items-center gap-2 border-b bg-[var(--background)] px-2 md:px-6'>
+      <div className='flex items-center gap-2 md:gap-6'>
         <Link
           href='/dashboard'
           className='flex items-center gap-2 text-lg font-semibold md:text-base'
@@ -34,7 +34,7 @@ export function Header() {
           <Package2 className='h-6 w-6' />
           <span className='hidden sm:inline-block'>{LAYOUT_CONSTANTS.APP_NAME}</span>
         </Link>
-        <NavigationMenu className='hidden md:flex items-center'>
+        <NavigationMenu className='hidden md:flex items-center bg-[var(--background)]'>
           <NavigationMenuList>
             <NavigationMenuItem>
               <NavigationMenuLink asChild>
@@ -121,7 +121,7 @@ export function Header() {
             <span className='sr-only'>{LAYOUT_CONSTANTS.TOGGLE_NAVIGATION_MENU_SR}</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side='left'>
+        <SheetContent side='left' className='bg-[var(--background)]'>
           <SheetHeader>
             <SheetTitle className='sr-only'>Navigation Menu</SheetTitle>
           </SheetHeader>
@@ -179,7 +179,7 @@ export function Header() {
         </SheetContent>
       </Sheet>
 
-      <div className='flex w-full items-center justify-end gap-4 md:ml-auto md:gap-2 lg:gap-4'>
+      <div className='flex w-full items-center justify-end gap-2 md:ml-auto md:gap-2 lg:gap-4'>
         <ThemeToggle />
         <OrganizationSwitcher
           hidePersonal

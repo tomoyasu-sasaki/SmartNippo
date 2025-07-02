@@ -12,7 +12,7 @@ import {
 /**
  * @fileoverview 日報データの作成・更新・削除Mutation
  *
- * @description 日報のライフサイクル（作成、更新、削除、復元、承認、却下）を
+ * @description 日報のライフサイクル（作成、更新、削除、復元、承認、差戻し）を
  * 管理するMutation関数群を提供します。権限チェック、楽観的ロック、
  * 監査ログ記録などの重要な機能を含みます。
  *
@@ -254,12 +254,9 @@ export const updateReport = mutation({
 
     // ステータス変更の権限チェック
     if (updates.status && updates.status !== report.status) {
-      // 承認済み/却下済みの日報は作成者が変更できない
-      if (
-        (report.status === 'approved' || report.status === 'rejected') &&
-        user._id === report.authorId
-      ) {
-        throw new Error('承認済み/却下済みの日報は編集できません');
+      // 承認済みの日報は作成者が変更できない
+      if (report.status === 'approved' && user._id === report.authorId) {
+        throw new Error('承認済みの日報は編集できません');
       }
 
       // approved/rejectedへの変更はmanager以上のみ
@@ -268,7 +265,7 @@ export const updateReport = mutation({
         !user.role.includes('manager') &&
         !user.role.includes('admin')
       ) {
-        throw new Error('承認/却下はマネージャー以上の権限が必要です');
+        throw new Error('承認/差戻しはマネージャー以上の権限が必要です');
       }
     }
 
@@ -358,10 +355,12 @@ export const updateReport = mutation({
             applicantId: report.authorId,
           });
 
-          // 既存の承認依頼をクリア
+          // "by_report_status" インデックスが存在しない可能性があるため、
+          // 代わりに既存の "by_report" インデックスを用いて status をフィルタします。
           const existingApprovals = await ctx.db
             .query('approvals')
             .withIndex('by_report', (q) => q.eq('reportId', report._id))
+            .filter((q) => q.eq(q.field('status'), 'pending'))
             .collect();
           await Promise.all(existingApprovals.map((a) => ctx.db.delete(a._id)));
 
@@ -607,9 +606,11 @@ export const approveReport = mutation({
 
     // 承認記録を更新または作成
     const now = Date.now();
+    // "by_report_status" インデックスが存在しない可能性があるため、既存のインデックスに置き換え
     const existingApproval = await ctx.db
       .query('approvals')
-      .withIndex('by_report_status', (q) => q.eq('reportId', args.reportId).eq('status', 'pending'))
+      .withIndex('by_report', (q) => q.eq('reportId', args.reportId))
+      .filter((q) => q.eq(q.field('status'), 'pending'))
       .filter((q) => q.eq(q.field('managerId'), user._id))
       .first();
 
@@ -658,17 +659,17 @@ export const approveReport = mutation({
 });
 
 /**
- * 日報の却下
+ * 日報の差戻し
  *
- * @description 提出された日報を却下します。マネージャー以上の権限が必要で、
- * 却下理由は必須です。
+ * @description 提出された日報を差し戻します。マネージャー以上の権限が必要で、
+ * 差戻し理由は必須です。
  *
  * @mutation
- * @param {Object} args - 却下情報
- * @param {Id<'reports'>} args.reportId - 却下対象の日報ID
- * @param {string} args.reason - 却下理由
- * @returns {Promise<{success: boolean}>} 却下結果
- * @throws {Error} 日報が見つからない、権限不足、ステータスが不適切、または却下理由が未入力の場合
+ * @param {Object} args - 差戻し情報
+ * @param {Id<'reports'>} args.reportId - 差戻し対象の日報ID
+ * @param {string} args.reason - 差戻し理由
+ * @returns {Promise<{success: boolean}>} 差戻し結果
+ * @throws {Error} 日報が見つからない、権限不足、ステータスが不適切、または差戻し理由が未入力の場合
  * @example
  * ```typescript
  * await rejectReport({
@@ -695,21 +696,21 @@ export const rejectReport = mutation({
 
     // ステータスチェック
     if (report.status === 'rejected') {
-      throw new Error('この日報は既に却下されています');
+      throw new Error('この日報は既に差し戻されています');
     }
     if (report.status !== 'submitted') {
-      throw new Error('提出済みの日報のみ却下できます');
+      throw new Error('提出済みの日報のみ差し戻しできます');
     }
 
-    // 却下理由のバリデーション
+    // 差戻し理由のバリデーション
     if (!args.reason || args.reason.trim().length === 0) {
-      throw new Error('却下理由は必須です');
+      throw new Error('差戻し理由は必須です');
     }
     if (args.reason.length > 500) {
-      throw new Error('却下理由は500文字以内で入力してください');
+      throw new Error('差戻し理由は500文字以内で入力してください');
     }
 
-    // 却下実行
+    // 差戻し実行
     await ctx.db.patch(args.reportId, {
       status: 'rejected',
       rejectedAt: Date.now(),
@@ -718,9 +719,11 @@ export const rejectReport = mutation({
     });
 
     // 関連する承認依頼のステータスを更新
+    // "by_report_status" インデックスが存在しない可能性があるため、既存のインデックスに置き換え
     const pendingApprovals = await ctx.db
       .query('approvals')
-      .withIndex('by_report_status', (q) => q.eq('reportId', args.reportId).eq('status', 'pending'))
+      .withIndex('by_report', (q) => q.eq('reportId', args.reportId))
+      .filter((q) => q.eq(q.field('status'), 'pending'))
       .collect();
 
     await Promise.all(
@@ -731,11 +734,11 @@ export const rejectReport = mutation({
       )
     );
 
-    // 却下理由をコメントとして追加
+    // 差戻し理由をコメントとして追加
     await ctx.db.insert('comments', {
       reportId: args.reportId,
       authorId: user._id,
-      content: `却下理由: ${args.reason.trim()}`,
+      content: `差戻し理由: ${args.reason.trim()}`,
       type: 'system',
       created_at: Date.now(),
     });

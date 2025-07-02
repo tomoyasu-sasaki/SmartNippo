@@ -151,3 +151,21 @@ export function getMonthEnd(date: Date | string = new Date()): Date {
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
   return new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0);
 }
+
+/**
+ * 法定労働時間に基づいた休憩時間を計算する
+ * @param workDurationInMinutes - 勤務時間（分）
+ * @returns 休憩時間（分）
+ */
+export function calculateBreakTimeInMinutes(workDurationInMinutes: number): number {
+  const EIGHT_HOURS_IN_MINUTES = 8 * 60;
+  const SIX_HOURS_IN_MINUTES = 6 * 60;
+
+  if (workDurationInMinutes > EIGHT_HOURS_IN_MINUTES) {
+    return 60; // 8時間超は60分
+  }
+  if (workDurationInMinutes > SIX_HOURS_IN_MINUTES) {
+    return 45; // 6時間超8時間以下は45分
+  }
+  return 0; // 6時間以下は0分
+}

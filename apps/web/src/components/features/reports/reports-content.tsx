@@ -28,10 +28,12 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Clock,
   FileText,
   Filter,
   Plus,
   Search,
+  User,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -210,92 +212,159 @@ function ReportsContentInner() {
       {/* 日報テーブル */}
       <Card>
         <CardContent className='p-0'>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className='cursor-pointer' onClick={() => handleSort('reportDate')}>
-                  <div className='flex items-center gap-1'>
-                    {REPORTS_CONSTANTS.TABLE_HEADER.DATE}
-                    <ArrowUpDown className='h-4 w-4' />
-                  </div>
-                </TableHead>
-                <TableHead>{REPORTS_CONSTANTS.TABLE_HEADER.TITLE}</TableHead>
-                <TableHead>{REPORTS_CONSTANTS.TABLE_HEADER.AUTHOR}</TableHead>
-                <TableHead>{REPORTS_CONSTANTS.TABLE_HEADER.STATUS}</TableHead>
-                <TableHead className='cursor-pointer' onClick={() => handleSort('created_at')}>
-                  <div className='flex items-center gap-1'>
-                    {REPORTS_CONSTANTS.TABLE_HEADER.CREATED_AT}
-                    <ArrowUpDown className='h-4 w-4' />
-                  </div>
-                </TableHead>
-                <TableHead className='text-right'>
-                  {REPORTS_CONSTANTS.TABLE_HEADER.ACTIONS}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {reports.reports.length === 0 ? (
+          {/* Desktop Table */}
+          <div className='hidden md:block'>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className='text-center py-8'>
-                    <div className='flex flex-col items-center gap-2'>
-                      <FileText className='h-8 w-8 text-gray-400' />
-                      <p className='text-gray-500'>{REPORTS_CONSTANTS.NO_REPORTS_MESSAGE}</p>
+                  <TableHead className='cursor-pointer' onClick={() => handleSort('reportDate')}>
+                    <div className='flex items-center gap-1'>
+                      {REPORTS_CONSTANTS.TABLE_HEADER.DATE}
+                      <ArrowUpDown className='h-4 w-4' />
                     </div>
-                  </TableCell>
+                  </TableHead>
+                  <TableHead>{REPORTS_CONSTANTS.TABLE_HEADER.TITLE}</TableHead>
+                  <TableHead>{REPORTS_CONSTANTS.TABLE_HEADER.AUTHOR}</TableHead>
+                  <TableHead>{REPORTS_CONSTANTS.TABLE_HEADER.STATUS}</TableHead>
+                  <TableHead className='cursor-pointer' onClick={() => handleSort('created_at')}>
+                    <div className='flex items-center gap-1'>
+                      {REPORTS_CONSTANTS.TABLE_HEADER.CREATED_AT}
+                      <ArrowUpDown className='h-4 w-4' />
+                    </div>
+                  </TableHead>
+                  <TableHead className='text-right'>
+                    {REPORTS_CONSTANTS.TABLE_HEADER.ACTIONS}
+                  </TableHead>
                 </TableRow>
-              ) : (
-                reports.reports.map((report) => {
+              </TableHeader>
+              <TableBody>
+                {reports.reports.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className='text-center py-8'>
+                      <div className='flex flex-col items-center gap-2'>
+                        <FileText className='h-8 w-8 text-gray-400' />
+                        <p className='text-gray-500'>{REPORTS_CONSTANTS.NO_REPORTS_MESSAGE}</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  reports.reports.map((report) => {
+                    const statusInfo = getStatusBadge(report.status);
+                    const isOwner = currentUser?._id === report.authorId;
+                    return (
+                      <TableRow key={report._id}>
+                        <TableCell>
+                          <div className='flex items-center gap-1'>
+                            <Calendar className='h-4 w-4 text-gray-400' />
+                            {format(new Date(report.reportDate), 'M月d日（E）', {
+                              locale: ja,
+                            })}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/reports/${report._id}`}
+                            className='font-medium hover:underline'
+                          >
+                            {report.title}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          {report.author?.name ?? REPORTS_CONSTANTS.UNKNOWN_AUTHOR}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(report.created_at), 'yyyy/MM/dd HH:mm')}
+                        </TableCell>
+                        <TableCell className='text-right'>
+                          <div className='flex justify-end gap-2'>
+                            <Link href={`/reports/${report._id}`}>
+                              <Button variant='ghost' size='sm'>
+                                {REPORTS_CONSTANTS.ACTION_BUTTON_DETAILS}
+                              </Button>
+                            </Link>
+                            {isOwner && report.status === 'draft' && (
+                              <Link href={`/reports/${report._id}/edit`}>
+                                <Button variant='ghost' size='sm'>
+                                  {REPORTS_CONSTANTS.ACTION_BUTTON_EDIT}
+                                </Button>
+                              </Link>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card List */}
+          <div className='md:hidden'>
+            {reports.reports.length === 0 ? (
+              <div className='text-center py-8'>
+                <div className='flex flex-col items-center gap-2'>
+                  <FileText className='h-8 w-8 text-gray-400' />
+                  <p className='text-gray-500'>{REPORTS_CONSTANTS.NO_REPORTS_MESSAGE}</p>
+                </div>
+              </div>
+            ) : (
+              <div className='divide-y'>
+                {reports.reports.map((report) => {
                   const statusInfo = getStatusBadge(report.status);
                   const isOwner = currentUser?._id === report.authorId;
                   return (
-                    <TableRow key={report._id}>
-                      <TableCell>
-                        <div className='flex items-center gap-1'>
-                          <Calendar className='h-4 w-4 text-gray-400' />
-                          {format(new Date(report.reportDate), 'M月d日（E）', {
-                            locale: ja,
-                          })}
-                        </div>
-                      </TableCell>
-                      <TableCell>
+                    <div key={report._id} className='p-4 space-y-3'>
+                      <div className='flex justify-between items-start gap-3'>
                         <Link
                           href={`/reports/${report._id}`}
-                          className='font-medium hover:underline'
+                          className='font-semibold hover:underline'
                         >
                           {report.title}
                         </Link>
-                      </TableCell>
-                      <TableCell>
-                        {report.author?.name ?? REPORTS_CONSTANTS.UNKNOWN_AUTHOR}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(report.created_at), 'yyyy/MM/dd HH:mm')}
-                      </TableCell>
-                      <TableCell className='text-right'>
-                        <div className='flex justify-end gap-2'>
-                          <Link href={`/reports/${report._id}`}>
-                            <Button variant='ghost' size='sm'>
-                              {REPORTS_CONSTANTS.ACTION_BUTTON_DETAILS}
+                        <Badge variant={statusInfo.variant} className='shrink-0'>
+                          {statusInfo.label}
+                        </Badge>
+                      </div>
+                      <div className='text-sm text-muted-foreground space-y-2'>
+                        <div className='flex items-center gap-2'>
+                          <Calendar className='h-4 w-4' />
+                          <span>
+                            {format(new Date(report.reportDate), 'M月d日（E）', { locale: ja })}
+                          </span>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <User className='h-4 w-4' />
+                          <span>{report.author?.name ?? REPORTS_CONSTANTS.UNKNOWN_AUTHOR}</span>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <Clock className='h-4 w-4' />
+                          <span>{format(new Date(report.created_at), 'yyyy/MM/dd HH:mm')}</span>
+                        </div>
+                      </div>
+                      <div className='flex justify-end gap-2'>
+                        <Link href={`/reports/${report._id}`} passHref>
+                          <Button variant='outline' size='sm' className='flex-1'>
+                            {REPORTS_CONSTANTS.ACTION_BUTTON_DETAILS}
+                          </Button>
+                        </Link>
+                        {isOwner && report.status === 'draft' && (
+                          <Link href={`/reports/${report._id}/edit`} passHref>
+                            <Button variant='default' size='sm' className='flex-1'>
+                              {REPORTS_CONSTANTS.ACTION_BUTTON_EDIT}
                             </Button>
                           </Link>
-                          {isOwner && report.status === 'draft' && (
-                            <Link href={`/reports/${report._id}/edit`}>
-                              <Button variant='ghost' size='sm'>
-                                {REPORTS_CONSTANTS.ACTION_BUTTON_EDIT}
-                              </Button>
-                            </Link>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                        )}
+                      </div>
+                    </div>
                   );
-                })
-              )}
-            </TableBody>
-          </Table>
+                })}
+              </div>
+            )}
+          </div>
 
           {/* ページネーション */}
           {reports.reports.length > 0 && (
