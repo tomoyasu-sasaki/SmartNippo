@@ -4,8 +4,6 @@ import { Text, View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 
 export function WorkingHoursChart({ data }: { data: any[] }) {
-  // TODO: 30日表示にするとレイアウトが崩れるため、一時的に7日表示にしています。
-  //レスポンシブなチャートライブラリを検討するか、表示方法の工夫が必要です。
   const chartData = data.map((item) => ({
     value: item.hours,
     label: format(parseISO(item.date), 'M/d'),
@@ -17,18 +15,18 @@ export function WorkingHoursChart({ data }: { data: any[] }) {
         <BarChart3 size={20} color='#3B82F6' />
         <Text className='text-lg font-semibold text-gray-900 ml-2'>業務時間の推移</Text>
       </View>
-      <Text className='text-sm text-gray-600 mb-4'>過去7日間の日別業務時間</Text>
+      <Text className='text-sm text-gray-600 mb-4'>過去30日間の日別業務時間</Text>
       <BarChart
         data={chartData}
-        barWidth={30}
+        barWidth={8}
         barBorderRadius={4}
         frontColor='#3B82F6'
         yAxisThickness={0}
         xAxisThickness={0}
         hideRules
         height={150}
-        // width={280}
-        spacing={10}
+        width={280}
+        spacing={1}
         noOfSections={5}
         yAxisTextStyle={{ color: '#6B7280', fontSize: 9 }}
         xAxisLabelTextStyle={{ color: '#6B7280', fontSize: 9 }}

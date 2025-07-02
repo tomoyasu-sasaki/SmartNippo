@@ -103,58 +103,58 @@ constraints:
 
 ### Section 5 – Draft / Submit 切替 UI
 
-- [ ] 最終ステップに「下書き保存」ボタンを追加し `status='draft'` 送信
-- [ ] 既存「作成する」ボタンは `status='submitted'` に変更
-- [ ] ボタン押下時のバリデーションメッセージ差異を `Toast` 表示
-- [ ] 下書き保存成功後の遷移を Dashboard ではなく ReportDetail に変更検討
-- [ ] Constants の i18n 文言追加
+- [x] 最終ステップに「下書き保存」ボタンを追加し `status='draft'` 送信
+- [x] 既存「作成する」ボタンは `status='submitted'` に変更
+- [x] ボタン押下時のバリデーションメッセージ差異を `Toast` 表示
+- [x] 下書き保存成功後の遷移を Dashboard ではなく ReportDetail に変更検討
+- [x] Constants の i18n 文言追加
 - [ ] E2E (Detox) で draft 保存→編集→送信フローを自動化
-- [ ] ドラフト数を StatsSection の `drafts` と連動確認
-- [ ] 実装の冗長・整合性確認
-- [ ] pnpm lintの実行と発生した警告とエラーの修正
-- [ ] 実装漏れチェック
+- [x] ドラフト数を StatsSection の `drafts` と連動確認
+- [x] 実装の冗長・整合性確認
+- [x] pnpm lintの実行と発生した警告とエラーの修正
+- [x] 実装漏れチェック
 
 ### Section 6 – Draft/Rejected レポート削除機能
 
-- [ ] `ReportDetailScreen` に Delete アイコンを追加 (条件: owner &
+- [x] `ReportDetailScreen` に Delete アイコンを追加 (条件: owner &
       draft|rejected)
-- [ ] `Alert` で確認ダイアログ実装し Cancel/OK パターンをテスト
-- [ ] Convex `deleteReport` Mutation 呼び出し + 成功 Toast
-- [ ] Dashboard RecentReportsSection から即時削除を確認 (react-query cache
+- [x] `Alert` で確認ダイアログ実装し Cancel/OK パターンをテスト
+- [x] Convex `deleteReport` Mutation 呼び出し + 成功 Toast
+- [x] Dashboard RecentReportsSection から即時削除を確認 (react-query cache
       invalidate)
-- [ ] Backend 権限制御 (owner or admin)
+- [x] Backend 権限制御 (owner or admin)
 - [ ] iOS Swipe アクション追加検討 (低優先)
-- [ ] ユニットテスト: draft/rejected/approved パスでボタン非表示を確認
-- [ ] 実装の冗長・整合性確認
-- [ ] pnpm lintの実行と発生した警告とエラーの修正
-- [ ] 実装漏れチェック
+- [x] ユニットテスト: draft/rejected/approved パスでボタン非表示を確認
+- [x] 実装の冗長・整合性確認
+- [x] pnpm lintの実行と発生した警告とエラーの修正
+- [x] 実装漏れチェック
 
 ### Section 7 – CumulativeHoursChart 30 日整合性
 
-- [ ] `CumulativeHoursChart` のデータソースを 30 日分に更新
-- [ ] xAxis ラベル密度を自動計算し視認性確保
-- [ ] 線グラフ色・グラデーションを Web と一致させる (design token)
+- [x] `CumulativeHoursChart` のデータソースを 30 日分に更新
+- [x] xAxis ラベル密度を自動計算し視認性確保
+- [x] 線グラフ色・グラデーションを Web と一致させる (design token)
 - [ ] バージョンアップで breaking 無いか `react-native-gifted-charts`
       の changelog 確認
-- [ ] 型定義ファイルが無い場合 `d.ts` 追加
+- [x] 型定義ファイルが無い場合 `d.ts` 追加
 - [ ] Storybook で 5 / 15 / 30 日ケース snapshot
 - [ ] パフォーマンス計測 (JS fps とメモリ)
-- [ ] 実装の冗長・整合性確認
-- [ ] pnpm lintの実行と発生した警告とエラーの修正
-- [ ] 実装漏れチェック
+- [x] 実装の冗長・整合性確認
+- [x] pnpm lintの実行と発生した警告とエラーの修正
+- [x] 実装漏れチェック
 
 ### Section 8 – ActivityCalendar UI 文言 & UX
 
-- [ ] カレンダーカードタイトル・説明を Web と同一日本語に揃える
-- [ ] Legend 表示を追加 (提出有り / 無し)
-- [ ] `react-native-calendars` theme を design tokens 化
-- [ ] 30 日分ドット表示のパフォーマンス検証 & Debounce
-- [ ] Accessibility: dot の代替テキスト (提出数) を付与
+- [x] カレンダーカードタイトル・説明を Web と同一日本語に揃える
+- [x] Legend 表示を追加 (提出有り / 無し)
+- [x] `react-native-calendars` theme を design tokens 化
+- [x] 30 日分ドット表示のパフォーマンス検証 & Debounce
+- [x] Accessibility: dot の代替テキスト (提出数) を付与
 - [ ] iOS DarkMode で視認性確認
 - [ ] QA シートにカレンダー操作項目を追加
-- [ ] 実装の冗長・整合性確認
-- [ ] pnpm lintの実行と発生した警告とエラーの修正
-- [ ] 実装漏れチェック
+- [x] 実装の冗長・整合性確認
+- [x] pnpm lintの実行と発生した警告とエラーの修正
+- [x] 実装漏れチェック
 
 ## Phase 3 – Nice-to-Have (Could-Have)
 
