@@ -90,27 +90,52 @@ export const saveReportWithWorkItems = action({
       currentReportId = reportId;
     } else {
       // レポートの新規作成
-      const createArgs: any = { ...cleanReportData };
+      // submitted で直接作成された場合でも、一度 draft で作成してから update する
+      // updateReport に承認フローを開始するロジックが実装されているため
+      const createArgs: any = { ...cleanReportData, status: 'draft' };
       if (reportData.projectId) {
         createArgs.projectId = reportData.projectId;
       }
       currentReportId = await ctx.runMutation(api.index.createReport, createArgs);
 
-      // 新規作成後に 'submitted' にする場合
       if (status === 'submitted') {
-        const newReport = await ctx.runQuery(api.index.getReportDetail, {
-          reportId: currentReportId,
-        });
-        if (newReport) {
-          const updateArgs: any = {
-            reportId: newReport._id,
-            expectedUpdatedAt: newReport.updated_at,
-            status: 'submitted',
-          };
-          if (reportData.projectId) {
-            updateArgs.projectId = reportData.projectId;
+        // status を submitted に更新して、承認フローを開始する
+        // 新規作成直後のため、作成されたドキュメントを取得してタイムスタンプを渡す
+        // eventual consistency問題に対処するため、短時間のリトライロジックを実装
+        let newReport = null;
+        let retryCount = 0;
+        const maxRetries = 5;
+        const retryDelay = 50; // 50ms
+
+        while (!newReport && retryCount < maxRetries) {
+          newReport = await ctx.runQuery(api.index.getReportForEdit, {
+            reportId: currentReportId,
+          });
+
+          if (!newReport) {
+            retryCount++;
+            if (retryCount < maxRetries) {
+              // 短時間待機してからリトライ
+              await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            }
           }
-          await ctx.runMutation(api.index.updateReport, updateArgs);
+        }
+
+        if (!newReport) {
+          // 最大リトライ回数に達してもレポートが見つからない場合
+          // eventual consistency問題により、作成されたレポートの更新ができない状況
+          console.error(
+            `Created report ${currentReportId} not found after ${maxRetries} retries, cannot submit without timestamp validation`
+          );
+          throw new Error(
+            `レポートの作成は完了しましたが、システムの同期処理により一時的に更新ができません。しばらく待ってから手動で提出してください。`
+          );
+        } else {
+          await ctx.runMutation(api.index.updateReport, {
+            reportId: currentReportId,
+            status: 'submitted',
+            expectedUpdatedAt: newReport.updated_at,
+          });
         }
       }
     }

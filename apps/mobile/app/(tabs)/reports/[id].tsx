@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Send,
   Share2,
+  Trash2,
   User,
 } from 'lucide-react-native';
 import { useState } from 'react';
@@ -60,6 +61,7 @@ export default function ReportDetailScreen() {
   const approveReport = useMutation(api.index.approveReport);
   const rejectReport = useMutation(api.index.rejectReport);
   const updateReport = useMutation(api.index.updateReport);
+  const deleteReport = useMutation(api.index.deleteReport);
 
   const handleAddComment = async () => {
     if (!commentText.trim() || !report) {
@@ -197,6 +199,44 @@ export default function ReportDetailScreen() {
     );
   };
 
+  // 削除処理
+  const handleDelete = async () => {
+    Alert.alert(
+      REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.DELETE_TITLE,
+      REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.DELETE_MESSAGE,
+      [
+        { text: REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.CANCEL, style: 'cancel' },
+        {
+          text: REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ACTIONS.DELETE,
+          style: 'destructive',
+          onPress: async () => {
+            setIsSubmittingAction(true);
+            try {
+              await deleteReport({
+                reportId: id as Id<'reports'>,
+              });
+              Alert.alert('成功', REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.DELETE_SUCCESS);
+              // 削除後はリスト画面に戻る
+              router.back();
+            } catch (error) {
+              const errorMessage = (error as Error).message;
+              const isPermissionError =
+                errorMessage.includes('permission') || errorMessage.includes('権限');
+              Alert.alert(
+                'エラー',
+                isPermissionError
+                  ? REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.PERMISSION_ERROR
+                  : REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.DELETE_ERROR(errorMessage)
+              );
+            } finally {
+              setIsSubmittingAction(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // シェア機能
   const handleShare = async () => {
     if (!report) {
@@ -235,6 +275,7 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
   // 自分のレポートかどうか判定（Web版と同様の方法）
   const isOwner = currentUser?._id === report.author?._id;
   const canEdit = isOwner && (report.status === 'draft' || report.status === 'rejected');
+  const canDelete = isOwner && (report.status === 'draft' || report.status === 'rejected');
   const canTakeAction = currentUser?.role === 'manager' || currentUser?.role === 'admin';
 
   return (
@@ -258,6 +299,11 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
                 {canEdit && (
                   <Pressable onPress={handleEdit} className='ml-2 p-1'>
                     <Edit size={20} color='#6B7280' />
+                  </Pressable>
+                )}
+                {canDelete && (
+                  <Pressable onPress={handleDelete} className='ml-2 p-1'>
+                    <Trash2 size={20} color='#EF4444' />
                   </Pressable>
                 )}
                 <Pressable onPress={handleShare} className='ml-2 p-1'>

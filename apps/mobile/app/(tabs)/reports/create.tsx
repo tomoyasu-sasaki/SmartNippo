@@ -132,9 +132,10 @@ export default function CreateReportScreen() {
   };
 
   // フォーム送信（楽観的更新対応）
-  const handleSubmit = async () => {
-    // 全ステップのバリデーションを実行
-    for (let i = 0; i < STEPS.length; i++) {
+  const handleSubmit = async (isDraft = false) => {
+    // 全ステップのバリデーションを実行（下書きの場合は基本情報のみ）
+    const stepsToValidate = isDraft ? 1 : STEPS.length;
+    for (let i = 0; i < stepsToValidate; i++) {
       if (!validateStep(i)) {
         setCurrentStep(i);
         Toast.show({
@@ -152,7 +153,16 @@ export default function CreateReportScreen() {
     }
 
     setIsSubmitting(true);
-    Toast.show({ type: 'info', text1: '日報を作成中...' });
+
+    if (isDraft) {
+      Toast.show({
+        type: 'info',
+        text1: REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.TOAST_MESSAGES.DRAFT_SAVING,
+        text2: REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.TOAST_MESSAGES.DRAFT_SAVING_SUBTITLE,
+      });
+    } else {
+      Toast.show({ type: 'info', text1: '日報を作成中...' });
+    }
 
     try {
       const workItemsForBackend = formData.workItems
@@ -164,7 +174,7 @@ export default function CreateReportScreen() {
           workCategoryId: rest.workCategoryId as Id<'workCategories'>,
         }));
 
-      await saveReport({
+      const reportId = await saveReport({
         reportData: {
           reportDate: formData.reportDate,
           projectId: formData.projectId as Id<'projects'>,
@@ -174,10 +184,22 @@ export default function CreateReportScreen() {
           metadata: formData.metadata,
         },
         workItems: workItemsForBackend,
+        status: isDraft ? 'draft' : 'submitted',
       });
 
-      Toast.show({ type: 'success', text1: '日報を作成しました', visibilityTime: 2000 });
-      setTimeout(() => router.back(), 1500);
+      if (isDraft) {
+        Toast.show({
+          type: 'success',
+          text1: REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.TOAST_MESSAGES.DRAFT_SUCCESS,
+          text2: REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.TOAST_MESSAGES.DRAFT_SUCCESS_SUBTITLE,
+          visibilityTime: 2000,
+        });
+        // 下書き保存後は詳細画面に遷移
+        setTimeout(() => router.replace(`/reports/${reportId}`), 1500);
+      } else {
+        Toast.show({ type: 'success', text1: '日報を作成しました', visibilityTime: 2000 });
+        setTimeout(() => router.back(), 1500);
+      }
     } catch (error) {
       Toast.show({
         type: 'error',
@@ -323,24 +345,49 @@ export default function CreateReportScreen() {
                 <ChevronRight size={20} color='white' />
               </Pressable>
             ) : (
-              <Pressable
-                onPress={handleSubmit}
-                disabled={isSubmitting || isConnected === false}
-                className={`flex-1 flex-row items-center justify-center rounded-lg py-3 ${
-                  isSubmitting || isConnected === false
-                    ? 'bg-gray-400'
-                    : 'bg-green-500 active:bg-green-600'
-                }`}
-              >
-                {isSubmitting && <ActivityIndicator size='small' color='white' className='mr-2' />}
-                <Text className='text-center font-semibold text-white'>
-                  {isConnected === false
-                    ? REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.OFFLINE_DISABLED
-                    : isSubmitting
-                      ? REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.CREATING
-                      : REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.CREATE}
-                </Text>
-              </Pressable>
+              <>
+                <Pressable
+                  onPress={() => handleSubmit(true)}
+                  disabled={isSubmitting || isConnected === false}
+                  className={`flex-1 flex-row items-center justify-center rounded-lg py-3 ${
+                    isSubmitting || isConnected === false
+                      ? 'bg-gray-400'
+                      : 'bg-gray-500 active:bg-gray-600'
+                  }`}
+                >
+                  {isSubmitting && (
+                    <ActivityIndicator size='small' color='white' className='mr-2' />
+                  )}
+                  <Text className='text-center font-semibold text-white'>
+                    {isConnected === false
+                      ? REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.OFFLINE_DISABLED
+                      : isSubmitting
+                        ? REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.SAVING_DRAFT
+                        : REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.SAVE_DRAFT}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => handleSubmit(false)}
+                  disabled={isSubmitting || isConnected === false}
+                  className={`flex-1 flex-row items-center justify-center rounded-lg py-3 ml-2 ${
+                    isSubmitting || isConnected === false
+                      ? 'bg-gray-400'
+                      : 'bg-green-500 active:bg-green-600'
+                  }`}
+                >
+                  {isSubmitting && (
+                    <ActivityIndicator size='small' color='white' className='mr-2' />
+                  )}
+                  <Text className='text-center font-semibold text-white'>
+                    {isConnected === false
+                      ? REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.OFFLINE_DISABLED
+                      : isSubmitting
+                        ? REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.CREATING
+                        : REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.CREATE}
+                  </Text>
+                </Pressable>
+              </>
             )}
           </View>
         </View>
