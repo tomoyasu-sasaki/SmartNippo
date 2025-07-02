@@ -100,12 +100,21 @@ export const saveReportWithWorkItems = action({
 
       if (status === 'submitted') {
         // status を submitted に更新して、承認フローを開始する
-        // 新規作成直後のため、バージョン競合は起きない。
-        // updateReport 側はオプショナルだが、呼び出し側の型定義で必須になっているため any で回避
+        // 新規作成直後のため、バージョン競合は起きない想定だが、
+        // updateReport の expectedUpdatedAt は必須パラメータのため、
+        // 作成直後のドキュメントを取得してタイムスタンプを渡す。
+        const newReport = await ctx.runQuery(api.reports.queries.getReportForEdit, {
+          reportId: currentReportId,
+        });
+        if (!newReport) {
+          // このパスは理論上到達しないはず
+          throw new Error('Failed to retrieve newly created report.');
+        }
         await ctx.runMutation(api.index.updateReport, {
           reportId: currentReportId,
           status: 'submitted',
-        } as any);
+          expectedUpdatedAt: newReport.updated_at,
+        });
       }
     }
 
