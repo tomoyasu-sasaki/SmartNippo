@@ -76,7 +76,7 @@ export default function DashboardScreen() {
       <View className='flex-1 items-center justify-center bg-gray-50'>
         <ActivityIndicator size='large' color='#3B82F6' />
         <Text className='mt-4 text-gray-600'>{DASHBOARD_CONSTANTS.LOADING_TEXT}</Text>
-        <Text className='mt-1 text-sm text-gray-500'>過去30日分のデータを読み込み中...</Text>
+        <Text className='mt-1 text-sm text-gray-500'>過去7日分のデータを読み込み中...</Text>
       </View>
     );
   }

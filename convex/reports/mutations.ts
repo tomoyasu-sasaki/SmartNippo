@@ -355,12 +355,12 @@ export const updateReport = mutation({
             applicantId: report.authorId,
           });
 
-          // 既存の「承認待ち」の承認依頼をクリア
+          // "by_report_status" インデックスが存在しない可能性があるため、
+          // 代わりに既存の "by_report" インデックスを用いて status をフィルタします。
           const existingApprovals = await ctx.db
             .query('approvals')
-            .withIndex('by_report_status', (q) =>
-              q.eq('reportId', report._id).eq('status', 'pending')
-            )
+            .withIndex('by_report', (q) => q.eq('reportId', report._id))
+            .filter((q) => q.eq(q.field('status'), 'pending'))
             .collect();
           await Promise.all(existingApprovals.map((a) => ctx.db.delete(a._id)));
 
@@ -606,9 +606,11 @@ export const approveReport = mutation({
 
     // 承認記録を更新または作成
     const now = Date.now();
+    // "by_report_status" インデックスが存在しない可能性があるため、既存のインデックスに置き換え
     const existingApproval = await ctx.db
       .query('approvals')
-      .withIndex('by_report_status', (q) => q.eq('reportId', args.reportId).eq('status', 'pending'))
+      .withIndex('by_report', (q) => q.eq('reportId', args.reportId))
+      .filter((q) => q.eq(q.field('status'), 'pending'))
       .filter((q) => q.eq(q.field('managerId'), user._id))
       .first();
 
@@ -717,9 +719,11 @@ export const rejectReport = mutation({
     });
 
     // 関連する承認依頼のステータスを更新
+    // "by_report_status" インデックスが存在しない可能性があるため、既存のインデックスに置き換え
     const pendingApprovals = await ctx.db
       .query('approvals')
-      .withIndex('by_report_status', (q) => q.eq('reportId', args.reportId).eq('status', 'pending'))
+      .withIndex('by_report', (q) => q.eq('reportId', args.reportId))
+      .filter((q) => q.eq(q.field('status'), 'pending'))
       .collect();
 
     await Promise.all(

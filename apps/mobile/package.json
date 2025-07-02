@@ -60,7 +60,7 @@
   "scripts": {
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "lint": "eslint 'app/**/*.{ts,tsx}'",
+    "lint": "pnpm eslint \"**/*.{ts,tsx}\" --fix",
     "start": "expo start",
     "test": "echo \"⚠️  Mobile tests temporarily skipped due to React Native setup issues\" && exit 0",
     "test:original": "jest",

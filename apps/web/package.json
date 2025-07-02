@@ -70,7 +70,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "lint": "eslint .",
+    "lint": "pnpm eslint \"**/*.{ts,tsx}\" --fix",
     "start": "next start",
     "type-check": "tsc --noEmit",
     "storybook": "storybook dev -p 6006",
