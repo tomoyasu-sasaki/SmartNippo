@@ -90,11 +90,23 @@ export const saveReportWithWorkItems = action({
       currentReportId = reportId;
     } else {
       // レポートの新規作成
-      const createArgs: any = { ...cleanReportData, status: status ?? 'draft' };
+      // submitted で直接作成された場合でも、一度 draft で作成してから update する
+      // updateReport に承認フローを開始するロジックが実装されているため
+      const createArgs: any = { ...cleanReportData, status: 'draft' };
       if (reportData.projectId) {
         createArgs.projectId = reportData.projectId;
       }
       currentReportId = await ctx.runMutation(api.index.createReport, createArgs);
+
+      if (status === 'submitted') {
+        // status を submitted に更新して、承認フローを開始する
+        // 新規作成直後のため、バージョン競合は起きない。
+        // updateReport 側はオプショナルだが、呼び出し側の型定義で必須になっているため any で回避
+        await ctx.runMutation(api.index.updateReport, {
+          reportId: currentReportId,
+          status: 'submitted',
+        } as any);
+      }
     }
 
     // 作業項目の処理
