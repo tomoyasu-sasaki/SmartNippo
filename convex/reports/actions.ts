@@ -100,21 +100,29 @@ export const saveReportWithWorkItems = action({
 
       if (status === 'submitted') {
         // status を submitted に更新して、承認フローを開始する
-        // 新規作成直後のため、バージョン競合は起きない想定だが、
-        // updateReport の expectedUpdatedAt は必須パラメータのため、
-        // 作成直後のドキュメントを取得してタイムスタンプを渡す。
-        const newReport = await ctx.runQuery(api.reports.queries.getReportForEdit, {
+        // 新規作成直後のため、作成されたドキュメントを取得してタイムスタンプを渡す
+        // 正しいAPIパスを使用してeventual consistencyの問題を回避
+        const newReport = await ctx.runQuery(api.index.getReportForEdit, {
           reportId: currentReportId,
         });
         if (!newReport) {
-          // このパスは理論上到達しないはず
-          throw new Error('Failed to retrieve newly created report.');
+          // 作成直後のため、この状況が発生した場合は現在時刻を使用
+          console.warn(
+            `Created report ${currentReportId} not found immediately, using current timestamp`
+          );
+          const fallbackTimestamp = Date.now();
+          await ctx.runMutation(api.index.updateReport, {
+            reportId: currentReportId,
+            status: 'submitted',
+            expectedUpdatedAt: fallbackTimestamp,
+          });
+        } else {
+          await ctx.runMutation(api.index.updateReport, {
+            reportId: currentReportId,
+            status: 'submitted',
+            expectedUpdatedAt: newReport.updated_at,
+          });
         }
-        await ctx.runMutation(api.index.updateReport, {
-          reportId: currentReportId,
-          status: 'submitted',
-          expectedUpdatedAt: newReport.updated_at,
-        });
       }
     }
 

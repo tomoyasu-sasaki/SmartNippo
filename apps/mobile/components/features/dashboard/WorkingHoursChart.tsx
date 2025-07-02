@@ -9,6 +9,9 @@ export function WorkingHoursChart({ data }: { data: any[] }) {
     label: format(parseISO(item.date), 'M/d'),
   }));
 
+  // データ長に応じてspacingを調整（CumulativeHoursChartと同様のアプローチ）
+  const spacing = data.length > 7 ? 1 : 4;
+
   return (
     <View className='bg-white rounded-lg p-4 mb-6'>
       <View className='flex-row items-center mb-3'>
@@ -25,8 +28,7 @@ export function WorkingHoursChart({ data }: { data: any[] }) {
         xAxisThickness={0}
         hideRules
         height={150}
-        width={280}
-        spacing={1}
+        spacing={spacing}
         noOfSections={5}
         yAxisTextStyle={{ color: '#6B7280', fontSize: 9 }}
         xAxisLabelTextStyle={{ color: '#6B7280', fontSize: 9 }}
