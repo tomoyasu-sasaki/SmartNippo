@@ -14,7 +14,7 @@ interface BasicInfoStepProps {
   formData: ReportFormData;
   errors: Partial<Record<keyof ReportFormData, string>>;
   onUpdateFormData: (updates: Partial<ReportFormData>) => void;
-  isEditMode?: boolean;
+  _isEditMode?: boolean;
   projects?: Doc<'projects'>[];
 }
 
@@ -22,7 +22,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   formData,
   errors,
   onUpdateFormData,
-  isEditMode = false,
+  _isEditMode = false,
   projects = [],
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);

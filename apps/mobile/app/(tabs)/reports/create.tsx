@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -56,6 +57,11 @@ export default function CreateReportScreen() {
   const [errors, setErrors] = useState<Partial<Record<keyof ReportFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
+  // 競合解決用の状態
+  const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
+  const [pendingValues, setPendingValues] = useState<ReportFormData | null>(null);
+  const [pendingIsDraft, setPendingIsDraft] = useState(false);
+
   const saveReport = useAction(api.index.saveReportWithWorkItems);
   const projects = useQuery(api.index.listProjects);
 
@@ -201,6 +207,17 @@ export default function CreateReportScreen() {
         setTimeout(() => router.back(), 1500);
       }
     } catch (error) {
+      // 競合エラーの判定
+      if (error instanceof Error) {
+        if (error.message.includes('conflict') || error.message.includes('concurrency')) {
+          // データ競合が発生した場合
+          setPendingValues(formData);
+          setPendingIsDraft(isDraft);
+          setConflictDialogOpen(true);
+          return; // トーストは表示しない
+        }
+      }
+
       Toast.show({
         type: 'error',
         text1: '作成に失敗しました',
@@ -210,6 +227,81 @@ export default function CreateReportScreen() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // 競合解決の処理
+  const handleConflictResolution = async (forceUpdate: boolean) => {
+    if (!pendingValues) {
+      return;
+    }
+
+    setConflictDialogOpen(false);
+
+    if (forceUpdate) {
+      // 強制的に上書き保存
+      try {
+        setIsSubmitting(true);
+        Toast.show({
+          type: 'info',
+          text1: REPORTS_CONSTANTS.FORCE_SAVING_TOAST,
+        });
+
+        const workItemsForBackend = pendingValues.workItems
+          .filter((item) => item.projectId && item.workCategoryId)
+          .map(({ _id: __id, isNew: _isNew, ...rest }) => ({
+            ...rest,
+            projectId: rest.projectId as Id<'projects'>,
+            workCategoryId: rest.workCategoryId as Id<'workCategories'>,
+          }));
+
+        const reportId = await saveReport({
+          reportData: {
+            reportDate: pendingValues.reportDate,
+            projectId: pendingValues.projectId as Id<'projects'>,
+            title: pendingValues.title,
+            content: pendingValues.content,
+            workingHours: pendingValues.workingHours,
+            metadata: pendingValues.metadata,
+          },
+          workItems: workItemsForBackend,
+          status: pendingIsDraft ? 'draft' : 'submitted',
+        });
+
+        Toast.show({
+          type: 'success',
+          text1: REPORTS_CONSTANTS.FORCE_SAVE_SUCCESS_TOAST,
+          text2: REPORTS_CONSTANTS.FORCE_SAVE_SUCCESS_DESC_TOAST,
+          visibilityTime: 2000,
+        });
+
+        if (pendingIsDraft) {
+          setTimeout(() => router.replace(`/reports/${reportId}`), 1500);
+        } else {
+          setTimeout(() => router.back(), 1500);
+        }
+      } catch {
+        Toast.show({
+          type: 'error',
+          text1: REPORTS_CONSTANTS.FORCE_SAVE_ERROR_TOAST,
+          visibilityTime: 4000,
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // 編集を破棄して初期状態にリセット
+      setFormData(initialFormData);
+      setCurrentStep(0);
+      Toast.show({
+        type: 'info',
+        text1: '変更を破棄しました',
+        text2: '最新の状態にリセットされました',
+        visibilityTime: 2000,
+      });
+    }
+
+    setPendingValues(null);
+    setPendingIsDraft(false);
   };
 
   // フォームデータ更新
@@ -391,6 +483,53 @@ export default function CreateReportScreen() {
             )}
           </View>
         </View>
+
+        {/* 競合解決ダイアログ */}
+        <Modal
+          visible={conflictDialogOpen}
+          animationType='fade'
+          transparent={true}
+          onRequestClose={() => setConflictDialogOpen(false)}
+        >
+          <View className='flex-1 items-center justify-center bg-black/50'>
+            <View className='mx-4 rounded-lg bg-white p-6 shadow-lg'>
+              <Text className='mb-4 text-lg font-semibold text-gray-900'>
+                {REPORTS_CONSTANTS.CONFLICT_DIALOG_TITLE}
+              </Text>
+              <Text className='mb-4 text-sm text-gray-600'>
+                {REPORTS_CONSTANTS.CONFLICT_DIALOG_DESCRIPTION}
+              </Text>
+
+              <View className='mb-6 space-y-2'>
+                <Text className='text-sm text-gray-500'>
+                  • {REPORTS_CONSTANTS.CONFLICT_DIALOG_FORCE_SAVE_INFO}
+                </Text>
+                <Text className='text-sm text-gray-500'>
+                  • {REPORTS_CONSTANTS.CONFLICT_DIALOG_DISCARD_INFO}
+                </Text>
+              </View>
+
+              <View className='flex-row space-x-3'>
+                <Pressable
+                  onPress={() => handleConflictResolution(false)}
+                  className='flex-1 rounded-lg bg-gray-500 py-3 active:bg-gray-600'
+                >
+                  <Text className='text-center font-semibold text-white'>
+                    {REPORTS_CONSTANTS.CONFLICT_DIALOG_DISCARD_BUTTON}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => handleConflictResolution(true)}
+                  className='flex-1 rounded-lg bg-red-500 py-3 active:bg-red-600'
+                >
+                  <Text className='text-center font-semibold text-white'>
+                    {REPORTS_CONSTANTS.CONFLICT_DIALOG_FORCE_SAVE_BUTTON}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaViewContext>
   );

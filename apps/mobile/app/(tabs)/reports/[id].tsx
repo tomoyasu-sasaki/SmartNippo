@@ -28,8 +28,10 @@ import {
   Share,
   Text,
   TextInput,
+  Vibration,
   View,
 } from 'react-native';
+import { AISummaryCard } from '../../../components/features/reports/ai-summary-card';
 import { CommentItem } from '../../../components/features/reports/comment-item';
 import { MetadataSection } from '../../../components/features/reports/metadata-section';
 import { StatusBadge } from '../../../components/features/reports/status-badge';
@@ -43,13 +45,19 @@ export default function ReportDetailScreen() {
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // id を Id<'reports'> 型に変換
   const reportId = id as Id<'reports'>;
 
-  const report = useQuery(api.index.getReportDetail, {
-    reportId,
-  });
+  const report = useQuery(
+    api.index.getReportDetail,
+    isDeleting
+      ? 'skip'
+      : {
+          reportId,
+        }
+  );
 
   const workItems = report?.workItems;
 
@@ -64,19 +72,22 @@ export default function ReportDetailScreen() {
   const deleteReport = useMutation(api.index.deleteReport);
 
   const handleAddComment = async () => {
-    if (!commentText.trim() || !report) {
+    if (!commentText.trim()) {
       return;
     }
+
     setIsSubmittingComment(true);
     try {
       await addComment({
-        reportId: report._id,
+        reportId: id as Id<'reports'>,
         content: commentText.trim(),
       });
       setCommentText('');
+      // 成功時の振動フィードバック
+      Vibration.vibrate(50);
       Alert.alert('成功', 'コメントを追加しました');
-    } catch {
-      Alert.alert('エラー', REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.COMMENT_ERROR);
+    } catch (error) {
+      Alert.alert('エラー', `コメントの追加に失敗しました: ${(error as Error).message}`);
     } finally {
       setIsSubmittingComment(false);
     }
@@ -99,10 +110,9 @@ export default function ReportDetailScreen() {
           onPress: async () => {
             setIsSubmittingAction(true);
             try {
-              await approveReport({
-                reportId: id as Id<'reports'>,
-                comment: '承認しました',
-              });
+              await approveReport({ reportId: id as Id<'reports'> });
+              // 成功時の振動フィードバック
+              Vibration.vibrate(100);
               Alert.alert('成功', REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.APPROVE_SUCCESS);
             } catch (error) {
               const errorMessage = (error as Error).message;
@@ -211,13 +221,16 @@ export default function ReportDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             setIsSubmittingAction(true);
+            setIsDeleting(true);
             try {
               await deleteReport({
                 reportId: id as Id<'reports'>,
               });
+              // 成功時の振動フィードバック
+              Vibration.vibrate(100);
               Alert.alert('成功', REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.DELETE_SUCCESS);
-              // 削除後はリスト画面に戻る
-              router.back();
+              // 削除後は戻る履歴を残さずリスト画面に戻る
+              router.replace('/(tabs)/reports');
             } catch (error) {
               const errorMessage = (error as Error).message;
               const isPermissionError =
@@ -228,6 +241,7 @@ export default function ReportDetailScreen() {
                   ? REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.PERMISSION_ERROR
                   : REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.DELETE_ERROR(errorMessage)
               );
+              setIsDeleting(false);
             } finally {
               setIsSubmittingAction(false);
             }
@@ -363,6 +377,13 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
               ))}
             </View>
           )}
+
+          {/* AI要約カード */}
+          <AISummaryCard
+            summary={report.summary}
+            aiSummaryStatus={report.aiSummaryStatus}
+            isLoading={false}
+          />
 
           {/* メタデータ */}
           {report.metadata && (

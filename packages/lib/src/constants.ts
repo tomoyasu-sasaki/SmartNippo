@@ -839,6 +839,142 @@ export const REPORTS_CONSTANTS = {
 
   LOADING_MESSAGE: '読み込み中...',
 
+  // --- Toast Messages (Web & Mobile共通) ---
+  TOAST_MESSAGES: {
+    SUCCESS: {
+      NETWORK_RESTORED: {
+        title: 'ネットワークに接続しました',
+        description: 'データを同期しています...',
+        color: '#10B981', // green-500
+      },
+      REPORT_CREATED: {
+        title: '日報を作成しました',
+        description: '正常に保存されました',
+        color: '#10B981',
+      },
+      REPORT_UPDATED: {
+        title: '日報を更新しました',
+        description: '変更が保存されました',
+        color: '#10B981',
+      },
+      DRAFT_SAVED: {
+        title: '下書きを保存しました',
+        description: '後で編集を続けることができます',
+        color: '#10B981',
+      },
+      REPORT_DELETED: {
+        title: '日報を削除しました',
+        description: '正常に削除されました',
+        color: '#10B981',
+      },
+      COMMENT_ADDED: {
+        title: 'コメントを追加しました',
+        description: '',
+        color: '#10B981',
+      },
+    },
+    ERROR: {
+      NETWORK_ERROR: {
+        title: 'ネットワークエラー',
+        description: 'インターネット接続を確認してください',
+        color: '#EF4444', // red-500
+      },
+      VALIDATION_ERROR: {
+        title: '入力内容に不備があります',
+        description: '必須項目を確認してください',
+        color: '#EF4444',
+      },
+      SAVE_ERROR: {
+        title: '保存に失敗しました',
+        description: 'しばらく時間をおいて再度お試しください',
+        color: '#EF4444',
+      },
+      PERMISSION_ERROR: {
+        title: '権限がありません',
+        description: 'この操作を実行する権限がありません',
+        color: '#EF4444',
+      },
+    },
+    INFO: {
+      OFFLINE_MODE: {
+        title: 'オフラインモード',
+        description: 'キャッシュからデータを表示しています',
+        color: '#F59E0B', // amber-500
+      },
+      SAVING: {
+        title: '保存中...',
+        description: '',
+        color: '#3B82F6', // blue-500
+      },
+      CHANGES_DISCARDED: {
+        title: '変更を破棄しました',
+        description: '最新の状態にリセットされました',
+        color: '#6B7280', // gray-500
+      },
+    },
+  },
+
+  // --- Loading/Activity Indicator Standards ---
+  LOADING_STANDARDS: {
+    SIZES: {
+      SMALL: 'small' as const,
+      LARGE: 'large' as const,
+    },
+    COLORS: {
+      PRIMARY: '#3B82F6', // blue-500
+      SECONDARY: '#6B7280', // gray-500
+      SUCCESS: '#10B981', // green-500
+      WARNING: '#F59E0B', // amber-500
+      DANGER: '#EF4444', // red-500
+    },
+  },
+
+  // --- Color Palette Tokens (Web & Mobile共通) ---
+  COLOR_TOKENS: {
+    PRIMARY: {
+      50: '#EFF6FF',
+      100: '#DBEAFE',
+      200: '#BFDBFE',
+      300: '#93C5FD',
+      400: '#60A5FA',
+      500: '#3B82F6',
+      600: '#2563EB',
+      700: '#1D4ED8',
+      800: '#1E40AF',
+      900: '#1E3A8A',
+    },
+    GRAY: {
+      50: '#F9FAFB',
+      100: '#F3F4F6',
+      200: '#E5E7EB',
+      300: '#D1D5DB',
+      400: '#9CA3AF',
+      500: '#6B7280',
+      600: '#4B5563',
+      700: '#374151',
+      800: '#1F2937',
+      900: '#111827',
+    },
+    SUCCESS: {
+      50: '#ECFDF5',
+      100: '#D1FAE5',
+      500: '#10B981',
+      600: '#059669',
+    },
+    WARNING: {
+      50: '#FFFBEB',
+      100: '#FEF3C7',
+      500: '#F59E0B',
+      600: '#D97706',
+    },
+    DANGER: {
+      50: '#FEF2F2',
+      100: '#FEE2E2',
+      500: '#EF4444',
+      600: '#DC2626',
+    },
+  },
+
   // --- Mobile Specific ---
   MOBILE_STEPS: {
     STEPS: ['基本情報', 'タスク', 'メタデータ'],
