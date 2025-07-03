@@ -223,6 +223,98 @@ export default function EditReportScreen() {
     }
   };
 
+  // 下書き保存
+  const handleSaveDraft = async () => {
+    if (!formData || !report) {
+      return;
+    }
+    if (isConnected === false) {
+      Alert.alert('オフラインです', 'オンラインのときに再試行してください。');
+      return;
+    }
+
+    setIsSubmitting(true);
+    Toast.show({
+      type: 'info',
+      text1: REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.TOAST_MESSAGES.DRAFT_SAVING,
+    });
+
+    try {
+      const workItemsForBackend = formData.workItems.map((item) => {
+        const { projectId, workCategoryId, description, workDuration } = item;
+        const commonData = {
+          projectId: projectId as Id<'projects'>,
+          workCategoryId: workCategoryId as Id<'workCategories'>,
+          description,
+          workDuration,
+        };
+
+        if (item.isNew) {
+          return commonData;
+        }
+
+        return {
+          ...commonData,
+          _id: item._id as Id<'workItems'>,
+        };
+      });
+
+      // 削除されたアイテムを_isDeletedフラグ付きで追加
+      const allWorkItems = [
+        ...workItemsForBackend,
+        ...deletedWorkItems.map((item) => ({
+          _id: item._id as Id<'workItems'>,
+          projectId: item.projectId as Id<'projects'>,
+          workCategoryId: item.workCategoryId as Id<'workCategories'>,
+          description: item.description,
+          workDuration: item.workDuration,
+          _isDeleted: true,
+        })),
+      ];
+
+      await saveReport({
+        reportId,
+        expectedUpdatedAt: report.updated_at, // 下書きでも競合チェックは行う
+        reportData: {
+          reportDate: formData.reportDate,
+          projectId: formData.projectId as Id<'projects'>,
+          title: formData.title,
+          content: formData.content,
+          workingHours: formData.workingHours,
+          metadata: formData.metadata,
+        },
+        workItems: allWorkItems,
+        status: 'draft', // ステータスを 'draft' に設定
+      });
+
+      Toast.show({
+        type: 'success',
+        text1: REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.TOAST_MESSAGES.DRAFT_SUCCESS,
+        visibilityTime: 2000,
+      });
+      setTimeout(() => router.back(), 1500);
+    } catch (error) {
+      // 競合エラーの判定
+      if (error instanceof Error) {
+        if (error.message.includes('conflict') || error.message.includes('concurrency')) {
+          const latest = await convex.query(api.index.getReportDetail, { reportId });
+          setConflictingReport(latest);
+          setPendingValues(formData);
+          setConflictDialogOpen(true);
+          return;
+        }
+      }
+      Toast.show({
+        type: 'error',
+        text1: '下書き保存に失敗しました',
+        text2: (error as Error).message,
+        visibilityTime: 4000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // 競合解決の処理
   const handleConflictResolution = async (forceUpdate: boolean) => {
     if (!pendingValues || !conflictingReport) {
@@ -445,47 +537,76 @@ export default function EditReportScreen() {
         {/* ナビゲーションボタン */}
         <View className='border-t border-gray-200 bg-white px-4 py-4'>
           <View className='flex-row space-x-2'>
-            {currentStep > 0 && (
-              <Pressable
-                onPress={handlePrevious}
-                className='flex-1 flex-row items-center justify-center rounded-lg bg-gray-200 py-3 active:bg-gray-300'
-              >
-                <ChevronLeft size={20} color='#374151' />
-                <Text className='ml-1 font-semibold text-gray-700'>
-                  {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.PREVIOUS}
-                </Text>
-              </Pressable>
-            )}
-
             {currentStep < STEPS.length - 1 ? (
-              <Pressable
-                onPress={handleNext}
-                className='flex-1 flex-row items-center justify-center rounded-lg bg-blue-500 py-3 active:bg-blue-600'
-              >
-                <Text className='mr-1 font-semibold text-white'>
-                  {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.NEXT}
-                </Text>
-                <ChevronRight size={20} color='white' />
-              </Pressable>
+              // 最終ステップ以前のボタン
+              <>
+                {currentStep > 0 && (
+                  <Pressable
+                    onPress={handlePrevious}
+                    className='flex-1 flex-row items-center justify-center rounded-lg bg-gray-200 py-3 active:bg-gray-300'
+                  >
+                    <ChevronLeft size={20} color='#374151' />
+                    <Text className='ml-1 font-semibold text-gray-700'>
+                      {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.PREVIOUS}
+                    </Text>
+                  </Pressable>
+                )}
+                <Pressable
+                  onPress={handleNext}
+                  className='flex-1 flex-row items-center justify-center rounded-lg bg-blue-500 py-3 active:bg-blue-600'
+                >
+                  <Text className='mr-1 font-semibold text-white'>
+                    {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.NEXT}
+                  </Text>
+                  <ChevronRight size={20} color='white' />
+                </Pressable>
+              </>
             ) : (
-              <Pressable
-                onPress={handleSubmit}
-                disabled={isSubmitting || isConnected === false}
-                className={`flex-1 flex-row items-center justify-center rounded-lg py-3 ${
-                  isSubmitting || isConnected === false
-                    ? 'bg-gray-400'
-                    : 'bg-green-500 active:bg-green-600'
-                }`}
-              >
-                {isSubmitting && <ActivityIndicator size='small' color='white' className='mr-2' />}
-                <Text className='text-center font-semibold text-white'>
-                  {isConnected === false
-                    ? REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.OFFLINE_DISABLED
-                    : isSubmitting
-                      ? '更新中...'
-                      : '更新する'}
-                </Text>
-              </Pressable>
+              // 最終ステップのボタン
+              <>
+                <Pressable
+                  onPress={handlePrevious}
+                  className='flex-grow flex-row items-center justify-center rounded-lg bg-gray-200 py-3 active:bg-gray-300'
+                >
+                  <ChevronLeft size={20} color='#374151' />
+                  <Text className='ml-1 font-semibold text-gray-700'>
+                    {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.PREVIOUS}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleSaveDraft}
+                  disabled={isSubmitting || isConnected === false}
+                  className={`flex-1 flex-row items-center justify-center rounded-lg py-3 ml-2 ${
+                    isSubmitting || isConnected === false
+                      ? 'bg-gray-400'
+                      : 'bg-gray-500 active:bg-gray-600'
+                  }`}
+                >
+                  <Text className='text-center font-semibold text-white'>
+                    {REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.SAVE_DRAFT}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleSubmit}
+                  disabled={isSubmitting || isConnected === false}
+                  className={`flex-1 flex-row items-center justify-center rounded-lg py-3 ml-2 ${
+                    isSubmitting || isConnected === false
+                      ? 'bg-gray-400'
+                      : 'bg-green-500 active:bg-green-600'
+                  }`}
+                >
+                  {isSubmitting && (
+                    <ActivityIndicator size='small' color='white' className='mr-2' />
+                  )}
+                  <Text className='text-center font-semibold text-white'>
+                    {isConnected === false
+                      ? REPORTS_CONSTANTS.MOBILE_CREATE_SCREEN.BUTTONS.OFFLINE_DISABLED
+                      : isSubmitting
+                        ? '更新中...'
+                        : '更新する'}
+                  </Text>
+                </Pressable>
+              </>
             )}
           </View>
         </View>

@@ -152,6 +152,16 @@ export const listReports = query({
       sortOrder = 'desc',
     } = args;
 
+    // manager/admin 用: 承認者として関与しているレポートIDを取得
+    let allowedReportIds: Set<Id<'reports'>> | null = null;
+    if (user.role === 'manager' || user.role === 'admin') {
+      const approvals = await ctx.db
+        .query('approvals')
+        .withIndex('by_manager', (q) => q.eq('managerId', user._id))
+        .collect();
+      allowedReportIds = new Set(approvals.map((a) => a.reportId));
+    }
+
     // userロールの場合は自分の日報のみに強制する
     if (user.role === 'user') {
       authorId = user._id;
@@ -192,6 +202,13 @@ export const listReports = query({
     }
     if (!args.includeDeleted) {
       reports = reports.filter((r) => !r.isDeleted);
+    }
+
+    // manager/admin のアクセス制限: 自分が author か承認者のレポートのみ
+    if (user.role === 'manager' || user.role === 'admin') {
+      reports = reports.filter(
+        (r) => r.authorId === user._id || (allowedReportIds?.has(r._id) ?? false)
+      );
     }
 
     // JS側でのソート（インデックスでソートできない場合）

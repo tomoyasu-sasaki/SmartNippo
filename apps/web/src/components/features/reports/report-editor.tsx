@@ -565,6 +565,7 @@ export function ReportEditor({ reportId, initialData, expectedUpdatedAt }: Repor
               <Button
                 type='submit'
                 name='submit'
+                variant='outline'
                 disabled={isSubmitting}
                 onClick={() => (submitTypeRef.current = 'submitted')}
                 loading={isSubmitting && submitTypeRef.current === 'submitted'}

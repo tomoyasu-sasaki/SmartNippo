@@ -63,10 +63,17 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch report detail
-  const report = useQuery(api.index.getReportDetail, { reportId: reportIdConv });
-  const workItems = useQuery(api.index.listWorkItemsForReport, { reportId: reportIdConv });
+  const report = useQuery(
+    api.index.getReportDetail,
+    isDeleting ? 'skip' : { reportId: reportIdConv }
+  );
+  const workItems = useQuery(
+    api.index.listWorkItemsForReport,
+    isDeleting ? 'skip' : { reportId: reportIdConv }
+  );
   const currentUser = useQuery(api.index.current);
 
   // Mutations
@@ -164,6 +171,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
   };
 
   const handleDelete = async () => {
+    setIsDeleting(true);
     try {
       setIsSubmittingAction(true);
       const toastId = toast.loading(REPORTS_CONSTANTS.DELETE_SUBMITTING);
@@ -183,6 +191,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
             ? REPORTS_CONSTANTS.PERMISSION_ERROR_DESC
             : REPORTS_CONSTANTS.GENERIC_ERROR_DESC,
       });
+      setIsDeleting(false);
     } finally {
       setIsSubmittingAction(false);
     }

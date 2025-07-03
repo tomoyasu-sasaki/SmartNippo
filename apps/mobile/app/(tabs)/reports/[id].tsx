@@ -45,13 +45,19 @@ export default function ReportDetailScreen() {
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // id を Id<'reports'> 型に変換
   const reportId = id as Id<'reports'>;
 
-  const report = useQuery(api.index.getReportDetail, {
-    reportId,
-  });
+  const report = useQuery(
+    api.index.getReportDetail,
+    isDeleting
+      ? 'skip'
+      : {
+          reportId,
+        }
+  );
 
   const workItems = report?.workItems;
 
@@ -215,6 +221,7 @@ export default function ReportDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             setIsSubmittingAction(true);
+            setIsDeleting(true);
             try {
               await deleteReport({
                 reportId: id as Id<'reports'>,
@@ -234,6 +241,7 @@ export default function ReportDetailScreen() {
                   ? REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.PERMISSION_ERROR
                   : REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.ALERTS.DELETE_ERROR(errorMessage)
               );
+              setIsDeleting(false);
             } finally {
               setIsSubmittingAction(false);
             }
