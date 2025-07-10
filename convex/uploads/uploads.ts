@@ -191,7 +191,6 @@ export const deleteAvatar = mutation({
 
     // プロフィールから参照削除（avatarUrlにリセット）
     const updateData: any = {
-      avatarUrl: user.avatarUrl,
       updated_at: Date.now(),
     };
     // avatarStorageIdを削除
@@ -252,11 +251,6 @@ export const getAvatarUrl = query({
       } catch (error) {
         console.warn('Failed to get avatar URL from storage:', error);
       }
-    }
-
-    // レガシーの外部URLにフォールバック
-    if (targetUser.avatarUrl) {
-      return { url: targetUser.avatarUrl, source: 'external' };
     }
 
     return null;
@@ -324,50 +318,6 @@ export const validateAvatarFile = mutation({
       valid: errors.length === 0,
       errors,
       limits: AVATAR_LIMITS,
-    };
-  },
-});
-
-/**
- * アバターアップロード統計の取得（管理者向け）
- *
- * @description 組織内のアバターアップロード状況に関する統計情報を取得します。
- * 全ユーザー数、アバター設定済みユーザー数、ストレージ利用率などを集計します。
- *
- * @query
- * @returns {Promise<Object>} アバター統計情報
- * @throws {Error} 認証失敗または管理者権限がない場合
- * @example
- * ```typescript
- * const stats = await getUploadStats();
- * console.log(`Avatar coverage: ${stats.avatarCoverage}%`);
- * ```
- * @since 1.0.0
- */
-export const getUploadStats = query({
-  args: {},
-  handler: async (ctx) => {
-    const user = await getAuthenticatedUser(ctx);
-    if (!user || user.role !== 'admin') {
-      throw new Error('Admin access required');
-    }
-
-    // 組織内のアバターアップロード統計
-    const profiles = await ctx.db
-      .query('userProfiles')
-      .withIndex('by_org', (q) => q.eq('orgId', user.orgId))
-      .collect();
-
-    const stats = {
-      totalUsers: profiles.length,
-      usersWithAvatar: profiles.filter((p) => p.avatarStorageId ?? p.avatarUrl).length,
-      usersWithStorageAvatar: profiles.filter((p) => p.avatarStorageId).length,
-      usersWithExternalAvatar: profiles.filter((p) => p.avatarUrl && !p.avatarStorageId).length,
-    };
-
-    return {
-      ...stats,
-      avatarCoverage: Math.round((stats.usersWithAvatar / stats.totalUsers) * 100),
     };
   },
 });

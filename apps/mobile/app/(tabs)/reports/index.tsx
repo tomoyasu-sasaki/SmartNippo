@@ -1,5 +1,5 @@
 import { REPORTS_CONSTANTS, REPORT_STATUS_LABELS } from '@smartnippo/lib';
-import type { Report, ReportStatus, UserProfile } from '@smartnippo/types';
+import type { Report, ReportStatus } from '@smartnippo/types';
 import { api } from 'convex/_generated/api';
 import { useQuery } from 'convex/react';
 import { router } from 'expo-router';
@@ -55,12 +55,9 @@ export default function ReportsScreen() {
   };
 
   // FlatListのアイテムを描画する関数 (メモ化)
-  const renderItem = useCallback(
-    ({ item }: { item: Report & { author?: Pick<UserProfile, 'name'> } }) => {
-      return <ReportCard report={item} />;
-    },
-    []
-  );
+  const renderItem = useCallback(({ item }: { item: Report & { author?: string | null } }) => {
+    return <ReportCard report={item} />;
+  }, []);
 
   // フィルターチップのプレスハンドラ (メモ化)
   const handleFilterPress = useCallback((status: ReportStatus | null) => {
@@ -71,10 +68,7 @@ export default function ReportsScreen() {
   // アイテムの高さを概算してパフォーマンス向上
   const ITEM_HEIGHT = 180; // おおよその高さを指定
   const getItemLayout = useCallback(
-    (
-      data: Array<Report & { author?: Pick<UserProfile, 'name'> }> | null | undefined,
-      index: number
-    ) => ({
+    (data: Array<Report & { author?: string | null }> | null | undefined, index: number) => ({
       length: ITEM_HEIGHT,
       offset: ITEM_HEIGHT * index,
       index,

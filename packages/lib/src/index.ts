@@ -25,6 +25,24 @@ export {
   profileFormSchema,
 } from './schemas/user-profile';
 
+// Export Clerk metadata schemas and helpers
+export {
+  ClerkPublicMetadataSchema,
+  ClerkPublicMetadataUpdateSchema,
+  ClerkUnsafeMetadataSchema,
+  ClerkUnsafeMetadataUpdateSchema,
+  ConvexToClerkMapping,
+  isClerkPublicMetadata,
+  isClerkUnsafeMetadata,
+  mergeUnsafeMetadata,
+  normalizeSocialUrl,
+  parsePublicMetadata,
+  parsePublicMetadataWithErrors,
+  parseUnsafeMetadata,
+  parseUnsafeMetadataWithErrors,
+  shouldShowField,
+} from './schemas/clerk-metadata';
+
 // Explicitly export types that might not be picked up by export *
 export type {
   FilteredProfile,
@@ -54,11 +72,10 @@ export type {
   UserRole,
 } from './schemas/user-profile';
 
-// TODO: Implement utility functions in future sections
-// export { formatDate } from "./utils/date";
-// export { validateEmail } from "./utils/validation";
-// export { classNames } from "./utils/classNames";
-
-// TODO: Export types when utility functions are implemented
-// export type { DateFormat } from "./utils/date";
-// export type { ValidationResult } from "./utils/validation";
+// Export Clerk metadata types
+export type {
+  ClerkPublicMetadata,
+  ClerkPublicMetadataUpdate,
+  ClerkUnsafeMetadata,
+  ClerkUnsafeMetadataUpdate,
+} from './schemas/clerk-metadata';

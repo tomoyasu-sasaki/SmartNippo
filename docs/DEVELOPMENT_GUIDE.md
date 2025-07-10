@@ -5,6 +5,8 @@
 ## 📋 目次
 
 - [開発環境のセットアップ](#開発環境のセットアップ)
+- [アーキテクチャ概要](#アーキテクチャ概要)
+- [ユーザープロフィール管理](#ユーザープロフィール管理)
 - [コーディング規約](#コーディング規約)
 - [命名規則](#命名規則)
 - [プロジェクト構造](#プロジェクト構造)
@@ -50,6 +52,187 @@
   "typescript.enablePromptUseWorkspaceTsdk": true
 }
 ```
+
+## アーキテクチャ概要
+
+### 技術スタック
+
+- **フロントエンド**: Next.js (Web) + Expo (Mobile)
+- **バックエンド**: Convex (リアルタイムデータベース)
+- **認証・ユーザー管理**: Clerk
+- **UI**: Tailwind CSS + shadcn/ui
+- **状態管理**: React Query (Convex統合)
+
+### データフロー
+
+```
+[Clerk] ←→ [Web/Mobile Apps] ←→ [Convex Backend]
+   ↑              ↑                    ↑
+ユーザー情報    プロフィール表示    アプリ固有データ
+(SSoT)         (統合表示)         (role, orgId等)
+```
+
+## ユーザープロフィール管理
+
+### Clerkプロフィール一元化アーキテクチャ
+
+SmartNippoでは、ユーザープロフィール情報の管理にClerkを**Single Source of Truth
+(SSoT)**として採用しています。
+
+#### データ分離の原則
+
+| データ種別         | 管理場所             | 説明                               |
+| ------------------ | -------------------- | ---------------------------------- |
+| **個人情報**       | Clerk                | 名前、メールアドレス、アバター画像 |
+| **ユーザー設定**   | Clerk unsafeMetadata | ソーシャルリンク、プライバシー設定 |
+| **アプリ固有情報** | Convex userProfiles  | ロール、組織ID、プッシュトークン   |
+
+#### Clerkメタデータ構造
+
+```typescript
+// Clerk User.unsafeMetadata
+interface ClerkUnsafeMetadata {
+  socialLinks?: {
+    twitter?: string;
+    linkedin?: string;
+    github?: string;
+    instagram?: string;
+    facebook?: string;
+    youtube?: string;
+    website?: string;
+  };
+  privacySettings?: {
+    profile?: 'public' | 'organization' | 'team' | 'private';
+    email?: 'public' | 'organization' | 'team' | 'private';
+    socialLinks?: 'public' | 'organization' | 'team' | 'private';
+    reports?: 'public' | 'organization' | 'team' | 'private';
+    avatar?: 'public' | 'organization' | 'team' | 'private';
+  };
+}
+
+// Clerk User.publicMetadata
+interface ClerkPublicMetadata {
+  role?: 'user' | 'manager' | 'admin';
+}
+```
+
+#### Convex userProfilesテーブル（スリム化後）
+
+```typescript
+// convex/schema/userProfiles.ts
+export const userProfilesTable = defineTable({
+  clerkId: v.string(), // Clerk User ID
+  role: v.union(v.literal('user'), v.literal('manager'), v.literal('admin')),
+  orgId: v.optional(v.id('orgs')), // 所属組織ID
+  avatarStorageId: v.optional(v.id('_storage')), // Convexファイルストレージ
+  pushToken: v.optional(v.string()), // Expoプッシュ通知
+  created_at: v.number(),
+  updated_at: v.number(),
+});
+```
+
+#### プロフィール情報の取得
+
+```typescript
+// 統合ユーザープロフィールフック
+export const useUnifiedUserProfile = () => {
+  const { user, isLoaded } = useUser(); // Clerk
+  const convexUser = useQuery(api.users.current); // Convex
+
+  return {
+    // Clerkから取得
+    name: user?.fullName,
+    email: user?.emailAddresses?.[0]?.emailAddress,
+    imageUrl: user?.imageUrl,
+    socialLinks: parseClerkUnsafeMetadata(user?.unsafeMetadata)?.socialLinks,
+    privacySettings: parseClerkUnsafeMetadata(user?.unsafeMetadata)
+      ?.privacySettings,
+
+    // Convexから取得
+    role: convexUser?.role,
+    orgId: convexUser?.orgId,
+    pushToken: convexUser?.pushToken,
+
+    isLoaded: isLoaded && convexUser !== undefined,
+  };
+};
+```
+
+#### プロフィール編集
+
+```typescript
+// プロフィール更新（Clerk）
+const updateProfile = async (data: ProfileFormData) => {
+  try {
+    await user.update({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      unsafeMetadata: mergeUnsafeMetadata(user.unsafeMetadata, {
+        socialLinks: data.socialLinks,
+        privacySettings: data.privacySettings,
+      }),
+    });
+
+    await user.reload(); // UI即時反映
+  } catch (error) {
+    if (isClerkAPIResponseError(error)) {
+      // Clerkエラーハンドリング
+    }
+  }
+};
+```
+
+#### 他ユーザー情報の取得
+
+```typescript
+// Convexクエリで他ユーザーのClerk情報を取得
+export const listByOrg = query({
+  handler: async (ctx) => {
+    const users = await ctx.db.query('userProfiles').collect();
+
+    // Clerk Backend APIで追加情報を取得（プレースホルダー実装）
+    const clerkUsers = await Promise.all(
+      users.map(async (user) => {
+        // TODO: 実際のClerk Backend API実装
+        return {
+          clerkId: user.clerkId,
+          fullName: `User ${user.clerkId.slice(-4)}`,
+          emailAddress: `user@example.com`,
+          imageUrl: null,
+        };
+      })
+    );
+
+    return users.map((user) => ({
+      ...user,
+      clerkUser: clerkUsers.find((c) => c.clerkId === user.clerkId),
+    }));
+  },
+});
+```
+
+#### 重要な設計原則
+
+1. **データの一貫性**: Clerkが常に最新の個人情報を保持
+2. **プライバシー**: センシティブ情報はClerkで管理
+3. **パフォーマンス**: 頻繁にアクセスされる情報はキャッシュ
+4. **型安全性**: Zodスキーマによるメタデータの検証
+5. **エラー処理**: Clerk APIエラーの適切なハンドリング
+
+#### 移行済み機能
+
+- ✅ プロフィール編集（Web/Mobile）
+- ✅ プロフィール表示（統合フック）
+- ✅ ユーザー管理画面
+- ✅ レポート詳細での作成者表示
+- ✅ WebhookによるClerk↔Convex同期
+
+#### 今後の拡張予定
+
+- [ ] Clerk Backend APIによる他ユーザー情報取得
+- [ ] プロフィール画像のClerk管理への移行
+- [ ] 高度なプライバシー設定の実装
+- [ ] ユーザー検索機能の最適化
 
 ## コーディング規約
 
@@ -324,32 +507,27 @@ Closes #123
 ### レビュー観点
 
 1. **機能要件**
-
    - [ ] 要件を満たしているか
    - [ ] エッジケースが考慮されているか
    - [ ] 既存機能への影響はないか
 
 2. **コード品質**
-
    - [ ] 命名規則に従っているか
    - [ ] 適切にコメントされているか
    - [ ] DRY原則に従っているか
    - [ ] 単一責任の原則に従っているか
 
 3. **型安全性**
-
    - [ ] TypeScriptエラーがないか
    - [ ] 適切な型定義がされているか
    - [ ] any型の使用は避けられているか
 
 4. **パフォーマンス**
-
    - [ ] 不要な再レンダリングはないか
    - [ ] 適切にメモ化されているか
    - [ ] N+1問題はないか
 
 5. **セキュリティ**
-
    - [ ] 認証・認可が適切か
    - [ ] 入力値の検証がされているか
    - [ ] センシティブ情報の扱いが適切か

@@ -334,7 +334,7 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
                 <User size={16} color='white' />
               </View>
               <View>
-                <Text className='text-sm font-medium text-gray-900'>{report.author.name}</Text>
+                <Text className='text-sm font-medium text-gray-900'>{report.author.clerkId}</Text>
                 <Text className='text-xs text-gray-500'>{report.author.role}</Text>
               </View>
             </View>
@@ -477,7 +477,7 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
                       {status === 'approved' && (
                         <>
                           {REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.APPROVAL_HISTORY.APPROVED_BY(
-                            approval.manager.name
+                            approval.manager.clerkId
                           )}
                           {approval.approved_at && (
                             <Text className='text-gray-500'>
@@ -496,14 +496,14 @@ ${workItems && workItems.length > 0 ? `\n作業項目数: ${workItems.length}` :
                       {status === 'rejected' && (
                         <Text className='text-yellow-700 font-medium'>
                           {REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.APPROVAL_HISTORY.REJECTED_BY(
-                            approval.manager.name
+                            approval.manager.clerkId
                           )}
                         </Text>
                       )}
                       {status === 'pending' && (
                         <Text className='text-gray-500'>
                           {REPORTS_CONSTANTS.MOBILE_DETAIL_SCREEN.APPROVAL_HISTORY.PENDING(
-                            approval.manager.name
+                            approval.manager.clerkId
                           )}
                         </Text>
                       )}

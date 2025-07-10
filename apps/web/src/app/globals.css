@@ -106,7 +106,7 @@
   /* Enhanced Color Palette with OKLCH */
   /* ライトテーマの変数 - 明るい背景用の色設定 */
   /* Light Theme Variables */
-  --background: oklch(92.866% 0.03921 230.304); /* Slightly off-white */
+  --background: oklch(97.354% 0.01104 226.391); /* Slightly off-white */
   --foreground: oklch(9.4% 0.024 260); /* Near-black */
   --card: oklch(100% 0 0); /* Pure white */
   --card-foreground: oklch(9.4% 0.024 260);
@@ -159,7 +159,7 @@
 @layer base {
   /* ダークモードの設定 - 暗い背景用の色設定 */
   .dark {
-    --background: oklch(16.223% 0.04778 266.147);
+    --background: oklch(14.324% 0.03451 264.613);
     --foreground: oklch(98.1% 0.011 254);
     --card: oklch(12.7% 0.026 262);
     --card-foreground: oklch(98.1% 0.011 254);

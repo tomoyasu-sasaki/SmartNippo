@@ -95,7 +95,7 @@ export const columns: ColumnDef<Report>[] = [
     header: '作成者',
     cell: ({ row }) => {
       const report = row.original as Report;
-      return <div>{report.author?.name ?? 'N/A'}</div>;
+      return <div>{report.author?.clerkId ?? 'N/A'}</div>;
     },
   },
   {

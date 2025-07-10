@@ -13,43 +13,67 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { useUser } from '@clerk/nextjs';
+import { isClerkAPIResponseError } from '@clerk/nextjs/errors';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from 'convex/react';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { PROFILE_CONSTANTS, profileFormSchema, type ProfileFormData } from '@smartnippo/lib';
-import { api } from 'convex/_generated/api';
-import type { Id } from 'convex/_generated/dataModel';
-
-interface UserProfile {
-  _id: Id<'userProfiles'>;
-  name: string;
-  email?: string;
-  avatarUrl?: string;
-  role: 'user' | 'manager' | 'admin';
-  orgId?: Id<'orgs'>;
-  pushToken?: string;
-  created_at: number;
-  updated_at: number;
-}
+import type { UnifiedUserProfile } from '@smartnippo/types';
 
 interface ProfileFormProps {
-  initialData: UserProfile;
+  initialData: UnifiedUserProfile;
   onSuccess?: () => void;
 }
 
 export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
+  const { isLoaded, user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
-  const updateProfile = useMutation(api.index.updateProfile);
+
+  // Clerk のローディング状態を確認
+  if (!isLoaded) {
+    return (
+      <div className='space-y-6'>
+        <div className='flex items-center space-x-6'>
+          <div className='h-20 w-20 rounded-full bg-gray-200 animate-pulse' />
+          <div className='flex-1 space-y-2'>
+            <div className='h-4 bg-gray-200 rounded w-24 animate-pulse' />
+            <div className='h-10 bg-gray-200 rounded animate-pulse' />
+          </div>
+        </div>
+        <div className='space-y-4'>
+          <div className='h-4 bg-gray-200 rounded w-16 animate-pulse' />
+          <div className='h-10 bg-gray-200 rounded animate-pulse' />
+        </div>
+        <div className='space-y-4'>
+          <div className='grid grid-cols-2 gap-4'>
+            <div className='space-y-2'>
+              <div className='h-4 bg-gray-200 rounded w-20 animate-pulse' />
+              <div className='h-4 bg-gray-200 rounded w-32 animate-pulse' />
+            </div>
+            <div className='space-y-2'>
+              <div className='h-4 bg-gray-200 rounded w-16 animate-pulse' />
+              <div className='h-4 bg-gray-200 rounded w-24 animate-pulse' />
+            </div>
+          </div>
+        </div>
+        <div className='h-10 bg-gray-200 rounded w-32 animate-pulse' />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <div>ユーザー情報が見つかりません。</div>;
+  }
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      name: initialData.name,
-      avatarUrl: initialData.avatarUrl,
+      name: user?.fullName ?? initialData.fullName ?? '',
+      avatarUrl: user?.imageUrl ?? initialData.imageUrl ?? '',
     },
   });
 
@@ -57,29 +81,36 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
     try {
       setIsLoading(true);
 
-      const updateData: {
-        name: string;
-        avatarUrl?: string;
-        _version: number;
-      } = {
-        name: data.name,
-        _version: initialData.updated_at,
-      };
+      // 名前の更新（firstName/lastNameに分割）
+      const nameParts = data.name.trim().split(' ');
+      const firstName = nameParts[0] ?? '';
+      const lastName = nameParts.slice(1).join(' ') ?? '';
 
-      // avatarUrlが存在し、空文字でない場合のみ追加
-      if (data.avatarUrl && data.avatarUrl.trim() !== '') {
-        updateData.avatarUrl = data.avatarUrl;
+      // Clerkのユーザー情報を更新
+      await user.update({
+        firstName,
+        lastName,
+      });
+
+      // アバターURLの更新
+      if (data.avatarUrl && data.avatarUrl !== user.imageUrl) {
+        try {
+          const res = await fetch(data.avatarUrl);
+          const blob = await res.blob();
+          await user.setProfileImage({ file: blob });
+        } catch {
+          // Fallback: ignore if fetch fails
+        }
       }
 
-      await updateProfile(updateData);
+      // 変更を反映するためにユーザー情報をリロード
+      await user.reload();
 
       toast.success(PROFILE_CONSTANTS.UPDATE_SUCCESS_MESSAGE);
       onSuccess?.();
     } catch (error) {
-      // console.error('Profile update error:', error);
-
-      if (error instanceof Error && error.message.includes('updated by another process')) {
-        toast.error(PROFILE_CONSTANTS.UPDATE_CONFLICT_ERROR_MESSAGE);
+      if (isClerkAPIResponseError(error)) {
+        toast.error(error.errors[0]?.message ?? PROFILE_CONSTANTS.UPDATE_GENERAL_ERROR_MESSAGE);
       } else {
         toast.error(PROFILE_CONSTANTS.UPDATE_GENERAL_ERROR_MESSAGE);
       }
@@ -88,17 +119,18 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
     }
   };
 
+  const displayName =
+    user.fullName ?? user.firstName ?? user.emailAddresses[0]?.emailAddress ?? 'User';
+  const displayAvatar = form.watch('avatarUrl') ?? user.imageUrl ?? '';
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
         <div className='flex items-center space-x-6'>
           <Avatar className='h-20 w-20'>
-            <AvatarImage
-              src={form.watch('avatarUrl') ?? initialData.avatarUrl}
-              alt={initialData.name}
-            />
+            <AvatarImage src={displayAvatar} alt={displayName} />
             <AvatarFallback className='text-lg'>
-              {initialData.name[0]?.toUpperCase() ?? 'U'}
+              {displayName[0]?.toUpperCase() ?? 'U'}
             </AvatarFallback>
           </Avatar>
           <FormField
@@ -109,7 +141,7 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
                 <FormLabel>{PROFILE_CONSTANTS.AVATAR_LABEL}</FormLabel>
                 <FormControl>
                   <AvatarUpload
-                    avatarUrl={field.value ?? initialData.avatarUrl ?? ''}
+                    avatarUrl={field.value ?? user.imageUrl ?? ''}
                     onUpload={(result: { url: string }) => {
                       // アップロード成功時の処理
                       field.onChange(result.url);
@@ -154,7 +186,7 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
                 {PROFILE_CONSTANTS.EMAIL_LABEL}
               </label>
               <p className='text-sm text-gray-900'>
-                {initialData.email ?? PROFILE_CONSTANTS.EMAIL_NOT_SET}
+                {user.emailAddresses[0]?.emailAddress ?? PROFILE_CONSTANTS.EMAIL_NOT_SET}
               </p>
             </div>
             <div>
@@ -170,7 +202,7 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
               {PROFILE_CONSTANTS.MEMBER_SINCE_LABEL}
             </label>
             <p className='text-sm text-gray-900'>
-              {new Date(initialData.created_at).toLocaleDateString()}
+              {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
             </p>
           </div>
         </div>

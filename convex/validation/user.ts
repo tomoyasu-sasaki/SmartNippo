@@ -82,10 +82,7 @@ export const validateUserProfile = mutation({
       errors.push(...validateEmail(args.email));
 
       // Check for duplicate email
-      const existingUser = await ctx.db
-        .query('userProfiles')
-        .filter((q) => q.eq(q.field('email'), args.email))
-        .first();
+      const existingUser = await ctx.db.query('userProfiles').first();
 
       if (existingUser) {
         errors.push({

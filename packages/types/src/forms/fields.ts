@@ -41,7 +41,7 @@ export interface FormStateUI {
 // Form data types
 // ========================================
 
-import type { PrivacySettings, SocialLinks, WorkingHours, WorkItem } from '../core/entities';
+import type { WorkingHours, WorkItem } from '../core/entities';
 
 // レポート作成フォームデータの型定義
 export interface ReportFormData {
@@ -71,21 +71,5 @@ export interface ReportFormData {
   };
 }
 
-// プロフィールフォームデータの型定義
-export interface ProfileFormData {
-  name: string;
-  avatarUrl?: string;
-  avatarStorageId?: string;
-  socialLinks?: SocialLinks;
-  privacySettings?: PrivacySettings;
-}
-
-// プロフィール更新リクエストの型定義
-export interface ProfileUpdateRequest {
-  name: string;
-  avatarUrl?: string;
-  avatarStorageId?: string;
-  socialLinks?: SocialLinks;
-  privacySettings?: PrivacySettings;
-  _version: number; // 楽観的ロック用
-}
+// プロフィールフォームデータの型定義は@smartnippo/libに移動しました
+// import type { ProfileFormData, ProfileUpdateData } from '@smartnippo/lib';

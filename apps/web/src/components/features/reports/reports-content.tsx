@@ -270,7 +270,9 @@ function ReportsContentInner() {
                           </Link>
                         </TableCell>
                         <TableCell>
-                          {report.author?.name ?? REPORTS_CONSTANTS.UNKNOWN_AUTHOR}
+                          {(report.author as any)?.clerkUser?.fullName ??
+                            report.author?.name ??
+                            REPORTS_CONSTANTS.UNKNOWN_AUTHOR}
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
@@ -338,7 +340,11 @@ function ReportsContentInner() {
                         </div>
                         <div className='flex items-center gap-2'>
                           <User className='h-4 w-4' />
-                          <span>{report.author?.name ?? REPORTS_CONSTANTS.UNKNOWN_AUTHOR}</span>
+                          <span>
+                            {(report.author as any)?.clerkUser?.fullName ??
+                              report.author?.name ??
+                              REPORTS_CONSTANTS.UNKNOWN_AUTHOR}
+                          </span>
                         </div>
                         <div className='flex items-center gap-2'>
                           <Clock className='h-4 w-4' />

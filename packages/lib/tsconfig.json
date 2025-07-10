@@ -15,6 +15,12 @@
     "declarationMap": true,
     "composite": true,
     "baseUrl": ".",
+    "paths": {
+      "@smartnippo/lib": ["./src"],
+      "@smartnippo/lib/*": ["./src/*"],
+      "@smartnippo/types": ["../types/src"],
+      "@smartnippo/types/*": ["../types/src/*"]
+    },
     "outDir": "./dist",
     "rootDir": "./src"
   },

@@ -6,7 +6,9 @@
     "paths": {
       "convex/*": ["convex/*"],
       "@smartnippo/lib": ["packages/lib/src"],
-      "@smartnippo/lib/*": ["packages/lib/src/*"]
+      "@smartnippo/lib/*": ["packages/lib/src/*"],
+      "@smartnippo/types": ["packages/types/src"],
+      "@smartnippo/types/*": ["packages/types/src/*"]
     },
     "jsx": "react-jsx",
     "jsxImportSource": "react",

@@ -3,7 +3,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "@smartnippo/lib": ["packages/lib/src"],
       "@smartnippo/lib/*": ["packages/lib/src/*"],
+      "@smartnippo/types": ["packages/types/src"],
       "@smartnippo/types/*": ["packages/types/src/*"],
       "@/convex/*": ["convex/*"]
     }

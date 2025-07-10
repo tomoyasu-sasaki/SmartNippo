@@ -4,11 +4,16 @@
     "composite": true,
     "baseUrl": "../..",
     "paths": {
-      "@/convex/*": ["convex/*"]
+      "@/convex/*": ["convex/*"],
+      "@smartnippo/lib": ["packages/lib/src"],
+      "@smartnippo/lib/*": ["packages/lib/src/*"],
+      "@smartnippo/types": ["packages/types/src"],
+      "@smartnippo/types/*": ["packages/types/src/*"]
     },
     "outDir": "./dist",
-    "rootDir": "./src"
+    "emitDeclarationOnly": true,
+    "rootDir": "../.."
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../lib/src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }
