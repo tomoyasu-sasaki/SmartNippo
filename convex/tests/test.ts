@@ -72,7 +72,6 @@ export const createTestUser = mutation({
     email: v.string(),
     role: v.union(v.literal('user'), v.literal('manager'), v.literal('admin')),
     orgId: v.id('orgs'),
-    tokenIdentifier: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userData: {
@@ -81,7 +80,6 @@ export const createTestUser = mutation({
       email: string;
       role: 'user' | 'manager' | 'admin';
       orgId: Id<'orgs'>;
-      tokenIdentifier?: string;
       created_at: number;
       updated_at: number;
     } = {
@@ -94,29 +92,8 @@ export const createTestUser = mutation({
       updated_at: Date.now(),
     };
 
-    if (args.tokenIdentifier) {
-      userData.tokenIdentifier = args.tokenIdentifier;
-    }
-
     const userId = await ctx.db.insert('userProfiles', userData);
     return userId;
-  },
-});
-
-/**
- * ユーザーのtokenIdentifierを更新（テスト用）
- */
-export const updateUserToken = mutation({
-  args: {
-    userId: v.id('userProfiles'),
-    tokenIdentifier: v.string(),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.userId, {
-      tokenIdentifier: args.tokenIdentifier,
-      updated_at: Date.now(),
-    });
-    return { success: true };
   },
 });
 
@@ -178,8 +155,6 @@ export const listUsers = query({
     return users.map((user) => ({
       id: user._id,
       clerkId: user.clerkId,
-      name: user.name,
-      email: user.email,
       orgId: user.orgId,
       role: user.role,
     }));
@@ -235,22 +210,20 @@ export const cleanupDuplicateUsers = mutation({
           clerkId,
           kept: {
             id: keepUser._id,
-            name: keepUser.name,
-            role: keepUser.role,
             orgId: keepUser.orgId,
+            role: keepUser.role,
           },
           deleted: deleteUsers.map((u) => ({
             id: u._id,
-            name: u.name,
-            role: u.role,
             orgId: u.orgId,
+            role: u.role,
           })),
         });
 
         // 重複ユーザーを削除
         for (const user of deleteUsers) {
           await ctx.db.delete(user._id);
-          console.log(`Deleted duplicate user: ${user._id} (${user.name})`);
+          console.log(`Deleted duplicate user: ${user._id}`);
         }
       }
     }
@@ -331,8 +304,6 @@ export const linkUserToOrg = mutation({
       user: {
         id: user._id,
         clerkId: user.clerkId,
-        name: user.name,
-        email: user.email,
         orgId: org._id,
         role: newRole,
       },

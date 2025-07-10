@@ -60,8 +60,7 @@ export const getReportForEdit = query({
       author: authorProfile
         ? {
             _id: authorProfile._id,
-            name: authorProfile.name,
-            avatarUrl: authorProfile.avatarUrl,
+            role: authorProfile.role,
           }
         : null,
     };
@@ -258,8 +257,6 @@ export const listReports = query({
         author: author
           ? {
               _id: author._id,
-              name: author.name,
-              avatarUrl: author.avatarUrl,
               role: author.role,
             }
           : null,
@@ -359,9 +356,8 @@ export const getReportDetail = query({
       return user
         ? {
             _id: user._id,
-            name: user.name,
-            avatarUrl: user.avatarUrl,
             role: user.role,
+            clerkId: user.clerkId,
           }
         : null;
     };
@@ -413,10 +409,8 @@ export const getReportDetail = query({
       ...report,
       author: {
         _id: author._id,
-        name: author.name,
-        avatarUrl: author.avatarUrl,
         role: author.role,
-        email: author.email,
+        clerkId: author.clerkId,
       },
       comments: commentsWithAuthors.sort((a, b) => a.created_at - b.created_at),
       approvals: approvalsWithManagers,
@@ -593,8 +587,6 @@ export const searchReports = query({
           ...report,
           author: {
             _id: author._id,
-            name: author.name,
-            avatarUrl: author.avatarUrl,
             role: author.role,
           },
         };

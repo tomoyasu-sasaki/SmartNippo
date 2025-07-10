@@ -13,57 +13,44 @@ import {
 import {
   exportProfile,
   getSocialIcon,
+  mergeUnsafeMetadata,
   PRIVACY_LEVELS,
   PROFILE_CONSTANTS,
   SOCIAL_PLATFORMS,
   validateSocialUrl,
+  type ClerkUnsafeMetadata,
   type PrivacyLevel,
+  type PrivacySettings,
   type SocialPlatform,
 } from '@smartnippo/lib';
 
 import { ProfileForm } from '@/components/features/profile/profile-form';
-import { useAuth, useUser } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
+import { isClerkAPIResponseError } from '@clerk/nextjs/errors';
+import type { UnifiedUserProfile } from '@smartnippo/types';
 import { api } from 'convex/_generated/api';
-import type { Doc } from 'convex/_generated/dataModel';
-import { useConvexAuth, useMutation, useQuery } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { Download, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-type UserProfile = Doc<'userProfiles'>;
-
 export default function ProfilePage() {
-  const { isAuthenticated, isLoading } = useConvexAuth();
   const router = useRouter();
-  const { isLoaded, isSignedIn, userId } = useAuth();
-  const { user } = useUser();
-  const [isSyncing, setIsSyncing] = useState(false);
+  const { user, isLoaded } = useUser();
 
   // Fetch user profile from Convex
-  const userProfile = useQuery(api.index.current);
-  const storeUser = useMutation(api.index.store);
+  const convexProfile = useQuery(api.index.current);
 
   // Handle authentication state
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (isLoaded && !user) {
       router.push('/');
-      return;
     }
-
-    // Auto-create user if not exists and authenticated
-    if (isAuthenticated && userProfile === null) {
-      storeUser()
-        .then(() => {})
-        .catch((error) => {
-          console.error('Failed to create user profile:', error);
-          toast.error(PROFILE_CONSTANTS.CREATE_PROFILE_ERROR);
-        });
-    }
-  }, [isLoading, isAuthenticated, userProfile, router, storeUser]);
+  }, [isLoaded, user, router]);
 
   // Show loading state
-  if (isLoading) {
+  if (!isLoaded || !convexProfile) {
     return (
       <div className='container mx-auto max-w-4xl py-8 px-4'>
         <div className='flex items-center justify-center h-64'>
@@ -77,7 +64,7 @@ export default function ProfilePage() {
   }
 
   // Show authentication required
-  if (!isAuthenticated) {
+  if (!user) {
     return (
       <div className='container mx-auto max-w-4xl py-8 px-4'>
         <div className='text-center'>
@@ -88,32 +75,47 @@ export default function ProfilePage() {
     );
   }
 
-  // Show profile creation in progress
-  if (userProfile === null) {
-    return (
-      <div className='container mx-auto max-w-4xl py-8 px-4'>
-        <div className='flex items-center justify-center h-64'>
-          <div className='text-center'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4'></div>
-            <p className='text-muted-foreground'>{PROFILE_CONSTANTS.SETUP_PROFILE}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Parse Clerk metadata
+  const metadata = user.unsafeMetadata as ClerkUnsafeMetadata | null;
 
-  // Show profile not found error (should not happen with auto-creation)
-  if (userProfile === undefined) {
-    return (
-      <div className='container mx-auto max-w-4xl py-8 px-4'>
-        <div className='text-center'>
-          <h1 className='text-2xl font-bold mb-4 text-red-600'>
-            {PROFILE_CONSTANTS.PROFILE_ERROR_TITLE}
-          </h1>
-          <p className='text-muted-foreground'>{PROFILE_CONSTANTS.PROFILE_ERROR_DESCRIPTION}</p>
-        </div>
-      </div>
-    );
+  // Create unified profile
+  const unifiedProfile = {
+    id: user.id,
+    convexId: convexProfile._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    fullName: user.fullName,
+    emailAddress: user.emailAddresses[0]?.emailAddress || null,
+    emailAddresses: user.emailAddresses.map((email) => ({
+      id: email.id!,
+      emailAddress: email.emailAddress!,
+      verified: email.verification?.status === 'verified',
+      primary: user.primaryEmailAddressId === email.id,
+    })),
+    imageUrl: user.imageUrl,
+    phoneNumber: user.phoneNumbers[0]?.phoneNumber || null,
+    role: convexProfile.role,
+    orgId: convexProfile.orgId,
+    pushToken: convexProfile.pushToken,
+    avatarStorageId: convexProfile.avatarStorageId,
+    createdAt: user.createdAt ? new Date(user.createdAt) : new Date(),
+    updatedAt: user.updatedAt ? new Date(user.updatedAt) : new Date(),
+    convexCreatedAt: new Date(convexProfile.created_at),
+    convexUpdatedAt: new Date(convexProfile.updated_at),
+  } as UnifiedUserProfile;
+
+  // Set optional properties conditionally
+  if (metadata?.socialLinks) {
+    unifiedProfile.socialLinks = metadata.socialLinks as Record<string, string>;
+  }
+  if (metadata?.privacySettings) {
+    unifiedProfile.privacySettings = metadata.privacySettings as unknown as PrivacySettings;
+  }
+  if (metadata?.preferences) {
+    unifiedProfile.preferences = metadata.preferences as any;
+  }
+  if (metadata?.notifications) {
+    unifiedProfile.notifications = metadata.notifications as any;
   }
 
   return (
@@ -130,7 +132,7 @@ export default function ProfilePage() {
             <CardDescription>{PROFILE_CONSTANTS.PERSONAL_INFO_CARD_DESCRIPTION}</CardDescription>
           </CardHeader>
           <CardContent>
-            <ProfileForm initialData={userProfile} />
+            <ProfileForm initialData={unifiedProfile} />
           </CardContent>
         </Card>
 
@@ -140,7 +142,7 @@ export default function ProfilePage() {
             <CardDescription>{PROFILE_CONSTANTS.SOCIAL_LINKS_CARD_DESCRIPTION}</CardDescription>
           </CardHeader>
           <CardContent>
-            <SocialLinksSection userProfile={userProfile} />
+            <SocialLinksSection user={user} metadata={metadata} />
           </CardContent>
         </Card>
 
@@ -150,7 +152,7 @@ export default function ProfilePage() {
             <CardDescription>{PROFILE_CONSTANTS.PRIVACY_SETTINGS_CARD_DESCRIPTION}</CardDescription>
           </CardHeader>
           <CardContent>
-            <PrivacySettingsSection userProfile={userProfile} />
+            <PrivacySettingsSection user={user} metadata={metadata} />
           </CardContent>
         </Card>
 
@@ -160,7 +162,7 @@ export default function ProfilePage() {
             <CardDescription>{PROFILE_CONSTANTS.EXPORT_PROFILE_CARD_DESCRIPTION}</CardDescription>
           </CardHeader>
           <CardContent>
-            <ProfileExportSection userProfile={userProfile} />
+            <ProfileExportSection unifiedProfile={unifiedProfile} />
           </CardContent>
         </Card>
 
@@ -174,19 +176,23 @@ export default function ProfilePage() {
                 <Label className='text-sm font-medium text-muted-foreground'>
                   {PROFILE_CONSTANTS.EMAIL_LABEL}
                 </Label>
-                <p className='text-sm'>{userProfile.email ?? PROFILE_CONSTANTS.EMAIL_NOT_SET}</p>
+                <p className='text-sm'>
+                  {user.emailAddresses[0]?.emailAddress ?? PROFILE_CONSTANTS.EMAIL_NOT_SET}
+                </p>
               </div>
               <div>
                 <Label className='text-sm font-medium text-muted-foreground'>
                   {PROFILE_CONSTANTS.ROLE_LABEL}
                 </Label>
-                <p className='text-sm capitalize'>{userProfile.role}</p>
+                <p className='text-sm capitalize'>{convexProfile.role}</p>
               </div>
               <div>
                 <Label className='text-sm font-medium text-muted-foreground'>
                   {PROFILE_CONSTANTS.MEMBER_SINCE_LABEL}
                 </Label>
-                <p className='text-sm'>{new Date(userProfile.created_at).toLocaleDateString()}</p>
+                <p className='text-sm'>
+                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -197,10 +203,15 @@ export default function ProfilePage() {
 }
 
 // ソーシャルリンク管理セクション
-function SocialLinksSection({ userProfile }: { userProfile: UserProfile }) {
-  const [socialLinks, setSocialLinks] = useState(userProfile.socialLinks ?? {});
+function SocialLinksSection({
+  user,
+  metadata,
+}: {
+  user: NonNullable<ReturnType<typeof useUser>['user']>;
+  metadata: ClerkUnsafeMetadata | null;
+}) {
+  const [socialLinks, setSocialLinks] = useState(metadata?.socialLinks ?? {});
   const [isEditing, setIsEditing] = useState(false);
-  const updateProfile = useMutation(api.index.updateProfile);
 
   const handleAddLink = (platform: string, url: string) => {
     const validation = validateSocialUrl(platform as SocialPlatform, url);
@@ -220,14 +231,20 @@ function SocialLinksSection({ userProfile }: { userProfile: UserProfile }) {
 
   const handleSave = async () => {
     try {
-      await updateProfile({
-        socialLinks,
-        _version: userProfile.updated_at,
+      // Clerkのunsafeメタデータを更新
+      const updatedMetadata = mergeUnsafeMetadata(metadata ?? {}, { socialLinks });
+      await user.update({
+        unsafeMetadata: updatedMetadata,
       });
+      await user.reload();
       toast.success(PROFILE_CONSTANTS.UPDATE_SOCIAL_LINKS_SUCCESS);
       setIsEditing(false);
-    } catch {
-      toast.error(PROFILE_CONSTANTS.UPDATE_ERROR);
+    } catch (error) {
+      if (isClerkAPIResponseError(error)) {
+        toast.error(error.errors[0]?.message || PROFILE_CONSTANTS.UPDATE_ERROR);
+      } else {
+        toast.error(PROFILE_CONSTANTS.UPDATE_ERROR);
+      }
     }
   };
 
@@ -295,9 +312,14 @@ function SocialLinksSection({ userProfile }: { userProfile: UserProfile }) {
 }
 
 // プライバシー設定セクション
-function PrivacySettingsSection({ userProfile }: { userProfile: UserProfile }) {
-  const [privacySettings, setPrivacySettings] = useState(userProfile.privacySettings ?? {});
-  const updateProfile = useMutation(api.index.updateProfile);
+function PrivacySettingsSection({
+  user,
+  metadata,
+}: {
+  user: NonNullable<ReturnType<typeof useUser>['user']>;
+  metadata: ClerkUnsafeMetadata | null;
+}) {
+  const [privacySettings, setPrivacySettings] = useState(metadata?.privacySettings ?? {});
 
   const handlePrivacyChange = (key: string, value: PrivacyLevel) => {
     setPrivacySettings({ ...privacySettings, [key]: value });
@@ -305,13 +327,19 @@ function PrivacySettingsSection({ userProfile }: { userProfile: UserProfile }) {
 
   const handleSave = async () => {
     try {
-      await updateProfile({
-        privacySettings,
-        _version: userProfile.updated_at,
+      // Clerkのunsafeメタデータを更新
+      const updatedMetadata = mergeUnsafeMetadata(metadata ?? {}, { privacySettings });
+      await user.update({
+        unsafeMetadata: updatedMetadata,
       });
+      await user.reload();
       toast.success(PROFILE_CONSTANTS.UPDATE_PRIVACY_SUCCESS);
-    } catch {
-      toast.error(PROFILE_CONSTANTS.UPDATE_ERROR);
+    } catch (error) {
+      if (isClerkAPIResponseError(error)) {
+        toast.error(error.errors[0]?.message || PROFILE_CONSTANTS.UPDATE_ERROR);
+      } else {
+        toast.error(PROFILE_CONSTANTS.UPDATE_ERROR);
+      }
     }
   };
 
@@ -358,25 +386,25 @@ function PrivacySettingsSection({ userProfile }: { userProfile: UserProfile }) {
 }
 
 // プロフィールエクスポートセクション
-function ProfileExportSection({ userProfile }: { userProfile: UserProfile }) {
+function ProfileExportSection({ unifiedProfile }: { unifiedProfile: UnifiedUserProfile }) {
   const handleExport = () => {
     // Convert UserProfile to ProfileExportData format
     const exportData = {
       profile: {
-        name: userProfile.name,
-        email: userProfile.email ?? '',
-        role: userProfile.role,
-        avatarUrl: userProfile.avatarUrl ?? '',
-        created_at: new Date(userProfile.created_at).toISOString(),
-        updated_at: new Date(userProfile.updated_at).toISOString(),
+        name: unifiedProfile.fullName ?? '',
+        email: unifiedProfile.emailAddress ?? '',
+        role: unifiedProfile.role,
+        avatarUrl: unifiedProfile.imageUrl ?? '',
+        created_at: unifiedProfile.createdAt.toISOString(),
+        updated_at: unifiedProfile.updatedAt.toISOString(),
       },
-      socialLinks: Object.entries(userProfile.socialLinks ?? {})
+      socialLinks: Object.entries(unifiedProfile.socialLinks ?? {})
         .filter(([, url]) => url !== undefined)
         .map(([platformKey, url]) => ({
           platform: platformKey as SocialPlatform,
           url: (url ?? '') as string,
         })),
-      privacySettings: userProfile.privacySettings ?? ({} as any),
+      privacySettings: unifiedProfile.privacySettings ?? ({} as any),
       reports: [],
       profileHistory: [],
       organization: {

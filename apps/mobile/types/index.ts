@@ -11,7 +11,6 @@ export type { Doc, Id, TableNames };
 
 // Convex Doc型を使用した型エイリアス（Mobile固有）
 export type Report = Doc<'reports'>;
-export type UserProfile = Doc<'userProfiles'>;
 export type Comment = Doc<'comments'>;
 export type Approval = Doc<'approvals'>;
 export type Organization = Doc<'orgs'>;
@@ -20,7 +19,6 @@ export type Project = Doc<'projects'>;
 export type WorkCategory = Doc<'workCategories'>;
 // ID型エイリアス
 export type ReportId = Id<'reports'>;
-export type UserId = Id<'userProfiles'>;
 export type CommentId = Id<'comments'>;
 export type OrgId = Id<'orgs'>;
 export type WorkItemId = Id<'workItems'>;

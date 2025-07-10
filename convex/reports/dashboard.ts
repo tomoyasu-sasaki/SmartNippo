@@ -138,7 +138,6 @@ export const getMyDashboardData = query({
       title: r.title,
       status: r.status,
       reportDate: r.reportDate,
-      authorName: user.name, // 自身の名前
     }));
 
     // --- 7. 結果を返す ---

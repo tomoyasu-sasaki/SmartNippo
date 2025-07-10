@@ -1,6 +1,6 @@
 import { useClerk, useUser } from '@clerk/clerk-expo';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { router } from 'expo-router';
 import { Download, Edit3, Loader2, Plus, Save, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -23,11 +23,11 @@ import {
   PROFILE_CONSTANTS,
   SOCIAL_PLATFORMS,
   VALIDATION_MESSAGES,
+  mergeUnsafeMetadata,
+  type ClerkUnsafeMetadata,
 } from '@smartnippo/lib';
 import { api } from 'convex/_generated/api';
 import { Image as ExpoImage } from 'expo-image';
-
-import type { UserProfile } from '@smartnippo/types';
 
 // Zodスキーマをこのファイル内で直接定義
 const profileFormSchema = z.object({
@@ -48,15 +48,7 @@ const profileFormSchema = z.object({
       website: z.string().optional(),
     })
     .optional(),
-  privacySettings: z
-    .object({
-      profile: z.enum(['public', 'organization', 'team', 'private']).optional(),
-      email: z.enum(['public', 'organization', 'team', 'private']).optional(),
-      socialLinks: z.enum(['public', 'organization', 'team', 'private']).optional(),
-      reports: z.enum(['public', 'organization', 'team', 'private']).optional(),
-      avatar: z.enum(['public', 'organization', 'team', 'private']).optional(),
-    })
-    .optional(),
+  privacySettings: z.any().optional(),
 });
 
 // zodスキーマから型を推論
@@ -68,11 +60,11 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // userProfileをUserProfile型として扱う
-  const userProfile = useQuery(api.index.current) as UserProfile | undefined;
-  const updateProfile = useMutation(api.index.updateProfile);
-  const generateUploadUrl = useMutation(api.index.generateAvatarUploadUrl);
-  const saveAvatarToProfile = useMutation(api.index.saveAvatarToProfile);
+  // Convexプロフィールを取得
+  const convexProfile = useQuery(api.index.current);
+
+  // Clerkメタデータを取得
+  const metadata = user?.unsafeMetadata as ClerkUnsafeMetadata | null;
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -86,15 +78,15 @@ export default function ProfileScreen() {
 
   // フォームのデフォルト値を更新（useEffect内で実行）
   useEffect(() => {
-    if (userProfile && !isEditing) {
+    if (user && !isEditing) {
       form.reset({
-        name: userProfile.name ?? '',
-        avatarUrl: userProfile.avatarUrl ?? '',
-        socialLinks: userProfile.socialLinks ?? {},
-        privacySettings: userProfile.privacySettings ?? {},
+        name: user.fullName || '',
+        avatarUrl: user.imageUrl || '',
+        socialLinks: metadata?.socialLinks ?? {},
+        privacySettings: (metadata?.privacySettings as any) ?? {},
       });
     }
-  }, [userProfile, isEditing, form.reset]);
+  }, [user, metadata, isEditing, form.reset]);
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -119,18 +111,34 @@ export default function ProfileScreen() {
   };
 
   const handleSubmit = async (data: ProfileFormData) => {
-    if (!userProfile) {
+    if (!user) {
       return;
     }
     setIsLoading(true);
     try {
-      await updateProfile({
-        name: data.name,
-        avatarUrl: data.avatarUrl,
-        socialLinks: data.socialLinks,
-        privacySettings: data.privacySettings,
-        _version: userProfile.updated_at,
+      // 名前の更新（firstName/lastNameに分割）
+      const nameParts = data.name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      // Clerkのユーザー情報を更新
+      await user.update({
+        firstName,
+        lastName,
       });
+
+      // メタデータの更新
+      const updatedMetadata = mergeUnsafeMetadata(metadata ?? {}, {
+        socialLinks: data.socialLinks,
+        privacySettings: data.privacySettings as any,
+      });
+      await user.update({
+        unsafeMetadata: updatedMetadata,
+      });
+
+      // 変更を反映するためにユーザー情報をリロード
+      await user.reload();
+
       Alert.alert('成功', PROFILE_CONSTANTS.ALERTS.PROFILE_UPDATE_SUCCESS);
       setIsEditing(false);
     } catch {
@@ -141,18 +149,18 @@ export default function ProfileScreen() {
   };
 
   const handleCancel = () => {
-    if (userProfile) {
+    if (user) {
       form.reset({
-        name: userProfile.name ?? '',
-        avatarUrl: userProfile.avatarUrl ?? '',
-        socialLinks: userProfile.socialLinks ?? {},
-        privacySettings: userProfile.privacySettings ?? {},
+        name: user.fullName || '',
+        avatarUrl: user.imageUrl || '',
+        socialLinks: metadata?.socialLinks ?? {},
+        privacySettings: (metadata?.privacySettings as any) ?? {},
       });
     }
     setIsEditing(false);
   };
 
-  if (!isLoaded || !userProfile) {
+  if (!isLoaded || !user || !convexProfile) {
     return (
       <View className='flex-1 items-center justify-center bg-white'>
         <Text className='text-gray-600'>{PROFILE_CONSTANTS.LOADING_TEXT}</Text>
@@ -160,16 +168,8 @@ export default function ProfileScreen() {
     );
   }
 
-  if (!user) {
-    return (
-      <View className='flex-1 items-center justify-center bg-white'>
-        <Text className='text-red-600'>{PROFILE_CONSTANTS.ERROR_TEXT}</Text>
-      </View>
-    );
-  }
-
   const watchedAvatarUrl = form.watch('avatarUrl');
-  const avatarUrl = watchedAvatarUrl ?? userProfile?.avatarUrl ?? user?.imageUrl;
+  const avatarUrl = watchedAvatarUrl || user.imageUrl;
 
   return (
     <KeyboardAvoidingView
@@ -219,43 +219,13 @@ export default function ProfileScreen() {
               <AvatarPicker
                 currentAvatarUrl={avatarUrl}
                 onImageSelected={async (result) => {
-                  // Convexのファイルストレージにアップロード
-                  try {
-                    const uploadUrl = await generateUploadUrl();
-
-                    // React Nativeから画像をアップロード
-                    const response = await fetch(uploadUrl, {
-                      method: 'POST',
-                      headers: { 'Content-Type': result.mimeType },
-                      body: await fetch(result.uri).then((r) => r.blob()),
-                    });
-
-                    if (!response.ok) {
-                      throw new Error('Upload failed');
-                    }
-
-                    const { storageId } = await response.json();
-
-                    const resultUrl = await saveAvatarToProfile({
-                      storageId,
-                      fileSize: result.fileSize,
-                      fileType: result.mimeType,
-                      fileName: result.fileName,
-                    });
-
-                    if (resultUrl?.url) {
-                      form.setValue('avatarUrl', resultUrl.url);
-                      Alert.alert('成功', PROFILE_CONSTANTS.ALERTS.IMAGE_UPLOAD_SUCCESS);
-                    } else {
-                      throw new Error('Failed to get avatar URL after saving.');
-                    }
-                  } catch {
-                    Alert.alert('エラー', PROFILE_CONSTANTS.ALERTS.IMAGE_UPLOAD_ERROR);
-                  }
+                  // TODO: Implement avatar upload with Clerk
+                  form.setValue('avatarUrl', result.uri);
+                  Alert.alert('注意', 'アバターアップロード機能は現在実装中です。');
                 }}
                 disabled={isLoading}
               />
-            ) : avatarUrl ? (
+            ) : (
               <ExpoImage
                 source={{ uri: avatarUrl }}
                 style={{ width: 96, height: 96, borderRadius: 48, marginBottom: 16 }}
@@ -263,12 +233,6 @@ export default function ProfileScreen() {
                 transition={500}
                 cachePolicy='disk'
               />
-            ) : (
-              <View className='w-24 h-24 rounded-full bg-gray-200 items-center justify-center mb-4'>
-                <Text className='text-2xl font-semibold text-gray-600'>
-                  {userProfile.name?.[0]?.toUpperCase() ?? 'U'}
-                </Text>
-              </View>
             )}
           </View>
 
@@ -295,7 +259,9 @@ export default function ProfileScreen() {
                 )}
               />
             ) : (
-              <Text className='text-xl font-semibold text-gray-900'>{userProfile.name}</Text>
+              <Text className='text-xl font-semibold text-gray-900'>
+                {user.fullName || 'No name'}
+              </Text>
             )}
           </View>
 
@@ -306,7 +272,7 @@ export default function ProfileScreen() {
                 {PROFILE_CONSTANTS.FORM_LABELS.SOCIAL_LINKS}
               </Text>
               <SocialLinksEditor
-                socialLinks={form.watch('socialLinks') ?? userProfile.socialLinks ?? {}}
+                socialLinks={form.watch('socialLinks') ?? metadata?.socialLinks ?? {}}
                 onChange={(links) => {
                   form.setValue('socialLinks', links);
                 }}
@@ -321,7 +287,9 @@ export default function ProfileScreen() {
                 {PROFILE_CONSTANTS.FORM_LABELS.PRIVACY_SETTINGS}
               </Text>
               <PrivacySettingsEditor
-                privacySettings={form.watch('privacySettings') ?? userProfile.privacySettings ?? {}}
+                privacySettings={
+                  form.watch('privacySettings') ?? (metadata?.privacySettings as any) ?? {}
+                }
                 onChange={(settings) => {
                   form.setValue('privacySettings', settings);
                 }}
@@ -336,7 +304,7 @@ export default function ProfileScreen() {
                 {PROFILE_CONSTANTS.FORM_LABELS.EMAIL}
               </Text>
               <Text className='text-base text-gray-900'>
-                {userProfile.email ?? user.primaryEmailAddress?.emailAddress ?? 'Not set'}
+                {user.emailAddresses[0]?.emailAddress ?? 'Not set'}
               </Text>
             </View>
 
@@ -344,7 +312,7 @@ export default function ProfileScreen() {
               <Text className='text-sm font-medium text-gray-700 mb-1'>
                 {PROFILE_CONSTANTS.FORM_LABELS.ROLE}
               </Text>
-              <Text className='text-base text-gray-900 capitalize'>{userProfile.role}</Text>
+              <Text className='text-base text-gray-900 capitalize'>{convexProfile.role}</Text>
             </View>
 
             <View className='bg-gray-50 p-4 rounded-lg'>
@@ -352,7 +320,7 @@ export default function ProfileScreen() {
                 {PROFILE_CONSTANTS.FORM_LABELS.MEMBER_SINCE}
               </Text>
               <Text className='text-base text-gray-600'>
-                {new Date(userProfile.created_at).toLocaleDateString()}
+                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
               </Text>
             </View>
 

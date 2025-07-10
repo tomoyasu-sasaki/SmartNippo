@@ -34,7 +34,6 @@ import {
   User,
   X as XIcon,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -296,7 +295,7 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
             <div className='flex items-center gap-1'>
               <User className='h-4 w-4' />
               {REPORTS_CONSTANTS.AUTHOR_PREFIX}:{' '}
-              {report.author?.name ?? REPORTS_CONSTANTS.UNKNOWN_AUTHOR}
+              {(report.author as any)?.clerkUser?.fullName ?? report.author?.clerkId}
             </div>
             <div className='flex items-center gap-1'>
               <Clock className='h-4 w-4' />
@@ -382,12 +381,21 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
               {report.approvals.map((approval: any) => (
                 <div key={approval._id} className='flex items-center gap-3'>
                   <Avatar className='h-8 w-8'>
-                    <AvatarImage src={approval.manager?.avatarUrl} />
-                    <AvatarFallback>{approval.manager?.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage
+                      src={
+                        approval.manager?.clerkUser?.imageUrl ?? approval.manager?.avatarUrl ?? ''
+                      }
+                      alt={approval.manager?.clerkUser?.fullName ?? '不明なユーザー'}
+                    />
+                    <AvatarFallback>
+                      {(approval.manager?.clerkUser?.fullName ?? '不明なユーザー')[0]}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className='text-sm font-medium flex items-center gap-2'>
-                      {approval.manager?.name ?? '不明なユーザー'}
+                      {approval.manager?.clerkUser?.fullName ??
+                        '不明なユーザー' ??
+                        '不明なユーザー'}
                       {approval.status === 'approved' && (
                         <span className='text-green-600 font-bold'>が承認しました</span>
                       )}
@@ -425,22 +433,20 @@ function ReportDetailInner({ reportId }: ReportDetailProps) {
           {report.comments.map((comment: any) => (
             <div key={comment._id} className='flex gap-3'>
               <Avatar className='h-8 w-8'>
-                {comment.author?.avatarUrl ? (
-                  <AvatarImage asChild src={comment.author.avatarUrl}>
-                    <Image
-                      src={comment.author.avatarUrl}
-                      alt={comment.author.name ?? 'Commenter'}
-                      fill
-                      className='rounded-full object-cover'
-                    />
-                  </AvatarImage>
-                ) : null}
-                <AvatarFallback>{comment.author?.name?.charAt(0) ?? 'S'}</AvatarFallback>
+                <AvatarImage
+                  src={comment.author?.clerkUser?.imageUrl ?? comment.author?.avatarUrl ?? ''}
+                  alt={comment.author?.clerkUser?.fullName ?? '不明なユーザー'}
+                />
+                <AvatarFallback>
+                  {(comment.author?.clerkUser?.fullName ?? '不明なユーザー')[0]}
+                </AvatarFallback>
               </Avatar>
               <div className='flex-1'>
                 <div className='flex items-center gap-2'>
                   <p className='text-sm font-medium'>
-                    {comment.author?.name ?? REPORTS_CONSTANTS.COMMENT_AUTHOR_SYSTEM}
+                    <span className='font-medium'>
+                      {comment.author?.clerkUser?.fullName ?? '不明なユーザー'}
+                    </span>
                   </p>
                   <p className='text-xs text-gray-500'>
                     {format(new Date(comment.created_at), 'yyyy/MM/dd HH:mm')}

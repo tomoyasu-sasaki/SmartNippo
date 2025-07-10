@@ -61,7 +61,7 @@ function AddApprovalFlowForm({
           <SelectContent>
             {users.map((user: Doc<'userProfiles'>) => (
               <SelectItem key={user._id} value={user._id}>
-                {user.name}
+                {user.clerkId}
               </SelectItem>
             ))}
           </SelectContent>
@@ -144,8 +144,8 @@ export function ApprovalFlowContent() {
               <TableBody>
                 {approvalFlows?.map((flow) => (
                   <TableRow key={flow._id}>
-                    <TableCell>{flow.approver?.name ?? 'N/A'}</TableCell>
-                    <TableCell>{flow.applicant?.name ?? '全員'}</TableCell>
+                    <TableCell>{flow.approver?.clerkId ?? 'N/A'}</TableCell>
+                    <TableCell>{flow.applicant?.clerkId ?? '全員'}</TableCell>
                     <TableCell>
                       <Button variant='ghost' size='icon' onClick={() => handleRemove(flow._id)}>
                         <Trash2 className='h-4 w-4' />
@@ -167,9 +167,9 @@ export function ApprovalFlowContent() {
             {approvalFlows?.map((flow) => (
               <div key={flow._id} className='p-4 flex justify-between items-center'>
                 <div>
-                  <p className='font-semibold'>{flow.approver?.name ?? 'N/A'}</p>
+                  <p className='font-semibold'>{flow.approver?.clerkId ?? 'N/A'}</p>
                   <p className='text-sm text-muted-foreground'>
-                    申請者: {flow.applicant?.name ?? '全員'}
+                    申請者: {flow.applicant?.clerkId ?? '全員'}
                   </p>
                 </div>
                 <Button variant='ghost' size='icon' onClick={() => handleRemove(flow._id)}>

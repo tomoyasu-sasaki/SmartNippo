@@ -3,6 +3,7 @@
   "description": "Shared type definitions for SmartNippo",
   "version": "0.1.0",
   "dependencies": {
+    "@clerk/types": "^4.60.1",
     "convex": "*"
   },
   "devDependencies": {

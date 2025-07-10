@@ -2,20 +2,14 @@
 // Report component props types
 // ========================================
 
-import type {
-  Approval,
-  Comment,
-  Report,
-  ReportStats,
-  UserProfile,
-  WorkItem,
-} from '../core/entities';
+import type { Approval, Comment, Report, ReportStats, WorkItem } from '../core/entities';
 import type { CommentType } from '../core/enums';
+import type { UnifiedUserProfile as UserProfile } from '../core/unified-profile';
 
 // レポートカードコンポーネントのProps型
 export interface ReportCardProps {
   report: Report & {
-    author?: Pick<UserProfile, 'name'>;
+    author?: Pick<UserProfile, 'fullName'>;
   };
   onClick?: () => void;
 }
@@ -23,7 +17,7 @@ export interface ReportCardProps {
 // コメントアイテムコンポーネントのProps型
 export interface CommentItemProps {
   comment: Comment & {
-    author?: Pick<UserProfile, 'name' | 'avatarUrl'>;
+    author?: Pick<UserProfile, 'fullName' | 'imageUrl'>;
   };
 }
 

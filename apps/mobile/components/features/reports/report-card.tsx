@@ -1,5 +1,5 @@
 import { REPORT_STATUS_LABELS } from '@smartnippo/lib';
-import type { Report, UserProfile } from '@smartnippo/types';
+import type { Report } from '@smartnippo/types';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { router } from 'expo-router';
@@ -24,7 +24,7 @@ const getStatusColor = (status: string) => {
 };
 
 interface ReportCardProps {
-  report: Report & { author?: Pick<UserProfile, 'name'> };
+  report: Report & { author?: string | null };
 }
 
 export const ReportCard = React.memo(({ report }: ReportCardProps) => {
@@ -68,9 +68,7 @@ export const ReportCard = React.memo(({ report }: ReportCardProps) => {
         </View>
         <View className='flex-row items-center'>
           <User size={14} color='#6B7280' />
-          <Text className='ml-1 text-xs text-gray-500'>
-            {report.author?.name ?? '不明な作成者'}
-          </Text>
+          <Text className='ml-1 text-xs text-gray-500'>{report.author ?? '不明な作成者'}</Text>
         </View>
       </View>
     </Pressable>

@@ -7,7 +7,8 @@
     /* These settings are not required by Convex and can be modified. */
     "baseUrl": "..",
     "paths": {
-      "@smartnippo/lib": ["packages/lib/src"]
+      "@smartnippo/lib": ["packages/lib/src"],
+      "@smartnippo/types": ["packages/types/src"]
     },
     "allowJs": true,
     "strict": true,

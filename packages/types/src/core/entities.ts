@@ -11,22 +11,9 @@ export interface Organization {
   updated_at: number;
 }
 
-export interface UserProfile {
-  _id: string;
-  clerkId: string;
-  email?: string;
-  tokenIdentifier?: string;
-  name: string;
-  role: UserRole;
-  orgId?: string;
-  avatarUrl?: string;
-  avatarStorageId?: string;
-  pushToken?: string;
-  socialLinks?: SocialLinks;
-  privacySettings?: PrivacySettings;
-  created_at: number;
-  updated_at: number;
-}
+// UserProfile型は削除されました。
+// 代わりに、UnifiedUserProfileを使用してください。
+// import type { UnifiedUserProfile } from './unified-profile';
 
 export interface Report {
   _id: string;
@@ -179,4 +166,4 @@ export interface ReportStats {
 }
 
 // Import required types
-import type { AISummaryStatus, CommentType, PrivacyLevel, ReportStatus, UserRole } from './enums';
+import type { AISummaryStatus, CommentType, PrivacyLevel, ReportStatus } from './enums';

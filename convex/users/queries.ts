@@ -8,8 +8,72 @@
  */
 
 import { v } from 'convex/values';
-import { query } from '../_generated/server';
+import { action, internalQuery, query } from '../_generated/server';
 import { getAuthenticatedUser } from '../auth/auth';
+
+/**
+ * [INTERNAL] 特定のユーザープロファイルを取得
+ * @param userId ユーザープロファイルID
+ * @returns ユーザープロファイル情報
+ */
+export const getProfile = internalQuery({
+  args: {
+    userId: v.id('userProfiles'),
+  },
+  handler: async (ctx, { userId }) => {
+    return await ctx.db.get(userId);
+  },
+});
+
+/**
+ * [INTERNAL] 全ユーザープロファイルを取得（ページネーション付き）
+ * @param limit 取得する最大件数
+ * @returns ユーザープロファイルの配列
+ */
+export const getAllProfiles = internalQuery({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, { limit = 100 }) => {
+    return await ctx.db.query('userProfiles').order('asc').take(limit);
+  },
+});
+
+/**
+ * Clerkのユーザー情報を取得するアクション
+ * @param clerkIds ClerkユーザーIDの配列
+ * @returns Clerkユーザー情報の配列
+ */
+export const getClerkUsers = action({
+  args: {
+    clerkIds: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Clerk Backend APIを使用してユーザー情報を取得
+    // 注: 実際の実装ではclerkClientを使用する必要があります
+    // この実装は簡略化されており、実際のAPIコールが必要です
+    const users = await Promise.all(
+      args.clerkIds.map(async (clerkId) => {
+        try {
+          // TODO: 実際のClerk Backend API呼び出しを実装
+          // const user = await clerkClient.users.getUser(clerkId);
+          // return user;
+          return {
+            id: clerkId,
+            fullName: `User ${clerkId.slice(-4)}`, // プレースホルダー
+            emailAddresses: [{ emailAddress: `user${clerkId.slice(-4)}@example.com` }],
+            imageUrl: null,
+          };
+        } catch (error) {
+          console.error(`Failed to fetch Clerk user ${clerkId}:`, error);
+          return null;
+        }
+      })
+    );
+
+    return users.filter(Boolean);
+  },
+});
 
 /**
  * 現在の認証済みユーザー情報取得
@@ -41,7 +105,7 @@ export const current = query({
 
     const user = await ctx.db
       .query('userProfiles')
-      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
       .unique();
 
     return user;
@@ -49,8 +113,8 @@ export const current = query({
 });
 
 /**
- * 組織内の全ユーザーを取得する
- * @returns {Promise<Array<Doc<'userProfiles'>>>}
+ * 組織内の全ユーザーを取得する（Clerkユーザー情報付き）
+ * @returns {Promise<Array<Doc<'userProfiles'> & { clerkUser?: ClerkUser }>>}
  */
 export const listByOrg = query({
   args: {},
@@ -65,7 +129,40 @@ export const listByOrg = query({
       .withIndex('by_org', (q) => q.eq('orgId', user.orgId!))
       .collect();
 
-    return users;
+    // Clerkユーザー情報を取得するため、clerkIdを収集
+    const clerkIds = users.map((u) => u.clerkId).filter(Boolean);
+
+    // Clerk情報を取得（実際の実装では外部API呼び出しが必要）
+    // 現時点では簡略化された実装
+    const clerkUsers = await Promise.all(
+      clerkIds.map(async (clerkId) => {
+        try {
+          // TODO: 実際のClerk Backend API呼び出しを実装
+          // const clerkUser = await clerkClient.users.getUser(clerkId);
+          // return { clerkId, user: clerkUser };
+          return {
+            clerkId,
+            user: {
+              id: clerkId,
+              fullName: `User ${clerkId.slice(-4)}`,
+              emailAddresses: [{ emailAddress: `user${clerkId.slice(-4)}@example.com` }],
+              imageUrl: null,
+            },
+          };
+        } catch (error) {
+          console.error(`Failed to fetch Clerk user ${clerkId}:`, error);
+          return { clerkId, user: null };
+        }
+      })
+    );
+
+    const clerkUserMap = new Map(clerkUsers.map((item) => [item.clerkId, item.user]));
+
+    // ConvexユーザーとClerkユーザー情報をマージ
+    return users.map((user) => ({
+      ...user,
+      clerkUser: clerkUserMap.get(user.clerkId) ?? null,
+    }));
   },
 });
 

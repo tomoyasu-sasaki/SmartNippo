@@ -14,7 +14,7 @@ export { default as schema } from './schema';
 // 👤 ユーザー管理
 // ============================================================================
 // ユーザープロファイル操作
-export { deleteProfile, store, updateProfile } from './users/mutations';
+export { deleteProfile, store } from './users/mutations';
 
 // ユーザー情報取得
 export { current, getProfileHistory } from './users/queries';
@@ -52,18 +52,6 @@ export { getMyDashboardData } from './reports/dashboard';
 // ============================================================================
 // 組織の基本操作
 export { deleteOrganization, upsertOrganization } from './organizations/mutations';
-
-// ============================================================================
-// 📁 ファイルアップロード
-// ============================================================================
-export {
-  deleteAvatar,
-  generateAvatarUploadUrl,
-  getAvatarUrl,
-  getUploadStats,
-  saveAvatarToProfile,
-  validateAvatarFile,
-} from './uploads/uploads';
 
 // ============================================================================
 // ✅ バリデーション

@@ -2,10 +2,8 @@
 
 import type { AvatarUploadProps } from '@/types';
 import imageCompression from 'browser-image-compression';
-import { api } from 'convex/_generated/api';
-import { useMutation } from 'convex/react';
 import { Loader2, Upload, X } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from './button';
 
@@ -21,54 +19,13 @@ export function AvatarUpload({
   const [preview, setPreview] = useState<string | null>(avatarUrl ?? null);
   const [error, setError] = useState<string | null>(null);
 
-  // Convex mutations
-  const generateUploadUrl = useMutation(api.index.generateAvatarUploadUrl);
-  const saveAvatarToProfile = useMutation(api.index.saveAvatarToProfile);
+  // Convex連携は廃止。アップロード後はブラウザ内Blob URLを返す
 
-  const uploadToConvex = useCallback(
-    async (file: File) => {
-      if (!generateUploadUrl || !saveAvatarToProfile) {
-        throw new Error('Convex functions not available');
-      }
-
-      try {
-        // Generate upload URL
-        const uploadUrl = await generateUploadUrl();
-
-        // Upload file to Convex storage
-        const response = await fetch(uploadUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': file.type,
-          },
-          body: file,
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to upload file');
-        }
-
-        const { storageId } = await response.json();
-
-        // Save avatar reference to user profile and get the URL
-        const result = await saveAvatarToProfile({
-          storageId,
-          fileSize: file.size,
-          fileType: file.type,
-          fileName: file.name,
-        });
-
-        // Return the actual URL from Convex storage
-        return {
-          url: result.url,
-          storageId,
-        };
-      } catch (error) {
-        throw error;
-      }
-    },
-    [generateUploadUrl, saveAvatarToProfile]
-  );
+  const uploadLocally = useCallback(async (file: File) => {
+    // Object URL を生成して返す
+    const objectUrl = URL.createObjectURL(file);
+    return { url: objectUrl };
+  }, []);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -108,16 +65,11 @@ export function AvatarUpload({
         };
         reader.readAsDataURL(compressedFile);
 
-        // Upload to Convex
-        const result = await uploadToConvex(compressedFile);
+        // Upload locally (generate object URL)
+        const result = await uploadLocally(compressedFile);
 
-        // Notify parent component with the actual URL
-        onUpload({
-          url: result.url,
-          storageId: result.storageId,
-          fileSize: compressedFile.size,
-          fileType: compressedFile.type,
-        });
+        // Notify parent component with local URL
+        onUpload({ url: result.url });
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'アップロードに失敗しました');
@@ -126,8 +78,17 @@ export function AvatarUpload({
         setIsUploading(false);
       }
     },
-    [avatarUrl, maxSize, onUpload, uploadToConvex]
+    [avatarUrl, maxSize, onUpload, uploadLocally]
   );
+
+  // コンポーネントアンマウント時にObject URLを解放
+  useEffect(() => {
+    return () => {
+      if (preview?.startsWith('blob:')) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
